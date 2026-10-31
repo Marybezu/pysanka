@@ -60,28 +60,6 @@ fun OtherScreen() = FlorisScreen {
 
     content {
         ListPreference(
-            prefs.other.settingsTheme,
-            icon = Icons.Default.Palette,
-            title = stringRes(R.string.pref__other__settings_theme__label),
-            entries = enumDisplayEntriesOf(AppTheme::class),
-        )
-        ColorPickerPreference(
-            pref = prefs.other.accentColor,
-            title = stringRes(R.string.pref__other__settings_accent_color__label),
-            defaultValueLabel = stringRes(R.string.action__default),
-            icon = Icons.Default.FormatColorFill,
-            defaultColors = ColorMappings.colors,
-            showAlphaSlider = false,
-            enableAdvancedLayout = true,
-            colorOverride = {
-                if (it.isMaterialYou(context)) {
-                    Color.Unspecified
-                } else {
-                    it
-                }
-            }
-        )
-        ListPreference(
             prefs.other.settingsLanguage,
             icon = Icons.Default.Language,
             title = stringRes(R.string.pref__other__settings_language__label),
@@ -119,7 +97,6 @@ fun OtherScreen() = FlorisScreen {
                     "pl",
                     "pt",
                     "pt-BR",
-                    "ru",
                     "sk",
                     "sl",
                     "sr",
@@ -144,26 +121,6 @@ fun OtherScreen() = FlorisScreen {
                     }
                 }
             }
-        )
-        SwitchPreference(
-            prefs.other.showAppIcon,
-            icon = Icons.Default.Preview,
-            title = stringRes(R.string.pref__other__show_app_icon__label),
-            summary = when {
-                AndroidVersion.ATLEAST_API29_Q -> stringRes(R.string.pref__other__show_app_icon__summary_atleast_q)
-                else -> null
-            },
-            enabledIf = { AndroidVersion.ATMOST_API28_P },
-        )
-        Preference(
-            icon = ImageVector.vectorResource(R.drawable.ic_keyboard_keys),
-            title = stringRes(R.string.physical_keyboard__title),
-            onClick = { navController.navigate(Routes.Settings.PhysicalKeyboard) },
-        )
-        Preference(
-            icon = Icons.Default.Adb,
-            title = stringRes(R.string.devtools__title),
-            onClick = { navController.navigate(Routes.Devtools.Home) },
         )
 
         // Pysanka: FlorisBoard 0.6 has its backup and restore screens switched off (they were empty);

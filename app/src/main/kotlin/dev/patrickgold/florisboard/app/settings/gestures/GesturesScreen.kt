@@ -72,15 +72,6 @@ fun GesturesScreen() = FlorisScreen {
                 summary = "Word suggestions must be enabled for this to take effect!",
                 enabledIf = { prefs.glide.enabled isEqualTo true },
             )
-            DialogSliderPreference(
-                prefs.glide.previewRefreshDelay,
-                title = stringRes(R.string.pref__glide_preview_refresh_delay),
-                valueLabel = { stringRes(R.string.unit__milliseconds__symbol, "v" to it) },
-                min = 50,
-                max = 500,
-                stepIncrement = 25,
-                enabledIf = { prefs.glide.enabled isEqualTo true && prefs.glide.showPreview isEqualTo true },
-            )
             SwitchPreference(
                 prefs.glide.immediateBackspaceDeletesWord,
                 title = stringRes(R.string.pref__glide__immediate_backspace_deletes_word__label),
@@ -149,22 +140,6 @@ fun GesturesScreen() = FlorisScreen {
                 prefs.gestures.deleteKeyLongPress,
                 title = stringRes(R.string.pref__gestures__delete_key_long_press__label),
                 entries = enumDisplayEntriesOf(SwipeAction::class, "deleteLongPress"),
-            )
-            DialogSliderPreference(
-                prefs.gestures.swipeVelocityThreshold,
-                title = stringRes(R.string.pref__gestures__swipe_velocity_threshold__label),
-                valueLabel = { stringRes(R.string.unit__display_pixel_per_seconds__symbol, "v" to it) },
-                min = 400,
-                max = 4000,
-                stepIncrement = 100,
-            )
-            DialogSliderPreference(
-                prefs.gestures.swipeDistanceThreshold,
-                title = stringRes(R.string.pref__gestures__swipe_distance_threshold__label),
-                valueLabel = { stringRes(R.string.unit__display_pixel__symbol, "v" to it) },
-                min = 12,
-                max = 72,
-                stepIncrement = 1,
             )
         }
     }

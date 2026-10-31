@@ -289,6 +289,7 @@ class ImeController(
                 incognito = state.flags.isIncognitoMode || info.imeOptions.flagNoPersonalizedLearning,
                 passwordField = keyVariation == KeyVariation.PASSWORD,
             )
+            ua.pysanka.privacy.FieldPrivacy.isPrivate = state.flags.isIncognitoMode || info.imeOptions.flagNoPersonalizedLearning
             resetContent(initialSelection, initialSurrounding)
             expectedContentQueue.clear()
         }
@@ -597,6 +598,7 @@ class ImeController(
         fun handleFinishInputView() {
             // Pysanka: a copy made while no field is open is not judged by the last field
             clipboardManager.setFieldPrivacy(incognito = false, passwordField = false)
+            ua.pysanka.privacy.FieldPrivacy.isPrivate = false
             resetContent()
             state = state.copy(editor = ImeEditor.Disconnected)
             expectedContentQueue.clear()

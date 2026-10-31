@@ -20,9 +20,6 @@ import androidx.compose.runtime.Composable
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
-import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
-import dev.patrickgold.florisboard.ime.clipboard.CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO
-import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
@@ -42,23 +39,6 @@ fun ClipboardScreen() = FlorisScreen {
     val navController = LocalNavController.current
 
     content {
-        SwitchPreference(
-            prefs.clipboard.useInternalClipboard,
-            title = stringRes(R.string.pref__clipboard__use_internal_clipboard__label),
-            summary = stringRes(R.string.pref__clipboard__use_internal_clipboard__summary),
-        )
-        ListPreference(
-            prefs.clipboard.syncToFloris,
-            title = stringRes(R.string.pref__clipboard__sync_from_system_clipboard__label),
-            entries = enumDisplayEntriesOf(ClipboardSyncBehavior::class),
-            enabledIf = { prefs.clipboard.useInternalClipboard isEqualTo true },
-        )
-        ListPreference(
-            prefs.clipboard.syncToSystem,
-            title = stringRes(R.string.pref__clipboard__sync_to_system_clipboard__label),
-            entries = enumDisplayEntriesOf(ClipboardSyncBehavior::class),
-            enabledIf = { prefs.clipboard.useInternalClipboard isEqualTo true },
-        )
 
         PreferenceGroup(title = stringRes(R.string.pref__clipboard__group_clipboard_suggestion__label)) {
             SwitchPreference(
@@ -82,24 +62,6 @@ fun ClipboardScreen() = FlorisScreen {
                 prefs.clipboard.historyEnabled,
                 title = stringRes(R.string.pref__clipboard__enable_clipboard_history__label),
                 summary = stringRes(R.string.pref__clipboard__enable_clipboard_history__summary),
-            )
-            DialogSliderPreference(
-                primaryPref = prefs.clipboard.historyNumGridColumnsPortrait,
-                secondaryPref = prefs.clipboard.historyNumGridColumnsLandscape,
-                title = stringRes(R.string.pref__clipboard__num_history_grid_columns__label),
-                primaryLabel = stringRes(R.string.screen_orientation__portrait),
-                secondaryLabel = stringRes(R.string.screen_orientation__landscape),
-                valueLabel = { numGridColumns ->
-                    if (numGridColumns == CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO) {
-                        stringRes(R.string.general__auto)
-                    } else {
-                        numGridColumns.toString()
-                    }
-                },
-                min = 0,
-                max = 10,
-                stepIncrement = 1,
-                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
             )
             SwitchPreference(
                 prefs.clipboard.historyAutoCleanOldEnabled,
@@ -169,6 +131,15 @@ fun ClipboardScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label),
                 summary = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary),
                 enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
+            )
+        }
+
+        // Pysanka: the owner's tags for the history
+        PreferenceGroup(title = stringRes(R.string.pysanka__tag__screen_title)) {
+            Preference(
+                title = stringRes(R.string.pysanka__tag__screen_title),
+                summary = stringRes(R.string.pysanka__tag__screen_summary),
+                onClick = { navController.navigate(Routes.Settings.ClipboardTags) },
             )
         }
 

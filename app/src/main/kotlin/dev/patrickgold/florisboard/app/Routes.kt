@@ -36,10 +36,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
-import dev.patrickgold.florisboard.app.devtools.AndroidLocalesScreen
-import dev.patrickgold.florisboard.app.devtools.AndroidSettingsScreen
-import dev.patrickgold.florisboard.app.devtools.DevtoolsScreen
-import dev.patrickgold.florisboard.app.devtools.ExportDebugLogScreen
 import dev.patrickgold.florisboard.app.ext.CheckUpdatesScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionEditScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionExportScreen
@@ -61,7 +57,6 @@ import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
 import dev.patrickgold.florisboard.app.settings.gestures.GesturesScreen
 import dev.patrickgold.florisboard.app.settings.keyboard.FnKeyScreen
-import dev.patrickgold.florisboard.app.settings.keyboard.InputFeedbackScreen
 import dev.patrickgold.florisboard.app.settings.keyboard.KeyboardScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
@@ -141,10 +136,6 @@ object Routes {
             @Serializable
             @Deeplink("settings/keyboard/fn-key")
             object FnKey
-
-            @Serializable
-            @Deeplink("settings/keyboard/input-feedback")
-            object InputFeedback
         }
 
         @Serializable
@@ -175,6 +166,32 @@ object Routes {
         @Serializable
         @Deeplink("settings/clipboard/copy")
         object ClipboardCopy
+
+        // Pysanka: the short settings screens
+        @Serializable
+        @Deeplink("settings/pysanka/typing")
+        object PysankaTyping
+
+        @Serializable
+        @Deeplink("settings/pysanka/look")
+        object PysankaLook
+
+        @Serializable
+        @Deeplink("settings/pysanka/sound")
+        object PysankaSound
+
+        @Serializable
+        @Deeplink("settings/pysanka/privacy")
+        object PysankaPrivacy
+
+        @Serializable
+        @Deeplink("settings/pysanka/more")
+        object PysankaMore
+
+        // Pysanka: the owner's clipboard tags
+        @Serializable
+        @Deeplink("settings/clipboard/tags")
+        object ClipboardTags
 
         @Serializable
         @Deeplink("settings/media")
@@ -207,24 +224,6 @@ object Routes {
         @Serializable
         @Deeplink("settings/about/third-party-licenses")
         object ThirdPartyLicenses
-    }
-
-    object Devtools {
-        @Serializable
-        @Deeplink("devtools")
-        object Home
-
-        @Serializable
-        @Deeplink("devtools/android/locales")
-        object AndroidLocales
-
-        @Serializable
-        @Deeplink("devtools/android/settings")
-        data class AndroidSettings(val name: String)
-
-        @Serializable
-        @Deeplink("export-debug-log")
-        object ExportDebugLog
     }
 
     object Ext {
@@ -305,7 +304,6 @@ object Routes {
 
             composableWithDeepLink(Settings.Keyboard::class) { KeyboardScreen() }
             composableWithDeepLink(Settings.Keyboard.FnKey::class) { FnKeyScreen() }
-            composableWithDeepLink(Settings.Keyboard.InputFeedback::class) { InputFeedbackScreen() }
 
             composableWithDeepLink(Settings.Smartbar::class) { SmartbarScreen() }
 
@@ -321,6 +319,12 @@ object Routes {
 
             composableWithDeepLink(Settings.Clipboard::class) { ClipboardScreen() }
             composableWithDeepLink(Settings.ClipboardCopy::class) { ua.pysanka.clipboard.ClipboardBackupScreen() }
+            composableWithDeepLink(Settings.ClipboardTags::class) { ua.pysanka.clipboard.ClipboardTagsScreen() }
+            composableWithDeepLink(Settings.PysankaTyping::class) { ua.pysanka.settings.PysankaTypingScreen() }
+            composableWithDeepLink(Settings.PysankaLook::class) { ua.pysanka.settings.PysankaLookScreen() }
+            composableWithDeepLink(Settings.PysankaSound::class) { ua.pysanka.settings.PysankaSoundScreen() }
+            composableWithDeepLink(Settings.PysankaPrivacy::class) { ua.pysanka.settings.PysankaPrivacyScreen() }
+            composableWithDeepLink(Settings.PysankaMore::class) { ua.pysanka.settings.PysankaMoreScreen() }
 
             composableWithDeepLink(Settings.Media::class) { MediaScreen() }
 
@@ -333,14 +337,6 @@ object Routes {
             composableWithDeepLink(Settings.About::class) { AboutScreen() }
             composableWithDeepLink(Settings.ProjectLicense::class) { ProjectLicenseScreen() }
             composableWithDeepLink(Settings.ThirdPartyLicenses::class) { ThirdPartyLicensesScreen() }
-
-            composableWithDeepLink(Devtools.Home::class) { DevtoolsScreen() }
-            composableWithDeepLink(Devtools.AndroidLocales::class) { AndroidLocalesScreen() }
-            composableWithDeepLink(Devtools.AndroidSettings::class) { navBackStack ->
-                val payload = navBackStack.toRoute<Devtools.AndroidSettings>()
-                AndroidSettingsScreen(payload.name)
-            }
-            composableWithDeepLink(Devtools.ExportDebugLog::class) { ExportDebugLogScreen() }
 
             composableWithDeepLink(Ext.Home::class) { ExtensionHomeScreen() }
             composableWithDeepLink(Ext.List::class) { navBackStack ->

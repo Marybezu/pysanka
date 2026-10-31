@@ -55,28 +55,6 @@ fun SmartbarScreen() = FlorisScreen {
                 enabledIf = { prefs.smartbar.enabled isEqualTo true },
                 visibleIf = { prefs.smartbar.layout isNotEqualTo SmartbarLayout.ACTIONS_ONLY },
             )
-            SwitchPreference(
-                prefs.smartbar.flipToggles,
-                title = stringRes(R.string.pref__smartbar__flip_toggles__label),
-                summary = stringRes(R.string.pref__smartbar__flip_toggles__summary),
-                enabledIf = { prefs.smartbar.enabled isEqualTo true },
-                visibleIf = {
-                    prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED ||
-                        prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_EXTENDED
-                },
-            )
-            // TODO: schedule to remove this preference in the future, but keep it for now so users
-            //  know why the setting is not available anymore. Also force enable it for UI display.
-            SideEffect {
-                // prefs.smartbar.sharedActionsAutoExpandCollapse.set(true)
-            }
-            SwitchPreference(
-                prefs.smartbar.sharedActionsAutoExpandCollapse,
-                title = stringRes(R.string.pref__smartbar__shared_actions_auto_expand_collapse__label),
-                summary = "[Since v0.4.1] Always enabled due to UX issues",
-                enabledIf = { false },
-                visibleIf = { prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED },
-            )
             ListPreference(
                 listPref = prefs.smartbar.extendedActionsPlacement,
                 title = stringRes(R.string.pref__smartbar__extended_actions_placement__label),

@@ -16,6 +16,13 @@
 
 package dev.patrickgold.florisboard.ime.clipboard
 
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.automirrored.outlined.Label
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.filled.Check
 import android.content.ContentUris
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
@@ -53,9 +60,7 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
-import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.ToggleOff
 import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.Videocam
@@ -69,7 +74,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateSetOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -146,22 +150,35 @@ fun ClipboardInputLayout(
     val deviceLocked = androidKeyguardManager.let { it.isDeviceLocked || it.isKeyguardLocked }
     val historyEnabled by prefs.clipboard.historyEnabled.collectAsState()
 
-    var isFilterRowShown by remember { mutableStateOf(false) }
-    val activeFilterTypes = remember { mutableStateSetOf<ItemType>() }
+    // Pysanka: the tag slider is shown by default (the filter button hides it)
+    var isFilterRowShown by remember { mutableStateOf(true) }
+    var tagFilter by remember { mutableStateOf<ua.pysanka.clipboard.TagFilter?>(null) }
+    val ownTags by clipboardManager.tagsFlow.collectAsState()
 
     val unfilteredHistory by clipboardManager.historyFlow.collectAsState()
-    val filteredHistory = remember(unfilteredHistory, activeFilterTypes.toSet()) {
-        if (activeFilterTypes.isEmpty()) {
+    val filteredHistory = remember(unfilteredHistory, tagFilter) {
+        val f = tagFilter
+        if (f == null) {
             unfilteredHistory
         } else {
             unfilteredHistory.all
-                .filter { activeFilterTypes.contains(it.type) }
+                .filter { f.matches(it) }
                 .let { ClipboardHistory(it) }
         }
     }
+    // Automatic tags are offered only when some item has them
+    // (worked out off the main thread: a long history must not make the keyboard stutter)
+    val presentAutoTags by produceState(emptyList<ua.pysanka.clipboard.AutoTag>(), unfilteredHistory) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default) {
+            ua.pysanka.clipboard.AutoTag.entries.filter { t -> unfilteredHistory.all.any { t.matches(it) } }
+        }
+    }
+    // Pysanka: the long-press popup is showing the tag list instead of the actions
+    var popupTagsMode by remember { mutableStateOf(false) }
 
     val gridState = rememberLazyStaggeredGridState()
     var popupItem by remember(filteredHistory) { mutableStateOf<ClipboardItem?>(null) }
+    LaunchedEffect(popupItem) { if (popupItem == null) popupTagsMode = false }
     var showClearAllHistory by remember { mutableStateOf(false) }
 
     fun isPopupSurfaceActive() = popupItem != null || showClearAllHistory
@@ -169,11 +186,18 @@ fun ClipboardInputLayout(
     LaunchedEffect(isFilterRowShown) {
         delay(AnimationDuration.toLong())
         if (!isFilterRowShown) {
-            activeFilterTypes.clear()
+            tagFilter = null
         }
     }
 
-    LaunchedEffect(activeFilterTypes.toSet()) {
+    // A tag that was deleted (or an automatic one no item has any more) cannot stay selected
+    LaunchedEffect(ownTags, presentAutoTags) {
+        val f = tagFilter
+        if (f is ua.pysanka.clipboard.TagFilter.Own && ownTags.none { it.id == f.id }) tagFilter = null
+        if (f is ua.pysanka.clipboard.TagFilter.Auto && f.tag !in presentAutoTags && unfilteredHistory.all.isNotEmpty()) tagFilter = null
+    }
+
+    LaunchedEffect(tagFilter) {
         gridState.scrollToItem(0)
     }
 
@@ -421,47 +445,44 @@ fun ClipboardInputLayout(
                         modifier = Modifier.fillMaxWidth(),
                         clickAndSemanticsModifier = Modifier.florisHorizontalScroll(),
                     ) {
+                        // Pysanka: the tag slider: all, the automatic tags present, then the owner's own tags
                         @Composable
-                        fun FilterChip(
-                            imageVector: ImageVector,
-                            text: String,
-                            itemType: ItemType,
-                        ) {
-                            val active = activeFilterTypes.contains(itemType)
+                        fun TagChip(text: String, active: Boolean, dot: Color?, onClick: () -> Unit) {
                             val attributes = remember(active) {
-                                mapOf(
-                                    "state" to if (active) "active" else "inactive",
-                                    "type" to itemType.toString().lowercase(),
+                                mapOf("state" to if (active) "active" else "inactive", "type" to "tag")
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (dot != null) {
+                                    Box(
+                                        Modifier
+                                            .padding(start = 6.dp)
+                                            .size(10.dp)
+                                            .background(dot, CircleShape),
+                                    )
+                                }
+                                SnyggChip(
+                                    elementName = FlorisImeUi.ClipboardFilterChip.elementName,
+                                    attributes = attributes,
+                                    onClick = onClick,
+                                    imageVector = if (active) Icons.Default.Check else null,
+                                    text = text,
                                 )
                             }
-                            SnyggChip(
-                                elementName = FlorisImeUi.ClipboardFilterChip.elementName,
-                                attributes = attributes,
-                                onClick = {
-                                    if (!activeFilterTypes.add(itemType)) {
-                                        activeFilterTypes.remove(itemType)
-                                    }
-                                },
-                                imageVector = imageVector,
-                                text = text,
-                            )
                         }
 
-                        FilterChip(
-                            imageVector = Icons.Default.TextFields,
-                            text = "Text",
-                            itemType = ItemType.TEXT,
-                        )
-                        FilterChip(
-                            imageVector = Icons.Default.Image,
-                            text = "Images",
-                            itemType = ItemType.IMAGE,
-                        )
-                        FilterChip(
-                            imageVector = Icons.Default.Movie,
-                            text = "Videos",
-                            itemType = ItemType.VIDEO,
-                        )
+                        TagChip(stringRes(R.string.pysanka__tag__all), tagFilter == null, null) { tagFilter = null }
+                        for (auto in presentAutoTags) {
+                            val f = ua.pysanka.clipboard.TagFilter.Auto(auto)
+                            TagChip(stringRes(auto.label), tagFilter == f, null) {
+                                tagFilter = if (tagFilter == f) null else f
+                            }
+                        }
+                        for (tag in ownTags) {
+                            val f = ua.pysanka.clipboard.TagFilter.Own(tag.id)
+                            TagChip(tag.name, tagFilter == f, ua.pysanka.clipboard.TagColors.color(tag.color)) {
+                                tagFilter = if (tagFilter == f) null else f
+                            }
+                        }
                     }
                 }
                 SnyggBox(FlorisImeUi.ClipboardGrid.elementName,
@@ -474,6 +495,11 @@ fun ClipboardInputLayout(
                         state = gridState,
                         columns = staggeredGridCells,
                     ) {
+                        if (tagFilter != null && filteredHistory.all.isEmpty()) {
+                            item("pysanka-empty", span = StaggeredGridItemSpan.FullLine) {
+                                ClipCategoryTitle(text = stringRes(R.string.pysanka__tag__nothing))
+                            }
+                        }
                         clipboardItems(
                             items = filteredHistory.pinned,
                             key = "pinned-header",
@@ -521,7 +547,48 @@ fun ClipboardInputLayout(
                         }
                     }
                     SnyggColumn(modifier = Modifier.weight(0.5f)) {
-                        SnyggColumn(FlorisImeUi.ClipboardItemActions.elementName) {
+                        // Pysanka: the item's own tags, ticked on and off here
+                        if (popupTagsMode) SnyggColumn(
+                            FlorisImeUi.ClipboardItemActions.elementName,
+                            // Many tags must stay reachable in the small keyboard
+                            modifier = Modifier.verticalScroll(androidx.compose.foundation.rememberScrollState()),
+                        ) {
+                            val item = popupItem!!
+                            val ids = item.tagIds()
+                            for (tag in ownTags) {
+                                val on = tag.id in ids
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        Modifier
+                                            .padding(start = 8.dp)
+                                            .size(10.dp)
+                                            .background(ua.pysanka.clipboard.TagColors.color(tag.color), CircleShape),
+                                    )
+                                    PopupAction(
+                                        icon = if (on) Icons.Default.Check else Icons.AutoMirrored.Outlined.Label,
+                                        text = tag.name,
+                                    ) {
+                                        clipboardManager.setItemTags(item, if (on) ids - tag.id else ids + tag.id)
+                                        popupItem = null
+                                    }
+                                }
+                            }
+                            PopupAction(
+                                icon = Icons.Default.Settings,
+                                text = stringRes(
+                                    if (ownTags.isEmpty()) R.string.pysanka__tag__create_first else R.string.pysanka__tag__manage,
+                                ),
+                            ) {
+                                popupItem = null
+                                ua.pysanka.clipboard.openTagSettings(context)
+                            }
+                        } else SnyggColumn(FlorisImeUi.ClipboardItemActions.elementName) {
+                            PopupAction(
+                                icon = Icons.AutoMirrored.Outlined.Label,
+                                text = stringRes(R.string.pysanka__tag__tags),
+                            ) {
+                                popupTagsMode = true
+                            }
                             PopupAction(
                                 icon = Icons.Outlined.PushPin,
                                 text = stringRes(if (popupItem!!.isPinned) {
@@ -577,7 +644,7 @@ fun ClipboardInputLayout(
                         SnyggText(
                             elementName = FlorisImeUi.ClipboardClearAllDialogMessage.elementName,
                             text = stringRes(
-                                if (isFilterRowShown) {
+                                if (tagFilter != null) {
                                     R.string.clipboard__confirm_clear_filtered_history__message
                                 } else {
                                     R.string.clipboard__confirm_clear_unfiltered_history__message
@@ -687,7 +754,7 @@ fun ClipboardInputLayout(
             HistoryLockedView()
         } else {
             if (historyEnabled) {
-                if (filteredHistory.all.isNotEmpty() || !activeFilterTypes.isEmpty()) {
+                if (filteredHistory.all.isNotEmpty() || tagFilter != null) {
                     HistoryMainView()
                 } else {
                     HistoryEmptyView()
