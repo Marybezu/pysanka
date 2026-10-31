@@ -1,0 +1,54 @@
+name: Prepare OCR models
+
+# Run by hand. Downloads the official PaddlePaddle PP-OCRv5 mobile detection and East Slavic
+# recognition models, converts them to ONNX, checks them on a test image and pushes the files with
+# SHA256SUMS to the ocr-models branch for review. Nothing goes into the app until reviewed.
+on:
+  workflow_dispatch:
+  # A push to this branch runs it too (a manual run needs the file on main)
+  push:
+    branches: [ocr-prepare]
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          sparse-checkout: scripts
+      - name: Convert and check
+        run: |
+          python3 -m venv venv && . venv/bin/activate
+          pip install -q "paddlepaddle>=3.0,<4" "paddle2onnx>=2.0,<3" "onnxruntime>=1.20,<2" huggingface_hub pyyaml pillow numpy 2>&1 | tail -3
+          sudo apt-get install -y -qq fonts-dejavu-core
+          mkdir -p out && pip freeze > out/versions.txt
+          python scripts/ocr_models.py out 2>&1 | tee out/log.txt || { mkdir -p out; echo "FAILED" >> out/log.txt; }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: ocr-models
+          path: out/
+
+  publish:
+    needs: prepare
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: ocr-models
+          path: out
+      - name: Push for review
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd out
+          git init -q && git checkout -q -b ocr-models && git add . && git -c user.name=ci -c user.email=ci@localhost commit -qm "OCR models ${{ github.run_number }}"
+          git push -qf "https://x-access-token:${TOKEN}@github.com/${{ github.repository }}" ocr-models
