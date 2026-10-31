@@ -20,11 +20,17 @@ object SecureClipboard {
     const val HISTORY_DB = "clipboard_history"
     const val FILES_DB = "clipboard_files"
     const val FILES_DIR = "clipboard_files"
+    const val OPEN_DIR = "clipboard_open"
 
     /** Opens the vault; on a lost key every old clipboard file is wiped first. Call off the main thread. */
     fun open(context: Context): ClipboardVault.State {
         val app = context.applicationContext
-        return ClipboardVault.open(app) { wipe(app) }
+        val state = ClipboardVault.open(app) { wipe(app) }
+        if (state == ClipboardVault.State.Open || state == ClipboardVault.State.Lost) {
+            // Decrypted copies left from a crash while one was handed out
+            File(app.noBackupFilesDir, OPEN_DIR).listFiles()?.forEach { it.delete() }
+        }
+        return state
     }
 
     /** True when the clipboard can be read and written right now. */
@@ -41,6 +47,7 @@ object SecureClipboard {
         context.deleteDatabase(HISTORY_DB)
         context.deleteDatabase(FILES_DB)
         File(context.noBackupFilesDir, FILES_DIR).listFiles()?.forEach { it.delete() }
+        File(context.noBackupFilesDir, OPEN_DIR).listFiles()?.forEach { it.delete() }
     }
 
     /**

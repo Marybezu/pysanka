@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pysanka's own strings. Ukrainian is in values-uk/strings_pysanka.xml; keep the keys the same in both. -->
+<resources>
+    <string name="pysanka__clipboard__skip_sensitive__label">Don\'t keep passwords</string>
+    <string name="pysanka__clipboard__skip_sensitive__summary">Copies that a password manager marks as sensitive, and copies made in a password field, stay out of the history</string>
+</resources>

@@ -36,6 +36,7 @@ import java.util.UUID
  */
 object ClipboardFileStorage {
     const val CLIPBOARD_FILES_PATH = "clipboard_files"
+    const val OPEN_DIR = "clipboard_open"
 
     private val Context.clipboardFilesDir: FsFile
         get() = FsFile(this.noBackupFilesDir, "clipboard_files").also { it.mkdirs() }
@@ -63,7 +64,7 @@ object ClipboardFileStorage {
                     override fun read(b: ByteArray, off: Int, len: Int): Int =
                         super.read(b, off, len).also { if (it > 0) size += it }
                 }
-                file.outputStream().use { out -> SealedFile.seal(ClipboardVault.fileKey(), counting, out) }
+                file.outputStream().use { out -> SealedFile.seal(ClipboardVault.fileKey(), label(id), counting, out) }
             }
         } catch (e: Exception) {
             file.delete()
@@ -72,10 +73,18 @@ object ClipboardFileStorage {
         return Cloned(id, size)
     }
 
+    /** Pysanka: each file is sealed to its own id, so two stored files cannot be swapped unnoticed. */
+    private fun label(id: Long): ByteArray = java.nio.ByteBuffer.allocate(8).putLong(id).array()
+
+    /** Pysanka: removes decrypted copies left behind if the app stopped while handing one out. */
+    fun clearOpenCopies(context: Context) {
+        File(context.noBackupFilesDir, OPEN_DIR).listFiles()?.forEach { it.delete() }
+    }
+
     /** Pysanka: the original bytes of a stored file. */
     fun openStream(context: Context, id: Long): InputStream {
         check(SecureClipboard.ensureOpen(context)) { "Clipboard is locked" }
-        return SealedFile.open(ClipboardVault.fileKey(), getFileForId(context, id).inputStream().buffered())
+        return SealedFile.open(ClipboardVault.fileKey(), label(id), getFileForId(context, id).inputStream().buffered())
     }
 
     /**
@@ -84,7 +93,7 @@ object ClipboardFileStorage {
      * cache and unlinked right after it is opened, so it disappears when the descriptor is closed.
      */
     fun openPlainDescriptor(context: Context, id: Long): ParcelFileDescriptor {
-        val dir = File(context.noBackupFilesDir, "clipboard_open").apply { mkdirs() }
+        val dir = File(context.noBackupFilesDir, OPEN_DIR).apply { mkdirs() }
         // Leftovers from a crash in the middle of this function
         dir.listFiles()?.forEach { if (it.lastModified() < System.currentTimeMillis() - 60_000) it.delete() }
         val tmp = File(dir, UUID.randomUUID().toString())

@@ -70,6 +70,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -282,16 +283,19 @@ fun ClipboardInputLayout(
             if (item.type == ItemType.IMAGE) {
                 val id = ContentUris.parseId(item.uri!!)
                 val file = ClipboardFileStorage.getFileForId(context, id)
-                val bitmap = remember(id) {
-                    runCatching {
+                // Pysanka: decrypted in the background, so the keyboard never stalls on a big file
+                val bitmap = produceState<Result<androidx.compose.ui.graphics.ImageBitmap>?>(null, id) {
+                    value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching {
                         check(file.exists()) { "Unable to resolve image at ${file.absolutePath}" }
                         // Pysanka: the stored file is encrypted
                         val rawBitmap = ClipboardFileStorage.openStream(context, id).use { BitmapFactory.decodeStream(it) }
                         checkNotNull(rawBitmap) { "Unable to decode image at ${file.absolutePath}" }
                         rawBitmap.asImageBitmap()
-                    }
-                }
-                if (bitmap.isSuccess) {
+                    } }
+                }.value
+                if (bitmap == null) {
+                    // Still decrypting
+                } else if (bitmap.isSuccess) {
                     Image(
                         modifier = Modifier.fillMaxWidth(),
                         bitmap = bitmap.getOrThrow(),
@@ -307,8 +311,9 @@ fun ClipboardInputLayout(
             } else if (item.type == ItemType.VIDEO) {
                 val id = ContentUris.parseId(item.uri!!)
                 val file = ClipboardFileStorage.getFileForId(context, id)
-                val bitmap = remember(id) {
-                    runCatching {
+                // Pysanka: decrypted in the background, so the keyboard never stalls on a big file
+                val bitmap = produceState<Result<androidx.compose.ui.graphics.ImageBitmap>?>(null, id) {
+                    value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching {
                         check(file.exists()) { "Unable to resolve video at ${file.absolutePath}" }
                         // Pysanka: the stored file is encrypted; read a frame from a short-lived decrypted copy
                         val rawBitmap = ClipboardFileStorage.openPlainDescriptor(context, id).use { pfd ->
@@ -322,9 +327,11 @@ fun ClipboardInputLayout(
                         }
                         checkNotNull(rawBitmap) { "Unable to decode video at ${file.absolutePath}" }
                         rawBitmap.asImageBitmap()
-                    }
-                }
-                if (bitmap.isSuccess) {
+                    } }
+                }.value
+                if (bitmap == null) {
+                    // Still decrypting
+                } else if (bitmap.isSuccess) {
                     Image(
                         modifier = Modifier.fillMaxWidth(),
                         bitmap = bitmap.getOrThrow(),

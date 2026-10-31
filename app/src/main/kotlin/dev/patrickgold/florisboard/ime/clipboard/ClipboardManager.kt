@@ -100,9 +100,29 @@ class ClipboardManager(
     val currentHistory: ClipboardHistory
         get() = historyFlow.value
 
-    /** Pysanka: set by the keyboard while a password field or incognito is active. */
+    /**
+     * Pysanka: what kind of field the keyboard is in. Set on the main thread when a field opens or
+     * closes, and read on the main thread when a copy happens, so a copy is judged by its own field.
+     */
     @Volatile
-    var keepOutOfHistory: Boolean = false
+    private var fieldIncognito = false
+    @Volatile
+    private var fieldPassword = false
+
+    fun setFieldPrivacy(incognito: Boolean, passwordField: Boolean) {
+        fieldIncognito = incognito
+        fieldPassword = passwordField
+    }
+
+    /**
+     * Pysanka: whether a clip may enter the history. Incognito (and fields that ask for no learning)
+     * never; passwords and sensitive clips only when the owner turned "Don't keep passwords" off.
+     */
+    private fun mayKeep(isSensitive: Boolean, incognito: Boolean, passwordField: Boolean): Boolean {
+        if (!prefs.clipboard.historyEnabled.get() || incognito) return false
+        if ((isSensitive || passwordField) && prefs.clipboard.historySkipSensitive.get()) return false
+        return true
+    }
 
     private val primaryClipLastFromCallbackGuard = Mutex(locked = false)
     private var primaryClipLastFromCallback: ClipData? = null
@@ -134,6 +154,13 @@ class ClipboardManager(
                     return@launch
                 }
                 clipHistoryDb = ClipboardHistoryDatabase.new(context.applicationContext)
+                // Pysanka: open the encrypted file list now, in the background, so pasting an
+                // image later (a call on the main thread) never waits for it
+                runCatching {
+                    context.applicationContext.contentResolver.getType(
+                        dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider.IMAGE_CLIPS_URI,
+                    )
+                }
                 withContext(Dispatchers.Main) {
                     clipHistoryDao?.getAllAsFlow()?.collect { items ->
                         updateHistory(items)
@@ -197,6 +224,9 @@ class ClipboardManager(
         val syncBehavior = prefs.clipboard.syncToFloris.get()
         if (!prefs.clipboard.useInternalClipboard.get() || syncBehavior != ClipboardSyncBehavior.NO_EVENTS) {
             val systemPrimaryClip = systemClipboardManager.primaryClip
+            // Pysanka: the field at the moment of copying, not when the background job runs
+            val incognito = fieldIncognito
+            val passwordField = fieldPassword
             ioScope.launch {
                 val isDuplicate: Boolean
                 primaryClipLastFromCallbackGuard.withLock {
@@ -233,9 +263,12 @@ class ClipboardManager(
 
                 val isEqual = internalPrimaryClip?.isEqualTo(systemPrimaryClip) == true
                 if (!isEqual) {
-                    val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = true)
+                    // Pysanka: decide before anything is stored, so a clip that stays out of the
+                    // history never leaves an (encrypted) copy of its image behind either
+                    val keep = mayKeep(ClipboardItem.isSensitive(systemPrimaryClip), incognito, passwordField)
+                    val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = keep)
                     primaryClip = item
-                    insertOrMoveBeginning(item)
+                    if (keep) insertOrMoveBeginning(item)
                 }
             }
         }
@@ -245,7 +278,8 @@ class ClipboardManager(
      * Change the current text on clipboard, update history (if enabled).
      */
     private fun addNewClip(item: ClipboardItem) {
-        insertOrMoveBeginning(item)
+        // Pysanka: see mayKeep (a copy from the keyboard itself happens in the field open right now)
+        if (mayKeep(item.isSensitive, fieldIncognito, fieldPassword)) insertOrMoveBeginning(item)
         updatePrimaryClip(item)
     }
 
@@ -261,9 +295,6 @@ class ClipboardManager(
      * Adds a new item to the clipboard history (if enabled).
      */
     private fun insertOrMoveBeginning(newItem: ClipboardItem) {
-        // Pysanka: passwords and codes marked sensitive (password managers do this), and anything
-        // copied in a password field or in incognito, are never kept in the history
-        if (newItem.isSensitive || keepOutOfHistory) return
         if (prefs.clipboard.historyEnabled.get()) {
             val historyElement = currentHistory.all.firstOrNull { item ->
                 item.type == ItemType.TEXT && item.text == newItem.text && item.isSensitive == newItem.isSensitive

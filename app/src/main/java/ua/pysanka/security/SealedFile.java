@@ -18,8 +18,9 @@ import javax.crypto.spec.GCMParameterSpec;
  *
  * Format: "PYS1", 8 random bytes (nonce prefix), then chunks. Each chunk is up to {@link #CHUNK}
  * bytes of data sealed with AES-256-GCM (16-byte tag); its nonce is the prefix plus the chunk
- * number, and its associated data says whether it is the last chunk. So chunks cannot be reordered,
- * dropped or cut off without the read failing. An empty file is one empty last chunk.
+ * number, and its associated data says whether it is the last chunk, followed by a caller-given
+ * label (for the clipboard, the file's id). So chunks cannot be reordered, dropped or cut off, and
+ * two files cannot be swapped, without the read failing. An empty file is one empty last chunk.
  *
  * Written in Java so the format can be checked with plain javac as well as in the unit tests.
  */
@@ -33,7 +34,7 @@ public final class SealedFile {
     private static final SecureRandom RANDOM = new SecureRandom();
 
     /** Encrypts everything from {@code in} into {@code out}. Neither stream is closed. */
-    public static void seal(SecretKey key, InputStream in, OutputStream out) throws IOException, GeneralSecurityException {
+    public static void seal(SecretKey key, byte[] label, InputStream in, OutputStream out) throws IOException, GeneralSecurityException {
         byte[] prefix = new byte[PREFIX];
         RANDOM.nextBytes(prefix);
         out.write(MAGIC);
@@ -46,7 +47,7 @@ public final class SealedFile {
             // Look one chunk ahead: only then is it known whether the current one is the last
             int nextLen = curLen == CHUNK ? readFully(in, next) : 0;
             boolean last = nextLen == 0;
-            out.write(cipher(Cipher.ENCRYPT_MODE, key, prefix, index, last).doFinal(current, 0, curLen));
+            out.write(cipher(Cipher.ENCRYPT_MODE, key, prefix, index, last, label).doFinal(current, 0, curLen));
             if (last) break;
             byte[] t = current; current = next; next = t;
             curLen = nextLen;
@@ -57,21 +58,15 @@ public final class SealedFile {
     }
 
     /** A stream of the original bytes. Throws IOException on a wrong key or any change to the file. */
-    public static InputStream open(SecretKey key, InputStream in) throws IOException {
+    public static InputStream open(SecretKey key, byte[] label, InputStream in) throws IOException {
         byte[] head = new byte[MAGIC.length + PREFIX];
         if (readFully(in, head) != head.length || !Arrays.equals(Arrays.copyOf(head, MAGIC.length), MAGIC)) {
             throw new IOException("Not a sealed file");
         }
-        return new Reader(key, Arrays.copyOfRange(head, MAGIC.length, head.length), in);
+        return new Reader(key, label.clone(), Arrays.copyOfRange(head, MAGIC.length, head.length), in);
     }
 
-    /** True if the file starts like a sealed file (it may still fail to open). */
-    public static boolean looksSealed(InputStream in) throws IOException {
-        byte[] head = new byte[MAGIC.length];
-        return readFully(in, head) == head.length && Arrays.equals(head, MAGIC);
-    }
-
-    private static Cipher cipher(int mode, SecretKey key, byte[] prefix, long index, boolean last) throws GeneralSecurityException {
+    private static Cipher cipher(int mode, SecretKey key, byte[] prefix, long index, boolean last, byte[] label) throws GeneralSecurityException {
         if (index > 0xFFFFFFFFL) throw new GeneralSecurityException("File too large");
         byte[] nonce = new byte[12];
         System.arraycopy(prefix, 0, nonce, 0, PREFIX);
@@ -81,7 +76,10 @@ public final class SealedFile {
         nonce[11] = (byte) index;
         Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
         c.init(mode, key, new GCMParameterSpec(TAG * 8, nonce));
-        c.updateAAD(new byte[] {(byte) (last ? 1 : 0)});
+        byte[] aad = new byte[1 + label.length];
+        aad[0] = (byte) (last ? 1 : 0);
+        System.arraycopy(label, 0, aad, 1, label.length);
+        c.updateAAD(aad);
         return c;
     }
 
@@ -98,6 +96,7 @@ public final class SealedFile {
 
     private static final class Reader extends InputStream {
         private final SecretKey key;
+        private final byte[] label;
         private final byte[] prefix;
         private final InputStream in;
         private byte[] sealed = new byte[CHUNK + TAG];
@@ -108,8 +107,9 @@ public final class SealedFile {
         private long index;
         private boolean done;
 
-        Reader(SecretKey key, byte[] prefix, InputStream in) throws IOException {
+        Reader(SecretKey key, byte[] label, byte[] prefix, InputStream in) throws IOException {
             this.key = key;
+            this.label = label;
             this.prefix = prefix;
             this.in = in;
             sealedLen = readFully(in, sealed);
@@ -124,7 +124,7 @@ public final class SealedFile {
                 boolean last = followingLen == 0;
                 if (!last && followingLen < TAG) throw new IOException("Damaged sealed file");
                 try {
-                    plain = cipher(Cipher.DECRYPT_MODE, key, prefix, index, last).doFinal(sealed, 0, sealedLen);
+                    plain = cipher(Cipher.DECRYPT_MODE, key, prefix, index, last, label).doFinal(sealed, 0, sealedLen);
                 } catch (GeneralSecurityException e) {
                     throw new IOException("Sealed file was changed or the key is wrong", e);
                 }
@@ -164,8 +164,8 @@ public final class SealedFile {
     }
 
     /** Whole file into memory; only for small files such as thumbnails. */
-    public static byte[] readAll(SecretKey key, InputStream in) throws IOException {
-        try (InputStream s = open(key, in)) {
+    public static byte[] readAll(SecretKey key, byte[] label, InputStream in) throws IOException {
+        try (InputStream s = open(key, label, in)) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buf = new byte[16 * 1024];
             int n;

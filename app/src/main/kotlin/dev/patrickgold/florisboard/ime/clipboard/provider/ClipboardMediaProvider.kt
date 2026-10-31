@@ -75,20 +75,27 @@ class ClipboardMediaProvider : ContentProvider() {
      * Pysanka: the file list is encrypted, so it is opened only once the clipboard vault is
      * (after the phone is unlocked), on first use rather than when the process starts.
      */
-    @Synchronized
     fun init(): Boolean {
         if (clipboardFilesDao != null) return true
-        val ctx = context ?: return false
-        // Room refuses the main thread; a call from there waits for this one-time setup instead
-        return kotlinx.coroutines.runBlocking(Dispatchers.IO) {
-            if (!ua.pysanka.clipboard.SecureClipboard.ensureOpen(ctx)) return@runBlocking false
-            val dao = ClipboardFilesDatabase.new(ctx).clipboardFilesDao()
-            for (clipboardFileInfo in dao.getAll()) {
-                cachedFileInfos[clipboardFileInfo.id] = clipboardFileInfo
-            }
-            clipboardFilesDao = dao
-            true
+        // Never make the main thread wait for the keystore and SQLCipher: start it in the background
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            ioScope.launch { initBlocking() }
+            return false
         }
+        return initBlocking()
+    }
+
+    @Synchronized
+    private fun initBlocking(): Boolean {
+        if (clipboardFilesDao != null) return true
+        val ctx = context ?: return false
+        if (!ua.pysanka.clipboard.SecureClipboard.ensureOpen(ctx)) return false
+        val dao = ClipboardFilesDatabase.new(ctx).clipboardFilesDao()
+        for (clipboardFileInfo in dao.getAll()) {
+            cachedFileInfos[clipboardFileInfo.id] = clipboardFileInfo
+        }
+        clipboardFilesDao = dao
+        return true
     }
 
     override fun onCreate(): Boolean {
