@@ -130,10 +130,6 @@ fun KeyboardScreen() = FlorisScreen {
         )
 
         PreferenceGroup(title = stringRes(R.string.pref__keyboard__group_keypress__label)) {
-            Preference(
-                title = stringRes(R.string.settings__input_feedback__title),
-                onClick = { navController.navigate(Routes.Settings.Keyboard.InputFeedback) },
-            )
             SwitchPreference(
                 prefs.keyboard.popupEnabled,
                 title = stringRes(R.string.pref__keyboard__popup_enabled__label),
@@ -166,37 +162,6 @@ fun KeyboardScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__keyboard__long_press_key_hint_placement__label),
                 entries = enumDisplayEntriesOf(LongPressKeyHintPlacement::class),
                 enabledIf = { prefs.keyboard.longPressKeyHintEnabled isEqualTo true },
-            )
-        }
-
-        PreferenceGroup(title = stringRes(R.string.pref__keyboard__group_multi_tap__label)) {
-            TimeoutPreference(
-                prefs.keyboard.multiTapTimeoutUseSystem,
-                prefs.keyboard.multiTapTimeout,
-                title = stringRes(R.string.pref__keyboard__multi_tap_timeout__label),
-                min = 300,
-                max = 1500,
-                stepIncrement = 50,
-                systemTimeout = systemTimingOptions.multiTapTimeout,
-            )
-            SwitchPreference(
-                prefs.keyboard.multiTapHighlightEnabled,
-                title = stringRes(R.string.pref__keyboard__multi_tap_key_hint_enabled__label),
-                summary = stringRes(R.string.pref__keyboard__multi_tap_key_hint_enabled__summary),
-            )
-        }
-
-        PreferenceGroup(title = stringRes(R.string.pref__keyboard__group_flicks__label)) {
-            SwitchPreference(
-                prefs.keyboard.flickKeyHintEnabled,
-                title = "Show flick hints",
-                summary = "Displays the flick key as a hint",
-            )
-            ListPreference(
-                prefs.keyboard.flickKeyHintPlacement,
-                title = "Flick hint placement",
-                entries = enumDisplayEntriesOf(FlickKeyHintPlacement::class),
-                enabledIf = { prefs.keyboard.flickKeyHintEnabled isEqualTo true },
             )
         }
     }

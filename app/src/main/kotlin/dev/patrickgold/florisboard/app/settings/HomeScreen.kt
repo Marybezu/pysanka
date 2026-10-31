@@ -17,40 +17,24 @@
 package dev.patrickgold.florisboard.app.settings
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Assignment
-import androidx.compose.material.icons.filled.Extension
-import androidx.compose.material.icons.filled.Gesture
-import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
-import androidx.compose.material.icons.filled.SmartButton
-import androidx.compose.material.icons.filled.Spellcheck
-import androidx.compose.material.icons.outlined.Build
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Keyboard
-import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.app.LocalNavController
-import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
-import dev.patrickgold.jetpref.datastore.ui.Preference
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
 
 @Composable
 fun HomeScreen() = FlorisScreen {
-    title = stringRes(R.string.settings__home__title)
+    title = stringRes(R.string.app_name)
     navigationIconVisible = false
     previewFieldVisible = true
 
-    val navController = LocalNavController.current
     val context = LocalContext.current
 
     content {
@@ -72,60 +56,7 @@ fun HomeScreen() = FlorisScreen {
             )
         }
 
-        Preference(
-            icon = Icons.Default.Language,
-            title = stringRes(R.string.settings__localization__title),
-            onClick = { navController.navigate(Routes.Settings.Localization) },
-        )
-        Preference(
-            icon = Icons.Outlined.Palette,
-            title = stringRes(R.string.settings__theme__title),
-            onClick = { navController.navigate(Routes.Settings.Theme) },
-        )
-        Preference(
-            icon = Icons.Outlined.Keyboard,
-            title = stringRes(R.string.settings__keyboard__title),
-            onClick = { navController.navigate(Routes.Settings.Keyboard) },
-        )
-        Preference(
-            icon = Icons.Default.SmartButton,
-            title = stringRes(R.string.settings__smartbar__title),
-            onClick = { navController.navigate(Routes.Settings.Smartbar) },
-        )
-        Preference(
-            icon = Icons.Default.Spellcheck,
-            title = stringRes(R.string.settings__typing__title),
-            onClick = { navController.navigate(Routes.Settings.Typing) },
-        )
-        Preference(
-            icon = Icons.Default.Gesture,
-            title = stringRes(R.string.settings__gestures__title),
-            onClick = { navController.navigate(Routes.Settings.Gestures) },
-        )
-        Preference(
-            icon = Icons.AutoMirrored.Outlined.Assignment,
-            title = stringRes(R.string.settings__clipboard__title),
-            onClick = { navController.navigate(Routes.Settings.Clipboard) },
-        )
-        Preference(
-            icon = Icons.Default.SentimentSatisfiedAlt,
-            title = stringRes(R.string.settings__media__title),
-            onClick = { navController.navigate(Routes.Settings.Media) },
-        )
-        Preference(
-            icon = Icons.Default.Extension,
-            title = stringRes(R.string.ext__home__title),
-            onClick = { navController.navigate(Routes.Ext.Home) },
-        )
-        Preference(
-            icon = Icons.Outlined.Build,
-            title = stringRes(R.string.settings__other__title),
-            onClick = { navController.navigate(Routes.Settings.Other) },
-        )
-        Preference(
-            icon = Icons.Outlined.Info,
-            title = stringRes(R.string.about__title),
-            onClick = { navController.navigate(Routes.Settings.About) },
-        )
+        // Pysanka: tiles with their current state instead of eleven plain rows
+        ua.pysanka.settings.PysankaHome()
     }
 }

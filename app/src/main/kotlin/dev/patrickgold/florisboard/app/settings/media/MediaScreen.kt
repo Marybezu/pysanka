@@ -71,36 +71,6 @@ fun MediaScreen() = FlorisScreen {
                 title = stringRes(R.string.prefs__media__emoji_history_enabled),
                 summary = stringRes(R.string.prefs__media__emoji_history_enabled__summary),
             )
-            ListPreference(
-                prefs.emoji.historyPinnedUpdateStrategy,
-                title = stringRes(R.string.prefs__media__emoji_history_pinned_update_strategy),
-                entries = enumDisplayEntriesOf(EmojiHistory.UpdateStrategy::class),
-                enabledIf = { prefs.emoji.historyEnabled.isTrue() },
-            )
-            ListPreference(
-                prefs.emoji.historyRecentUpdateStrategy,
-                title = stringRes(R.string.prefs__media__emoji_history_recent_update_strategy),
-                entries = enumDisplayEntriesOf(EmojiHistory.UpdateStrategy::class),
-                enabledIf = { prefs.emoji.historyEnabled.isTrue() },
-            )
-            DialogSliderPreference(
-                primaryPref = prefs.emoji.historyPinnedMaxSize,
-                secondaryPref = prefs.emoji.historyRecentMaxSize,
-                title = stringRes(R.string.prefs__media__emoji_history_max_size),
-                primaryLabel = stringRes(R.string.emoji__history__pinned),
-                secondaryLabel = stringRes(R.string.emoji__history__recent),
-                valueLabel = { maxSize ->
-                    if (maxSize == EmojiHistory.MaxSizeUnlimited) {
-                        stringRes(R.string.general__unlimited)
-                    } else {
-                        pluralsRes(R.plurals.unit__items__written, maxSize, "v" to maxSize)
-                    }
-                },
-                min = 0,
-                max = 120,
-                stepIncrement = 1,
-                enabledIf = { prefs.emoji.historyEnabled.isTrue() },
-            )
             Preference(
                 title = stringRes(R.string.prefs__media__emoji_history_pinned_reset),
                 onClick = {
@@ -129,42 +99,6 @@ fun MediaScreen() = FlorisScreen {
                 prefs.emoji.suggestionType,
                 title = stringRes(R.string.prefs__media__emoji_suggestion_type),
                 entries = enumDisplayEntriesOf(EmojiSuggestionType::class),
-                enabledIf = { prefs.emoji.suggestionEnabled.isTrue() },
-            )
-            SwitchPreference(
-                prefs.emoji.suggestionUpdateHistory,
-                title = stringRes(R.string.prefs__media__emoji_suggestion_update_history),
-                summary = stringRes(R.string.prefs__media__emoji_suggestion_update_history__summary),
-                enabledIf = {
-                    prefs.emoji.suggestionEnabled.isTrue() && prefs.emoji.historyEnabled.isTrue()
-                },
-            )
-            SwitchPreference(
-                prefs.emoji.suggestionCandidateShowName,
-                title = stringRes(R.string.prefs__media__emoji_suggestion_candidate_show_name),
-                summary = stringRes(R.string.prefs__media__emoji_suggestion_candidate_show_name__summary),
-                enabledIf = { prefs.emoji.suggestionEnabled.isTrue() },
-            )
-            DialogSliderPreference(
-                prefs.emoji.suggestionQueryMinLength,
-                title = stringRes(R.string.prefs__media__emoji_suggestion_query_min_length),
-                valueLabel = { length ->
-                    pluralsRes(R.plurals.unit__characters__written, length, "v" to length)
-                },
-                min = 1,
-                max = 5,
-                stepIncrement = 1,
-                enabledIf = { prefs.emoji.suggestionEnabled.isTrue() },
-            )
-            DialogSliderPreference(
-                prefs.emoji.suggestionCandidateMaxCount,
-                title = stringRes(R.string.prefs__media__emoji_suggestion_candidate_max_count),
-                valueLabel = { count ->
-                    pluralsRes(R.plurals.unit__candidates__written, count, "v" to count)
-                },
-                min = 1,
-                max = 10,
-                stepIncrement = 1,
                 enabledIf = { prefs.emoji.suggestionEnabled.isTrue() },
             )
         }
