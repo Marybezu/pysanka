@@ -28,4 +28,7 @@
     <string name="pysanka__clipboard_copy__working">Працюю… (перевірка пароля триває кілька секунд)</string>
     <string name="pysanka__clipboard_copy__over_limit">Не вмістилося в обмеження історії, не додано: {n}. Щоб імпортувати все, збільште або вимкніть обмеження в налаштуваннях буфера й імпортуйте знову.</string>
     <string name="pysanka__clipboard_copy__history_off">Історію буфера вимкнено. Спершу ввімкніть її в налаштуваннях буфера.</string>
+    <string name="pysanka__ext__info">Теми, розкладки й мовні пакети додаються з файлу розширення (.flex), який ви приносите самі: Pysanka не ходить в інтернет.</string>
+    <string name="pysanka__about__based_on__title">Заснована на FlorisBoard</string>
+    <string name="pysanka__about__based_on__summary">Pysanka побудована на FlorisBoard від The FlorisBoard Contributors (Apache 2.0); це незалежний проєкт</string>
 </resources>

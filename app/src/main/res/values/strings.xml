@@ -625,7 +625,7 @@
 
     <string name="setup__grant_notification_permission__title">Permit crash report notifications</string>
     <string name="setup__grant_notification_permission__description">As of Android 13+, apps must ask for permission to
-        send notifications. In Florisboard, this is only used to open a crash report screen in the event of a crash.
+        send notifications. In Pysanka, this is only used to open a crash report screen in the event of a crash.
         This permission can be changed at any time in the system settings.
     </string>
     <string name="setup__grant_notification_permission__btn">Grant permission</string>

@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.FormatColorFill
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Preview
-import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
@@ -167,18 +166,14 @@ fun OtherScreen() = FlorisScreen {
             onClick = { navController.navigate(Routes.Devtools.Home) },
         )
 
+        // Pysanka: FlorisBoard 0.6 has its backup and restore screens switched off (they were empty);
+        // what is here is the clipboard copy, which also imports the clipboard from a FlorisBoard backup
         PreferenceGroup(title = stringRes(R.string.backup_and_restore__title)) {
             Preference(
-                onClick = { navController.navigate(Routes.Settings.Backup) },
+                onClick = { navController.navigate(Routes.Settings.ClipboardCopy) },
                 icon = Icons.Default.Archive,
-                title = stringRes(R.string.backup_and_restore__back_up__title),
-                summary = stringRes(R.string.backup_and_restore__back_up__summary),
-            )
-            Preference(
-                onClick = { navController.navigate(Routes.Settings.Restore) },
-                icon = Icons.Default.SettingsBackupRestore,
-                title = stringRes(R.string.backup_and_restore__restore__title),
-                summary = stringRes(R.string.backup_and_restore__restore__summary),
+                title = stringRes(R.string.pysanka__clipboard_copy__title),
+                summary = stringRes(R.string.pysanka__clipboard_copy__summary),
             )
         }
     }

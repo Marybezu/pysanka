@@ -119,6 +119,13 @@ fun AboutScreen() = FlorisScreen {
             summary = stringRes(R.string.about__project_license__summary, "license_name" to "Apache 2.0"),
             onClick = { navController.navigate(Routes.Settings.ProjectLicense) },
         )
+        // Pysanka: credit to the keyboard it is built on
+        Preference(
+            icon = Icons.Outlined.Description,
+            title = stringRes(R.string.pysanka__about__based_on__title),
+            summary = stringRes(R.string.pysanka__about__based_on__summary),
+            onClick = { context.launchUrl("https://github.com/florisboard/florisboard") },
+        )
         Preference(
             icon = Icons.Outlined.Description,
             title = stringRes(id = R.string.about__third_party_licenses__title),

@@ -449,7 +449,7 @@
     <string name="setup__select_ime__switch_keyboard_btn">Перемкнути клавіатуру</string>
     <string name="setup__grant_notification_permission__title">Повідомлення про збої в роботі з дозволами</string>
     <string name="setup__grant_notification_permission__description">Починаючи з Android 13+, програми повинні запитувати дозвіл на
-        надсилання сповіщень. У Florisboard цей дозвіл використовується лише для того, щоб відкрити екран звіту про збій у разі збою.
+        надсилання сповіщень. У Pysanka цей дозвіл використовується лише для того, щоб відкрити екран звіту про збій у разі збою.
         Цей дозвіл можна будь-коли змінити в налаштуваннях системи.
     </string>
     <string name="setup__grant_notification_permission__btn">Надати дозвіл</string>
@@ -667,7 +667,7 @@
     <string name="ext__addon_management_box__managing_placeholder">Керування {extensions}</string>
     <string name="ext__addon_management_box__addon_manager_info">Всі завдання, пов\'язані з імпортом, експортом, створенням, налаштуванням і видаленням розширень, можна вирішувати за допомогою централізованого менеджера розширень.</string>
     <string name="ext__addon_management_box__go_to_page">Перейти до {ext_home_title}</string>
-    <string name="ext__home__info">Ви можете завантажити і встановити розширення з магазину розширень Pysanka або імпортувати будь-який файл розширення, який ви завантажили з мережі.</string>
+    <string name="ext__home__info">Ви можете завантажити і встановити розширення з магазину розширень FlorisBoard або імпортувати будь-який файл розширення, який ви завантажили з мережі.</string>
     <string name="ext__home__visit_store">Відвідати магазин розширень</string>
     <string name="ext__home__manage_extensions">Керування встановленими розширеннями</string>
     <string name="ext__list__view_details">Докладніше</string>
