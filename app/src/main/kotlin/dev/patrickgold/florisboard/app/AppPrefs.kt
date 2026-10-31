@@ -181,6 +181,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "pysanka__screenshots__since",
             default = -1L,
         )
+        /** The permission was gone while on: when it is back, start from that moment. */
+        val blocked = boolean(
+            key = "pysanka__screenshots__blocked",
+            default = false,
+        )
         /** Largest MediaStore id already looked at. */
         val lastId = long(
             key = "pysanka__screenshots__last_id",

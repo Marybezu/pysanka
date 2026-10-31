@@ -88,6 +88,7 @@ object Screenshots {
     /** Called by the settings switch when the owner turns it on (with the permission granted). */
     suspend fun turnOn() {
         prefs.pysankaScreenshots.since.set(nowSeconds())
+        prefs.pysankaScreenshots.blocked.set(false)
         prefs.pysankaScreenshots.lastId.set(0L)
         prefs.pysankaScreenshots.enabled.set(true)
         refresh()
@@ -112,11 +113,12 @@ object Screenshots {
             for (s in signals) {
                 delay(1500) // the system reports a new screenshot several times while it is written
                 signals.tryReceive()
-                scan(app, manager)
+                // One failed look must not end the watching
+                attempt { scan(app, manager) }
             }
         }
         scope.launch {
-            prefs.pysankaScreenshots.enabled.asFlow().distinctUntilChanged().collect { refresh() }
+            prefs.pysankaScreenshots.enabled.asFlow().collect { refresh() }
         }
         // History or incognito changed: nothing taken before now comes in later
         scope.launch {
@@ -137,7 +139,7 @@ object Screenshots {
                 } else {
                     stop(app)
                     // On, but the permission is gone: what is taken until it is back stays out
-                    if (on) prefs.pysankaScreenshots.since.set(nowSeconds())
+                    if (on) prefs.pysankaScreenshots.blocked.set(true)
                 }
             }
         }
@@ -145,7 +147,11 @@ object Screenshots {
 
     private suspend fun start(context: Context) {
         if (observer != null) return
-        if (prefs.pysankaScreenshots.since.get() < 0) prefs.pysankaScreenshots.since.set(nowSeconds())
+        // Back after the permission was gone (granted again in the system settings): start from now
+        if (prefs.pysankaScreenshots.since.get() < 0 || prefs.pysankaScreenshots.blocked.get()) {
+            prefs.pysankaScreenshots.since.set(nowSeconds())
+            prefs.pysankaScreenshots.blocked.set(false)
+        }
         val o = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean, uri: Uri?) {
                 signals.trySend(Unit)
@@ -216,6 +222,7 @@ object Screenshots {
         val cols = arrayOf(
             MediaStore.Images.Media._ID, MediaStore.Images.Media.MIME_TYPE,
             MediaStore.Images.Media.DATE_ADDED, MediaStore.Images.Media.DATE_TAKEN,
+            MediaStore.Images.Media.DATE_MODIFIED,
         )
         // Rows still being written are not listed on Android 10+; they come with a later report
         val folder = if (Build.VERSION.SDK_INT >= 29) {
@@ -239,8 +246,14 @@ object Screenshots {
                 seen = max(seen, id)
                 val mime = c.getString(1) ?: continue
                 if (!mime.startsWith("image/")) continue
-                val takenMs = if (c.isNull(3)) 0L else c.getLong(3)
-                if (takenMs > 0 && abs(c.getLong(2) * 1000 - takenMs) > MAX_TAKEN_GAP_MS) continue
+                // When it was made: time taken, or else last changed (a copied file may have neither
+                // matching the time it was added)
+                val madeMs = when {
+                    !c.isNull(3) && c.getLong(3) > 0 -> c.getLong(3)
+                    !c.isNull(4) && c.getLong(4) > 0 -> c.getLong(4) * 1000
+                    else -> continue
+                }
+                if (abs(c.getLong(2) * 1000 - madeMs) > MAX_TAKEN_GAP_MS) continue
                 out.add(Found(id, mime))
             }
         }
