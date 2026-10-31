@@ -176,6 +176,11 @@ object Routes {
         @Deeplink("settings/clipboard/copy")
         object ClipboardCopy
 
+        // Pysanka: the owner's clipboard tags
+        @Serializable
+        @Deeplink("settings/clipboard/tags")
+        object ClipboardTags
+
         @Serializable
         @Deeplink("settings/media")
         object Media
@@ -321,6 +326,7 @@ object Routes {
 
             composableWithDeepLink(Settings.Clipboard::class) { ClipboardScreen() }
             composableWithDeepLink(Settings.ClipboardCopy::class) { ua.pysanka.clipboard.ClipboardBackupScreen() }
+            composableWithDeepLink(Settings.ClipboardTags::class) { ua.pysanka.clipboard.ClipboardTagsScreen() }
 
             composableWithDeepLink(Settings.Media::class) { MediaScreen() }
 

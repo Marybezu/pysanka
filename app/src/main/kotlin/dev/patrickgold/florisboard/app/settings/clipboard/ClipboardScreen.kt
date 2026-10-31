@@ -172,6 +172,15 @@ fun ClipboardScreen() = FlorisScreen {
             )
         }
 
+        // Pysanka: the owner's tags for the history
+        PreferenceGroup(title = stringRes(R.string.pysanka__tag__screen_title)) {
+            Preference(
+                title = stringRes(R.string.pysanka__tag__screen_title),
+                summary = stringRes(R.string.pysanka__tag__screen_summary),
+                onClick = { navController.navigate(Routes.Settings.ClipboardTags) },
+            )
+        }
+
         // Pysanka: a password-protected copy of the history, and import from FlorisBoard
         PreferenceGroup(title = stringRes(R.string.pysanka__clipboard_copy__title)) {
             Preference(

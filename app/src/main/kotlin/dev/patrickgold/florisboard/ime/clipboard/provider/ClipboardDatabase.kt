@@ -96,7 +96,18 @@ data class ClipboardItem(
     @EncodeDefault
     @ColumnInfo(name= "is_remote_device", defaultValue = "0")
     val isRemoteDevice: Boolean = false,
+    /** Pysanka: ids of the owner's own tags, comma-separated (",3,7,"), empty when none. */
+    @EncodeDefault
+    @ColumnInfo(name = "pysanka_tags", defaultValue = "")
+    val tags: String = "",
 ) {
+    /** Pysanka: the tag ids as numbers. */
+    fun tagIds(): Set<Long> = tags.split(',').mapNotNull { it.trim().toLongOrNull() }.toSet()
+
+    /** Pysanka: a copy with these tag ids. */
+    fun withTagIds(ids: Collection<Long>): ClipboardItem =
+        copy(tags = if (ids.isEmpty()) "" else ids.sorted().joinToString(",", prefix = ",", postfix = ","))
+
     companion object {
         /**
          * So that every item doesn't have to allocate its own array.
@@ -310,17 +321,57 @@ interface ClipboardHistoryDao {
     fun deleteAllUnpinned()
 }
 
+/** Pysanka: the owner's own clipboard tag: a name and a colour (always shown with its name). */
+@Entity(tableName = "pysanka_clipboard_tags")
+data class ClipboardTag(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val name: String,
+    /** Index into the tag palette (ua.pysanka.clipboard.TagColors). */
+    val color: Int,
+    val position: Int,
+)
+
+@Dao
+interface ClipboardTagDao {
+    @Query("SELECT * FROM pysanka_clipboard_tags ORDER BY position, id")
+    fun getAllAsFlow(): Flow<List<ClipboardTag>>
+
+    @Query("SELECT * FROM pysanka_clipboard_tags ORDER BY position, id")
+    fun getAll(): List<ClipboardTag>
+
+    @Insert
+    fun insert(tag: ClipboardTag): Long
+
+    @Update
+    fun update(tag: ClipboardTag)
+
+    @Query("DELETE FROM pysanka_clipboard_tags WHERE id = :id")
+    fun delete(id: Long)
+
+    /** Removes a deleted tag from every item. */
+    @Query("UPDATE $CLIPBOARD_HISTORY_TABLE SET pysanka_tags = REPLACE(pysanka_tags, ',' || :id || ',', ',') WHERE pysanka_tags LIKE '%,' || :id || ',%'")
+    fun untagAll(id: Long)
+
+    /** Tidies items left with only "," after untagging. */
+    @Query("UPDATE $CLIPBOARD_HISTORY_TABLE SET pysanka_tags = '' WHERE pysanka_tags = ','")
+    fun clearEmptyTags()
+}
+
 @Database(
-    entities = [ClipboardItem::class],
-    version = 4,
+    entities = [ClipboardItem::class, ClipboardTag::class],
+    version = 5,
     autoMigrations = [
         AutoMigration(from = 2, to = 4),
         AutoMigration(from = 3, to = 4, spec = ClipboardHistoryDatabase.MIGRATE_3_TO_4::class),
+        // Pysanka: tags (a new table and a column with an empty default; nothing existing changes)
+        AutoMigration(from = 4, to = 5),
     ],
 )
 @TypeConverters(Converters::class)
 abstract class ClipboardHistoryDatabase : RoomDatabase() {
     abstract fun clipboardItemDao(): ClipboardHistoryDao
+    abstract fun clipboardTagDao(): ClipboardTagDao
 
     @RenameColumn(
         tableName = CLIPBOARD_HISTORY_TABLE,

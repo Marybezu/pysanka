@@ -158,6 +158,12 @@ class ClipboardManager(
                     return@launch
                 }
                 clipHistoryDb = ClipboardHistoryDatabase.new(context.applicationContext)
+                // Pysanka: the owner's tags, kept up to date for the keyboard's tag slider
+                launch {
+                    clipHistoryDb?.clipboardTagDao()?.getAllAsFlow()?.collect { tags ->
+                        tagsFlow.value = tags.map { ua.pysanka.clipboard.TagView(it.id, it.name, it.color) }
+                    }
+                }
                 // Pysanka: open the encrypted file list now, in the background, so pasting an
                 // image later (a call on the main thread) never waits for it
                 runCatching {
@@ -375,7 +381,8 @@ class ClipboardManager(
     private fun moveToTheBeginning(oldItem: ClipboardItem, newItem: ClipboardItem) {
         ioScope.launch {
             clipHistoryDao?.delete(oldItem.id)
-            clipHistoryDao?.insert(newItem)
+            // Pysanka: copying the same text again keeps its tags
+            clipHistoryDao?.insert(newItem.copy(tags = oldItem.tags))
         }
     }
 
@@ -525,6 +532,63 @@ class ClipboardManager(
                     appContext.contentResolver.delete(uri, null, null)
                 }
             }
+        }
+    }
+
+    // ------------------------------------------------------------ Pysanka: tags
+
+    /** The owner's own tags, in their order. Empty until the encrypted history is open. */
+    val tagsFlow: StateFlow<List<ua.pysanka.clipboard.TagView>>
+        field = MutableStateFlow(emptyList())
+
+    private val tagDao get() = clipHistoryDb?.clipboardTagDao()
+
+    fun addTag(name: String, color: Int) {
+        val clean = name.trim().take(40)
+        if (clean.isEmpty()) return
+        ioScope.launch {
+            val dao = tagDao ?: return@launch
+            val position = (dao.getAll().maxOfOrNull { it.position } ?: -1) + 1
+            dao.insert(dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardTag(name = clean, color = color, position = position))
+        }
+    }
+
+    fun updateTag(id: Long, name: String, color: Int) {
+        val clean = name.trim().take(40)
+        if (clean.isEmpty()) return
+        ioScope.launch {
+            val dao = tagDao ?: return@launch
+            val tag = dao.getAll().firstOrNull { it.id == id } ?: return@launch
+            dao.update(tag.copy(name = clean, color = color))
+        }
+    }
+
+    /** Moves a tag one place earlier ([up]) or later in the slider. */
+    fun moveTag(id: Long, up: Boolean) {
+        ioScope.launch {
+            val dao = tagDao ?: return@launch
+            val list = dao.getAll().toMutableList()
+            val i = list.indexOfFirst { it.id == id }
+            val j = if (up) i - 1 else i + 1
+            if (i < 0 || j !in list.indices) return@launch
+            java.util.Collections.swap(list, i, j)
+            list.forEachIndexed { n, t -> if (t.position != n) dao.update(t.copy(position = n)) }
+        }
+    }
+
+    /** Deletes a tag; the items it was on stay, only without it. */
+    fun deleteTag(id: Long) {
+        ioScope.launch {
+            val dao = tagDao ?: return@launch
+            dao.untagAll(id)
+            dao.clearEmptyTags()
+            dao.delete(id)
+        }
+    }
+
+    fun setItemTags(item: ClipboardItem, ids: Collection<Long>) {
+        ioScope.launch {
+            clipHistoryDao?.update(item.withTagIds(ids))
         }
     }
 
