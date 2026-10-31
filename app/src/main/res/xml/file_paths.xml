@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
+    <!-- Nothing is shared through this provider at the moment; it stays for future use -->
     <cache-path
-        name="backup"
-        path="backup-and-restore/"/>
+        name="shared"
+        path="shared/"/>
 </paths>

@@ -159,6 +159,16 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
     }
 
+    // Pysanka: text from photos and the camera
+    val pysankaOcr = PysankaOcr()
+    inner class PysankaOcr {
+        /** Live camera inside Pysanka (needs the camera permission); off = recent photos or the system camera. */
+        val liveCamera = boolean(
+            key = "pysanka__ocr__live_camera",
+            default = false,
+        )
+    }
+
     val correction = Correction()
     inner class Correction {
         val autoSpacePunctuation = boolean(

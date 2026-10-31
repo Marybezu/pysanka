@@ -6,3 +6,8 @@
   independent project and is not affiliated with or endorsed by FlorisBoard.
 - Libraries used by FlorisBoard (AndroidX, Kotlin, Jetpack Compose and others) are used as
   dependencies under their own licences; the in-app "Open-source licences" screen lists them.
+- `app/src/main/assets/ocr/*.onnx` and `*_dict.txt` — PP-OCRv5 mobile text detection and East Slavic /
+  Latin text recognition models by PaddlePaddle (PaddleOCR), Apache License 2.0, converted to ONNX
+  unchanged in weights (see `SOURCES.json` and `scripts/ocr_models.py`).
+- ONNX Runtime (Microsoft, MIT), CameraX (AndroidX, Apache 2.0), Bouncy Castle (MIT-style),
+  SQLCipher for Android (BSD-style) are used as dependencies under their own licences.

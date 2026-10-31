@@ -109,6 +109,13 @@ class FlorisImeService : LifecycleInputMethodService() {
             }
         }
 
+        /** Pysanka: hides the keyboard and opens one of Pysanka's own screens. */
+        fun pysankaLaunch(intent: (android.content.Context) -> Intent) {
+            val ims = FlorisImeServiceReference.get() ?: return
+            ims.requestHideSelf(0)
+            ims.startActivity(intent(ims))
+        }
+
         fun showUi() {
             val ims = FlorisImeServiceReference.get() ?: return
             ims.showUi()
