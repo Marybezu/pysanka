@@ -80,7 +80,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.stringRes
-import java.io.File
 import kotlin.math.max
 import kotlin.math.min
 
@@ -124,7 +123,6 @@ class TextFromImageActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        File(cacheDir, "ocr").listFiles()?.forEach { it.delete() }
         // The models take about 60 MB; free them once the screen is really gone
         if (isFinishing) {
             val recognizer = TextRecognizer.get(this)
@@ -180,7 +178,11 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
         stage = if (granted) Stage.LiveCamera else Stage.Choose
     }
 
+    // Opened once, also if the screen is turned (the activity keeps itself across rotation)
+    var started by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
+        if (started) return@LaunchedEffect
+        started = true
         when {
             source == TextFromImageActivity.SOURCE_PHOTO ->
                 pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -202,7 +204,10 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
                 Button(onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.fillMaxWidth()) {
                     Text(stringRes(R.string.pysanka__ocr__recent_photos))
                 }
-                FilledTonalButton(
+                val hasCameraApp = remember {
+                    Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).resolveActivity(context.packageManager) != null
+                }
+                if (hasCameraApp) FilledTonalButton(
                     onClick = {
                         runCatching { openCameraApp.launch(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)) }
                     },
@@ -326,7 +331,32 @@ private fun ResultView(bitmap: Bitmap, lines: List<OcrLine>, close: () -> Unit) 
 private fun LiveCamera(onCaptured: (Bitmap) -> Unit, onFailed: () -> Unit, close: () -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val capture = remember { ImageCapture.Builder().setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY).build() }
+    // About 2400 px on the long side is plenty for text and keeps memory and time low
+    val capture = remember {
+        ImageCapture.Builder()
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            .setResolutionSelector(
+                androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
+                    .setResolutionStrategy(
+                        androidx.camera.core.resolutionselector.ResolutionStrategy(
+                            android.util.Size(2400, 1800),
+                            androidx.camera.core.resolutionselector.ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER,
+                        ),
+                    )
+                    .build(),
+            )
+            .build()
+    }
+    var providerRef by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+    var busy by remember { mutableStateOf(false) }
+    val background = remember { java.util.concurrent.Executors.newSingleThreadExecutor() }
+    // The camera turns off as soon as this view goes (after the shot, or on close)
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose {
+            runCatching { providerRef?.unbindAll() }
+            background.shutdown()
+        }
+    }
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
@@ -336,6 +366,7 @@ private fun LiveCamera(onCaptured: (Bitmap) -> Unit, onFailed: () -> Unit, close
                 future.addListener({
                     try {
                         val provider = future.get()
+                        providerRef = provider
                         val preview = Preview.Builder().build().also { it.setSurfaceProvider(view.surfaceProvider) }
                         provider.unbindAll()
                         provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, capture)
@@ -363,18 +394,26 @@ private fun LiveCamera(onCaptured: (Bitmap) -> Unit, onFailed: () -> Unit, close
                     .background(Color.White, CircleShape)
                     .pointerInput(Unit) {
                         detectTapGestures {
-                            capture.takePicture(ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageCapturedCallback() {
+                            if (busy) return@detectTapGestures
+                            busy = true
+                            // Converted on a background thread; the result comes back on the main one
+                            capture.takePicture(background, object : ImageCapture.OnImageCapturedCallback() {
                                 override fun onCaptureSuccess(image: ImageProxy) {
                                     val bitmap = runCatching {
                                         val b = image.toBitmap()
                                         val rot = image.imageInfo.rotationDegrees
-                                        if (rot == 0) b else Bitmap.createBitmap(b, 0, 0, b.width, b.height, Matrix().apply { postRotate(rot.toFloat()) }, true)
+                                        shrink(if (rot == 0) b else Bitmap.createBitmap(b, 0, 0, b.width, b.height, Matrix().apply { postRotate(rot.toFloat()) }, true))
                                     }.getOrNull()
                                     image.close()
-                                    if (bitmap != null) onCaptured(shrink(bitmap)) else onFailed()
+                                    ContextCompat.getMainExecutor(context).execute {
+                                        runCatching { providerRef?.unbindAll() }
+                                        if (bitmap != null) onCaptured(bitmap) else { busy = false; onFailed() }
+                                    }
                                 }
 
-                                override fun onError(exception: ImageCaptureException) = onFailed()
+                                override fun onError(exception: ImageCaptureException) {
+                                    ContextCompat.getMainExecutor(context).execute { busy = false; onFailed() }
+                                }
                             })
                         }
                     },

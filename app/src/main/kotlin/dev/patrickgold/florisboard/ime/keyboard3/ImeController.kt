@@ -292,8 +292,9 @@ class ImeController(
             ua.pysanka.privacy.FieldPrivacy.isPrivate = state.flags.isIncognitoMode || info.imeOptions.flagNoPersonalizedLearning
             resetContent(initialSelection, initialSurrounding)
             expectedContentQueue.clear()
-            // Pysanka: text picked from a photo goes into the field the keyboard comes back to
-            ua.pysanka.ocr.PendingInsert.take()?.let { state.editor.pysankaInsertText(it) }
+            // Pysanka: text picked from a photo goes only into the field it was picked for
+            ua.pysanka.ocr.PendingInsert.takeFor(info.packageName, info.base.fieldId, keyVariation == KeyVariation.PASSWORD)
+                ?.let { state.editor.pysankaInsertText(it) }
         }
 
         fun handleUpdateSelection(newSelection: K3TextRange) {
@@ -382,8 +383,13 @@ class ImeController(
                 ImeActions.Undo -> state.editor.performUndo()
                 ImeActions.Redo -> state.editor.performRedo()
                 ImeActions.Settings -> FlorisImeService.launchSettings()
-                ImeActions.PysankaTextFromPhoto -> ua.pysanka.ocr.openTextFromImage(ua.pysanka.ocr.TextFromImageActivity.SOURCE_PHOTO)
-                ImeActions.PysankaTextFromCamera -> ua.pysanka.ocr.openTextFromImage(ua.pysanka.ocr.TextFromImageActivity.SOURCE_CAMERA)
+                ImeActions.PysankaTextFromPhoto, ImeActions.PysankaTextFromCamera -> {
+                    ua.pysanka.ocr.PendingInsert.opened(state.editor.info.packageName, state.editor.info.base.fieldId)
+                    ua.pysanka.ocr.openTextFromImage(
+                        if (descriptor == ImeActions.PysankaTextFromPhoto) ua.pysanka.ocr.TextFromImageActivity.SOURCE_PHOTO
+                        else ua.pysanka.ocr.TextFromImageActivity.SOURCE_CAMERA,
+                    )
+                }
                 ImeActions.ShowInputMethodPicker -> FlorisImeService.showImePicker()
                 ImeActions.SwitchToPrevInputMethod -> FlorisImeService.switchToPrevInputMethod()
                 ImeActions.SwitchToNextInputMethod -> FlorisImeService.switchToNextInputMethod()

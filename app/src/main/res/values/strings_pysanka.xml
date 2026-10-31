@@ -133,16 +133,16 @@
     <string name="pysanka__ocr__take_photo">Take a photo</string>
     <string name="pysanka__ocr__close">Close</string>
     <string name="pysanka__ocr__working">Reading the text…</string>
-    <string name="pysanka__ocr__nothing">No text found on this picture.</string>
+    <string name="pysanka__ocr__nothing">No text found in this picture.</string>
     <string name="pysanka__ocr__failed">Could not read this picture.</string>
     <string name="pysanka__ocr__selected">Selected words: {n} of {all}. Tap or swipe over words to change.</string>
     <string name="pysanka__ocr__all">All</string>
     <string name="pysanka__ocr__none">None</string>
     <string name="pysanka__ocr__insert">Insert</string>
     <string name="pysanka__ocr__copy">Copy</string>
-    <string name="pysanka__ocr__to_history">To history</string>
+    <string name="pysanka__ocr__to_history">Save to history</string>
     <string name="pysanka__ocr__live_hint">Point at the text and tap the button</string>
     <string name="pysanka__ocr__live_camera">Live camera for text</string>
     <string name="pysanka__ocr__live_camera_summary">Point the camera and pick text right away. Needs the camera permission; without it, recent photos and the phone\'s camera app still work.</string>
-    <string name="pysanka__privacy__fact_ocr">Text is read from photos on the phone; Pysanka sees only the photo you pick</string>
+    <string name="pysanka__privacy__fact_ocr">Text from photos and the camera is read on the phone; from the gallery Pysanka sees only the photo you pick</string>
 </resources>

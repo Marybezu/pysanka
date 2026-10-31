@@ -152,6 +152,7 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:taskAffinity="ua.pysanka.ocr"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
             android:theme="@style/FlorisAppTheme"
             android:label="@string/pysanka__ocr__title"/>
 

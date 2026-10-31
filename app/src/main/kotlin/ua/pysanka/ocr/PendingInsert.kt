@@ -2,26 +2,43 @@ package ua.pysanka.ocr
 
 /**
  * Pysanka: text chosen on the "text from a photo" screen, waiting for the keyboard to come back to
- * the field it was opened from. Kept in memory only, for at most two minutes.
+ * the field it was opened from. Kept in memory only.
+ *
+ * It goes only into that same field (same app, same field id), never into a password field, and
+ * only within a minute; anything else drops it. Opening the screen again clears what was waiting.
  */
 object PendingInsert {
-    private const val MAX_AGE_MS = 2 * 60 * 1000L
+    private const val MAX_AGE_MS = 60 * 1000L
 
-    @Volatile
+    private data class Target(val packageName: String?, val fieldId: Int)
+
+    private var target: Target? = null
     private var text: String? = null
-    @Volatile
     private var at = 0L
 
+    /** Called when the screen is opened from the keyboard: remembers the field, clears old text. */
+    @Synchronized
+    fun opened(packageName: String?, fieldId: Int) {
+        target = Target(packageName, fieldId)
+        text = null
+    }
+
+    @Synchronized
     fun set(value: String) {
+        if (target == null) return
         text = value
         at = System.currentTimeMillis()
     }
 
+    /** The waiting text if [packageName]/[fieldId] is the field it was meant for; it is cleared either way. */
     @Synchronized
-    fun take(): String? {
-        val t = text
+    fun takeFor(packageName: String?, fieldId: Int, isPassword: Boolean): String? {
+        val t = text ?: return null
+        val wanted = target
         text = null
-        return t?.takeIf { System.currentTimeMillis() - at < MAX_AGE_MS }
+        target = null
+        val fresh = System.currentTimeMillis() - at < MAX_AGE_MS
+        return t.takeIf { fresh && !isPassword && wanted == Target(packageName, fieldId) }
     }
 }
 

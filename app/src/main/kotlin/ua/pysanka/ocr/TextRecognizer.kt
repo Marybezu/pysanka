@@ -72,11 +72,19 @@ class TextRecognizer private constructor(private val context: Context) {
         if (det != null) return
         val assets = context.assets
         fun bytes(name: String) = assets.open("$DIR/$name").use { it.readBytes() }
-        det = env.createSession(bytes("det.onnx"), options())
-        readers = listOf("cyrillic", "latin").map { name ->
-            val chars = String(bytes("rec_${name}_dict.txt"), Charsets.UTF_8).split('\n').dropLast(1) + " "
-            Reader(env.createSession(bytes("rec_$name.onnx"), options()), chars)
+        // Built first and assigned only when all three loaded, so a failure leaves nothing half-made
+        val d = env.createSession(bytes("det.onnx"), options())
+        val r = try {
+            listOf("cyrillic", "latin").map { name ->
+                val chars = String(bytes("rec_${name}_dict.txt"), Charsets.UTF_8).split('\n').dropLast(1) + " "
+                Reader(env.createSession(bytes("rec_$name.onnx"), options()), chars)
+            }
+        } catch (e: Throwable) {
+            d.close()
+            throw e
         }
+        det = d
+        readers = r
     }
 
     /** Frees the models' memory (about 60 MB) when the screen that used them closes. */
@@ -168,9 +176,18 @@ class TextRecognizer private constructor(private val context: Context) {
             )
             if (rect.width() >= 4 && rect.height() >= 4) boxes.add(rect)
         }
-        // Reading order: rows (by the line's middle, in steps of half a line), then left to right
-        val lineHeight = boxes.map { it.height() }.sorted().let { if (it.isEmpty()) 1 else it[it.size / 2] }
-        return boxes.sortedWith(compareBy({ it.centerY() / max(1, lineHeight / 2) }, { it.left }))
+        // Reading order: boxes that overlap vertically by more than half form a row; rows top to
+        // bottom, boxes in a row left to right
+        val rows = ArrayList<MutableList<Rect>>()
+        for (b in boxes.sortedBy { it.top }) {
+            val row = rows.lastOrNull()?.takeIf { r ->
+                val top = r.minOf { it.top }
+                val bottom = r.maxOf { it.bottom }
+                min(bottom, b.bottom) - max(top, b.top) > min(b.height(), bottom - top) / 2
+            }
+            if (row != null) row.add(b) else rows.add(mutableListOf(b))
+        }
+        return rows.flatMap { r -> r.sortedBy { it.left } }
     }
 
     private fun push(p: Int, prob: FloatArray, labels: IntArray, label: Int, stack: IntArray, top: Int): Int? {
@@ -189,7 +206,8 @@ class TextRecognizer private constructor(private val context: Context) {
         if (crop !== src && crop !== scaled) crop.recycle()
         val px = IntArray(rw * REC_HEIGHT)
         scaled.getPixels(px, 0, rw, 0, 0, rw, REC_HEIGHT)
-        scaled.recycle()
+        // Never the picture itself (a 48 px high picture of one line comes back unscaled)
+        if (scaled !== src) scaled.recycle()
         val plane = rw * REC_HEIGHT
         val input = FloatBuffer.allocate(3 * plane)
         for (i in 0 until plane) {
