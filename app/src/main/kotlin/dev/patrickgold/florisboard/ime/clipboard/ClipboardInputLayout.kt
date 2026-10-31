@@ -740,7 +740,7 @@ fun ClipboardInputLayout(
             HistoryLockedView()
         } else {
             if (historyEnabled) {
-                if (filteredHistory.all.isNotEmpty() || !activeFilterTypes.isEmpty()) {
+                if (filteredHistory.all.isNotEmpty() || tagFilter != null) {
                     HistoryMainView()
                 } else {
                     HistoryEmptyView()
