@@ -21,12 +21,17 @@ jobs:
         with:
           persist-credentials: false
           sparse-checkout: scripts
+      # Paddle's converter has wheels for Python 3.11; the runner's own Python may be newer
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       - name: Convert and check
         run: |
-          python3 -m venv venv && . venv/bin/activate
-          pip install -q "paddlepaddle>=3.0,<4" "paddle2onnx>=2.0,<3" "onnxruntime>=1.20,<2" huggingface_hub pyyaml pillow numpy 2>&1 | tail -3
+          mkdir -p out
+          pip install "paddlepaddle>=3.0,<4" "paddle2onnx>=2.0,<3" "onnxruntime>=1.20,<2" huggingface_hub pyyaml pillow numpy > out/pip.txt 2>&1 || true
+          tail -20 out/pip.txt
           sudo apt-get install -y -qq fonts-dejavu-core
-          mkdir -p out && pip freeze > out/versions.txt
+          pip freeze > out/versions.txt
           python scripts/ocr_models.py out 2>&1 | tee out/log.txt || { mkdir -p out; echo "FAILED" >> out/log.txt; }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
