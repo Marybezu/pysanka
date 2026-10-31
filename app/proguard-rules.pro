@@ -27,3 +27,10 @@
 
 # @Serializable and @Polymorphic are used at runtime for polymorphic serialization.
 -keepattributes RuntimeVisibleAnnotations,AnnotationDefault
+
+# Pysanka: SQLCipher is reached from native code (JNI); keep it whole.
+-keep class net.zetetic.database.** { *; }
+-keep class net.zetetic.database.sqlcipher.** { *; }
+
+# Pysanka: only Argon2 from Bouncy Castle is used; it refers to JDK classes Android lacks.
+-dontwarn org.bouncycastle.**

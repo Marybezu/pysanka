@@ -18,6 +18,8 @@ package dev.patrickgold.florisboard.app.settings.clipboard
 
 import androidx.compose.runtime.Composable
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.clipboard.CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
@@ -25,9 +27,9 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
+import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
-import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
@@ -36,6 +38,8 @@ import org.florisboard.lib.compose.stringRes
 fun ClipboardScreen() = FlorisScreen {
     title = stringRes(R.string.settings__clipboard__title)
     previewFieldVisible = true
+
+    val navController = LocalNavController.current
 
     content {
         SwitchPreference(
@@ -112,10 +116,15 @@ fun ClipboardScreen() = FlorisScreen {
                 enabledIf = { prefs.clipboard.historyEnabled isEqualTo true && prefs.clipboard.historyAutoCleanOldEnabled isEqualTo true },
             )
             SwitchPreference(
+                prefs.clipboard.historySkipSensitive,
+                title = stringRes(R.string.pysanka__clipboard__skip_sensitive__label),
+                summary = stringRes(R.string.pysanka__clipboard__skip_sensitive__summary),
+                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
+            )
+            SwitchPreference(
                 prefs.clipboard.historyAutoCleanSensitiveEnabled,
                 title = stringRes(R.string.pref__clipboard__auto_clean_sensitive__label),
-                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
-                visibleIf = { AndroidVersion.ATLEAST_API33_T },
+                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true && prefs.clipboard.historySkipSensitive isEqualTo false },
             )
             DialogSliderPreference(
                 prefs.clipboard.historyAutoCleanSensitiveAfter,
@@ -124,8 +133,10 @@ fun ClipboardScreen() = FlorisScreen {
                 min = 0,
                 max = 300,
                 stepIncrement = 10,
-                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true && prefs.clipboard.historyAutoCleanSensitiveEnabled isEqualTo true },
-                visibleIf = { AndroidVersion.ATLEAST_API33_T },
+                enabledIf = {
+                    prefs.clipboard.historyEnabled isEqualTo true && prefs.clipboard.historySkipSensitive isEqualTo false &&
+                        prefs.clipboard.historyAutoCleanSensitiveEnabled isEqualTo true
+                },
             )
             SwitchPreference(
                 prefs.clipboard.historySizeLimitEnabled,
@@ -158,6 +169,15 @@ fun ClipboardScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label),
                 summary = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary),
                 enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
+            )
+        }
+
+        // Pysanka: a password-protected copy of the history, and import from FlorisBoard
+        PreferenceGroup(title = stringRes(R.string.pysanka__clipboard_copy__title)) {
+            Preference(
+                title = stringRes(R.string.pysanka__clipboard_copy__title),
+                summary = stringRes(R.string.pysanka__clipboard_copy__summary),
+                onClick = { navController.navigate(Routes.Settings.ClipboardCopy) },
             )
         }
     }

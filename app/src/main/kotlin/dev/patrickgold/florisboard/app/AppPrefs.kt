@@ -123,6 +123,12 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "clipboard__history_auto_clean_old_after",
             default = 20,
         )
+        // Pysanka: passwords and other clips marked sensitive, and copies made in a password field,
+        // are not kept in the history. On by default; turning it off keeps them (optionally only for a while).
+        val historySkipSensitive = boolean(
+            key = "pysanka__clipboard__history_skip_sensitive",
+            default = true,
+        )
         val historyAutoCleanSensitiveEnabled = boolean(
             key = "clipboard__history_auto_clean_sensitive_enabled",
             default = false,

@@ -284,6 +284,11 @@ class ImeController(
                         }
                     )
             )
+            // Pysanka: nothing copied from a password field or in incognito goes into the history
+            clipboardManager.setFieldPrivacy(
+                incognito = state.flags.isIncognitoMode || info.imeOptions.flagNoPersonalizedLearning,
+                passwordField = keyVariation == KeyVariation.PASSWORD,
+            )
             resetContent(initialSelection, initialSurrounding)
             expectedContentQueue.clear()
         }
@@ -590,6 +595,8 @@ class ImeController(
         }
 
         fun handleFinishInputView() {
+            // Pysanka: a copy made while no field is open is not judged by the last field
+            clipboardManager.setFieldPrivacy(incognito = false, passwordField = false)
             resetContent()
             state = state.copy(editor = ImeEditor.Disconnected)
             expectedContentQueue.clear()

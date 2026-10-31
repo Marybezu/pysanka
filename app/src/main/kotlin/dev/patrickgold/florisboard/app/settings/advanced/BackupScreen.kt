@@ -329,54 +329,8 @@ internal fun BackupFilesSelector(
             text = stringRes(R.string.backup_and_restore__back_up__files_ime_theme),
         )
 
-        TriStateCheckboxListItem(
-            onClick = {
-                if (
-                    filesSelector.clipboardData.value == ToggleableState.Off ||
-                    filesSelector.clipboardData.value == ToggleableState.Indeterminate
-                ) {
-                    filesSelector.clipboardImageItems = true
-                    filesSelector.clipboardVideoItems = true
-                    filesSelector.clipboardTextItems = true
-                } else {
-                    filesSelector.clipboardImageItems = false
-                    filesSelector.clipboardVideoItems = false
-                    filesSelector.clipboardTextItems = false
-                }
-                filesSelector.updateCheckboxState()
-            },
-            state = filesSelector.clipboardData.value,
-            text = stringRes(R.string.backup_and_restore__back_up__files_clipboard_history),
-        )
-
-
-        CheckboxListItem(
-            onClick = {
-                filesSelector.clipboardTextItems = !filesSelector.clipboardTextItems
-                filesSelector.updateCheckboxState()
-            },
-            checked = filesSelector.clipboardTextItems,
-            text = stringRes(R.string.backup_and_restore__back_up__files_clipboard_history__clipboard_text_items),
-            isSecondaryListItem = true,
-        )
-        CheckboxListItem(
-            onClick = {
-                filesSelector.clipboardImageItems = !filesSelector.clipboardImageItems
-                filesSelector.updateCheckboxState()
-            },
-            checked = filesSelector.clipboardImageItems,
-            text = stringRes(R.string.backup_and_restore__back_up__files_clipboard_history__clipboard_image_items),
-            isSecondaryListItem = true,
-        )
-        CheckboxListItem(
-            onClick = {
-                filesSelector.clipboardVideoItems = !filesSelector.clipboardVideoItems
-                filesSelector.updateCheckboxState()
-            },
-            checked = filesSelector.clipboardVideoItems,
-            text = stringRes(R.string.backup_and_restore__back_up__files_clipboard_history__clipboard_video_items),
-            isSecondaryListItem = true,
-        )
+        // Pysanka: the clipboard is never put into a backup file. It can hold passwords and codes,
+        // and a backup file is not encrypted; the history stays only in its encrypted storage.
 
     }
 }

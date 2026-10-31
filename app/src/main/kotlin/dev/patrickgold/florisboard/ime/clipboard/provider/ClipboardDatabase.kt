@@ -106,6 +106,10 @@ data class ClipboardItem(
 
         const val FLORIS_CLIP_LABEL = "florisboard/clipboard_item"
 
+        /** Pysanka: true when the app that copied marked the clip as sensitive (a password, a code). */
+        fun isSensitive(data: ClipData): Boolean =
+            data.description?.extras?.getBoolean(EXTRA_IS_SENSITIVE) ?: false
+
         fun text(text: String): ClipboardItem {
             return ClipboardItem(
                 type = ItemType.TEXT,
@@ -131,11 +135,8 @@ data class ClipboardItem(
                 else -> ItemType.TEXT
             }
 
-            val isSensitive = if (AndroidVersion.ATLEAST_API33_T) {
-                data.description?.extras?.getBoolean(EXTRA_IS_SENSITIVE) ?: false
-            } else {
-                false
-            }
+            // Pysanka: password managers set this flag on every Android version, not only 13+
+            val isSensitive = isSensitive(data)
 
             val isRemoteDevice = if (AndroidVersion.ATLEAST_API34_U) {
                 data.description?.extras?.getBoolean(EXTRA_IS_REMOTE_DEVICE) ?: false
@@ -339,6 +340,8 @@ abstract class ClipboardHistoryDatabase : RoomDatabase() {
                 .databaseBuilder(
                     context, ClipboardHistoryDatabase::class.java, CLIPBOARD_HISTORY_TABLE,
                 )
+                // Pysanka: encrypted with SQLCipher; the caller has opened the clipboard vault
+                .openHelperFactory(ua.pysanka.clipboard.SecureClipboard.openHelperFactory())
                 .fallbackToDestructiveMigration()
                 .build()
         }
@@ -387,6 +390,8 @@ abstract class ClipboardFilesDatabase : RoomDatabase() {
                 .databaseBuilder(
                     context, ClipboardFilesDatabase::class.java, CLIPBOARD_FILES_TABLE,
                 )
+                // Pysanka: encrypted with SQLCipher; the caller has opened the clipboard vault
+                .openHelperFactory(ua.pysanka.clipboard.SecureClipboard.openHelperFactory())
                 .fallbackToDestructiveMigration()
                 .build()
         }

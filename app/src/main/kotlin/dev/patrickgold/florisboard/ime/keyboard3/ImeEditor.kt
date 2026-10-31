@@ -26,6 +26,7 @@ import androidx.core.view.inputmethod.InputConnectionCompat
 import androidx.core.view.inputmethod.InputContentInfoCompat
 import dev.patrickgold.florisboard.FlorisApplication
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
 import dev.patrickgold.florisboard.ime.editor.ImeOptions
@@ -107,7 +108,10 @@ open class ImeEditor(
         val ic = ic.get() ?: return false
         val uri = item.uri ?: return false
         val mimeTypes = item.mimeTypes
-        val id = ContentUris.parseId(uri)
+        // Pysanka: a clip not kept in the history (a video, or one copied in incognito) points to
+        // the other app's own file; the app's normal paste handles it
+        if (uri.authority != ClipboardMediaProvider.AUTHORITY) return performClipboardPaste()
+        val id = runCatching { ContentUris.parseId(uri) }.getOrNull() ?: return performClipboardPaste()
         val appContext = FlorisApplication.getHack() // TODO this is a hack
         val file = ClipboardFileStorage.getFileForId(appContext, id)
         if (!file.exists()) return false

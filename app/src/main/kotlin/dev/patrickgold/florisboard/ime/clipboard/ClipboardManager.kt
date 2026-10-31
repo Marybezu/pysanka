@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
@@ -58,6 +59,9 @@ class ClipboardManager(
     companion object {
         // 1 minute
         private const val INTERVAL = 60 * 1000L
+
+        /** Pysanka: longest text accepted from an import (a longer row would break loading the history). */
+        const val MAX_IMPORT_TEXT = 512 * 1024
 
         /**
          * Taken from ClipboardDescription.java from the AOSP
@@ -100,6 +104,30 @@ class ClipboardManager(
     val currentHistory: ClipboardHistory
         get() = historyFlow.value
 
+    /**
+     * Pysanka: what kind of field the keyboard is in. Set on the main thread when a field opens or
+     * closes, and read on the main thread when a copy happens, so a copy is judged by its own field.
+     */
+    @Volatile
+    private var fieldIncognito = false
+    @Volatile
+    private var fieldPassword = false
+
+    fun setFieldPrivacy(incognito: Boolean, passwordField: Boolean) {
+        fieldIncognito = incognito
+        fieldPassword = passwordField
+    }
+
+    /**
+     * Pysanka: whether a clip may enter the history. Incognito (and fields that ask for no learning)
+     * never; passwords and sensitive clips only when the owner turned "Don't keep passwords" off.
+     */
+    private fun mayKeep(isSensitive: Boolean, incognito: Boolean, passwordField: Boolean): Boolean {
+        if (!prefs.clipboard.historyEnabled.get() || incognito) return false
+        if ((isSensitive || passwordField) && prefs.clipboard.historySkipSensitive.get()) return false
+        return true
+    }
+
     private val primaryClipLastFromCallbackGuard = Mutex(locked = false)
     private var primaryClipLastFromCallback: ClipData? = null
     val primaryClipFlow: StateFlow<ClipboardItem?>
@@ -123,7 +151,24 @@ class ClipboardManager(
     fun initializeForContext(context: Context) {
         ioScope.launch {
             if (clipHistoryDb == null) {
+                // Pysanka: the history is encrypted; while the phone is locked the vault stays shut,
+                // so try again as soon as it is unlocked
+                if (!ua.pysanka.clipboard.SecureClipboard.ensureOpen(context)) {
+                    retryWhenUnlocked(context.applicationContext)
+                    return@launch
+                }
                 clipHistoryDb = ClipboardHistoryDatabase.new(context.applicationContext)
+                // Pysanka: open the encrypted file list now, in the background, so pasting an
+                // image later (a call on the main thread) never waits for it
+                runCatching {
+                    val client = context.applicationContext.contentResolver
+                        .acquireContentProviderClient(dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider.AUTHORITY)
+                    try {
+                        (client?.localContentProvider as? dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider)?.warmUp()
+                    } finally {
+                        client?.close()
+                    }
+                }
                 withContext(Dispatchers.Main) {
                     clipHistoryDao?.getAllAsFlow()?.collect { items ->
                         updateHistory(items)
@@ -131,6 +176,28 @@ class ClipboardManager(
                 }
             }
         }
+    }
+
+    private var unlockReceiver: android.content.BroadcastReceiver? = null
+
+    @Synchronized
+    private fun retryWhenUnlocked(appContext: Context) {
+        if (unlockReceiver != null) return
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: Context?, intent: android.content.Intent?) {
+                synchronized(this@ClipboardManager) {
+                    runCatching { appContext.unregisterReceiver(this) }
+                    unlockReceiver = null
+                }
+                initializeForContext(appContext)
+            }
+        }
+        unlockReceiver = receiver
+        // A system broadcast; registering for it needs no permission
+        androidx.core.content.ContextCompat.registerReceiver(
+            appContext, receiver, android.content.IntentFilter(android.content.Intent.ACTION_USER_PRESENT),
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
     }
 
     private fun updateHistory(items: List<ClipboardItem>) {
@@ -165,6 +232,9 @@ class ClipboardManager(
         val syncBehavior = prefs.clipboard.syncToFloris.get()
         if (!prefs.clipboard.useInternalClipboard.get() || syncBehavior != ClipboardSyncBehavior.NO_EVENTS) {
             val systemPrimaryClip = systemClipboardManager.primaryClip
+            // Pysanka: the field at the moment of copying, not when the background job runs
+            val incognito = fieldIncognito
+            val passwordField = fieldPassword
             ioScope.launch {
                 val isDuplicate: Boolean
                 primaryClipLastFromCallbackGuard.withLock {
@@ -201,9 +271,24 @@ class ClipboardManager(
 
                 val isEqual = internalPrimaryClip?.isEqualTo(systemPrimaryClip) == true
                 if (!isEqual) {
-                    val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = true)
+                    // Pysanka: decide before anything is stored, so a clip that stays out of the
+                    // history never leaves an (encrypted) copy of its image behind either
+                    // Pysanka: videos never enter the history (they can be gigabytes); images do, up to
+                    // ClipboardFileStorage.MAX_IMAGE_BYTES
+                    val isVideo = systemPrimaryClip.getItemAt(0).uri != null &&
+                        systemPrimaryClip.description.hasMimeType("video/*") &&
+                        !systemPrimaryClip.description.hasMimeType("image/*")
+                    val keep = !isVideo && mayKeep(ClipboardItem.isSensitive(systemPrimaryClip), incognito, passwordField)
+                    val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = keep).let {
+                        // Kept although copied in a password field ("Don't keep passwords" off): mark it
+                        // sensitive, so it is masked and the timed clean-up of sensitive items applies
+                        if (passwordField && !it.isSensitive) it.copy(isSensitive = true) else it
+                    }
                     primaryClip = item
-                    insertOrMoveBeginning(item)
+                    // An image that could not be stored (too large, unreadable) gets id 0: not kept
+                    val stored = item.type == ItemType.TEXT ||
+                        item.uri?.let { runCatching { android.content.ContentUris.parseId(it) }.getOrNull() }?.let { it > 0 } == true
+                    if (keep && stored) insertOrMoveBeginning(item)
                 }
             }
         }
@@ -213,7 +298,10 @@ class ClipboardManager(
      * Change the current text on clipboard, update history (if enabled).
      */
     private fun addNewClip(item: ClipboardItem) {
-        insertOrMoveBeginning(item)
+        // Pysanka: see mayKeep (a copy from the keyboard itself happens in the field open right now)
+        if (mayKeep(item.isSensitive, fieldIncognito, fieldPassword)) {
+            insertOrMoveBeginning(if (fieldPassword && !item.isSensitive) item.copy(isSensitive = true) else item)
+        }
         updatePrimaryClip(item)
     }
 
@@ -255,6 +343,8 @@ class ClipboardManager(
             if (nToRemove > 0) {
                 val itemsToRemove = nonPinnedItems.asReversed().filterIndexed { n, _ -> n < nToRemove }
                 ioScope.launch {
+                    // Pysanka: an image's stored file goes with its item, never left behind
+                    itemsToRemove.forEach { it.close(appContext) }
                     clipHistoryDao?.delete(itemsToRemove)
                 }
             }
@@ -275,6 +365,8 @@ class ClipboardManager(
         }
         if (itemsToRemove.isNotEmpty()) {
             ioScope.launch {
+                // Pysanka: an image's stored file goes with its item, never left behind
+                itemsToRemove.forEach { it.close(appContext) }
                 clipHistoryDao?.delete(itemsToRemove.toList())
             }
         }
@@ -333,6 +425,82 @@ class ClipboardManager(
      *
      * @param items the [ClipboardItem] list with the new items
      */
+    /** Pysanka: what an import did. */
+    data class ImportOutcome(val added: Int, val skipped: Int, val overLimit: Int)
+
+    class HistoryDisabled : Exception()
+
+    /**
+     * Pysanka: adds imported items to the history.
+     *
+     * [item] describes a candidate (for an image, with no uri yet); [materialize] turns an accepted
+     * candidate into the item to store (registering its image file); [discard] removes whatever a
+     * candidate stored that will not be used. Text already present is not added twice; videos, very
+     * long texts and (while "Don't keep passwords" is on) sensitive items are skipped. With the
+     * history size limit on, only as many unpinned items as fit are added (the newest), so nothing
+     * already in the history is pushed out. Imported items get fresh times in their original order,
+     * so the automatic clean-up of old items does not remove them at once.
+     */
+    suspend fun <T> importCandidates(
+        candidates: List<T>,
+        item: (T) -> ClipboardItem,
+        materialize: (T) -> ClipboardItem,
+        discard: (T) -> Unit,
+    ): ImportOutcome = withContext(Dispatchers.IO) {
+        val pending = candidates.toMutableList()
+        try {
+            var waited = 0
+            while (clipHistoryDao == null && waited < 10_000) {
+                delay(200)
+                waited += 200
+            }
+            val dao = checkNotNull(clipHistoryDao) { "Clipboard is locked" }
+            if (!prefs.clipboard.historyEnabled.get()) throw HistoryDisabled()
+            val skipSensitive = prefs.clipboard.historySkipSensitive.get()
+            val current = dao.getAll()
+            val texts = current.filter { it.type == ItemType.TEXT }.mapNotNull { it.text }.toHashSet()
+            var skipped = 0
+            val accepted = ArrayList<T>()
+            for (c in candidates.sortedBy { item(it).creationTimestampMs }) {
+                val i = item(c)
+                val bad = i.type == ItemType.VIDEO ||
+                    (i.type == ItemType.TEXT && (i.text == null || i.text.length > MAX_IMPORT_TEXT || i.text in texts)) ||
+                    (i.isSensitive && skipSensitive)
+                if (bad) {
+                    skipped++
+                    discard(c)
+                    pending.remove(c)
+                } else {
+                    accepted.add(c)
+                    i.text?.let { texts.add(it) }
+                }
+            }
+            var overLimit = 0
+            val final = if (prefs.clipboard.historySizeLimitEnabled.get()) {
+                val free = maxOf(0, prefs.clipboard.historySizeLimit.get() - current.count { !it.isPinned })
+                val unpinned = accepted.filter { !item(it).isPinned }
+                val dropped = unpinned.dropLast(free).toHashSet()
+                overLimit = dropped.size
+                dropped.forEach { discard(it); pending.remove(it) }
+                accepted.filter { it !in dropped }
+            } else {
+                accepted
+            }
+            val now = System.currentTimeMillis()
+            for ((n, c) in final.withIndex()) {
+                ensureActive()
+                val stored = materialize(c)
+                dao.insert(stored.copy(id = 0, creationTimestampMs = now - (final.size - n)))
+                pending.remove(c)
+            }
+            ImportOutcome(final.size, skipped, overLimit)
+        } catch (t: Throwable) {
+            // Nothing a failed or cancelled import stored may stay behind
+            pending.forEach { runCatching { discard(it) } }
+            throw t
+        }
+    }
+
     fun restoreHistory(items: List<ClipboardItem>) {
         ioScope.launch {
             val currentHistory = currentHistory.all
