@@ -27,4 +27,6 @@
     <string name="pysanka__clipboard_copy__not_a_copy">This file is not a clipboard copy</string>
     <string name="pysanka__clipboard_copy__failed">Did not work. Nothing was changed.</string>
     <string name="pysanka__clipboard_copy__working">Working… (the password check takes a few seconds)</string>
+    <string name="pysanka__clipboard_copy__over_limit">Over the history size limit, not added: {n}. To import everything, raise or turn off the limit in clipboard settings and import again.</string>
+    <string name="pysanka__clipboard_copy__history_off">Clipboard history is turned off. Turn it on in clipboard settings first.</string>
 </resources>

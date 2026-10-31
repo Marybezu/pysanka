@@ -54,15 +54,24 @@ object ClipboardFileStorage {
      *
      * @return The file's name, which is a unique long, and its original size
      */
-    @Synchronized
     fun cloneUri(context: Context, uri: Uri): Cloned =
         context.contentResolver.openInputStream(uri)!!.use { storeStream(context, it) }
 
-    /** Pysanka: stores (encrypted) whatever [input] holds, up to [MAX_IMAGE_BYTES]; also used by import. */
-    @Synchronized
+    private val lastId = java.util.concurrent.atomic.AtomicLong()
+
+    /** A unique file id, also when two files are stored at the same moment on different threads. */
+    private fun newId(): Long {
+        val now = System.nanoTime()
+        return lastId.updateAndGet { prev -> if (now > prev) now else prev + 1 }
+    }
+
+    /**
+     * Pysanka: stores (encrypted) whatever [input] holds, up to [MAX_IMAGE_BYTES]; also used by
+     * import. Not synchronized: a slow read (a large image from a cloud file) must not hold up copies.
+     */
     fun storeStream(context: Context, input: InputStream): Cloned {
         check(SecureClipboard.ensureOpen(context)) { "Clipboard is locked" }
-        val id = System.nanoTime()
+        val id = newId()
         val file = context.clipboardFilesDir.subFile(id.toString())
         var size = 0L
         try {

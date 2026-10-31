@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
@@ -58,6 +59,9 @@ class ClipboardManager(
     companion object {
         // 1 minute
         private const val INTERVAL = 60 * 1000L
+
+        /** Pysanka: longest text accepted from an import (a longer row would break loading the history). */
+        const val MAX_IMPORT_TEXT = 512 * 1024
 
         /**
          * Taken from ClipboardDescription.java from the AOSP
@@ -339,6 +343,8 @@ class ClipboardManager(
             if (nToRemove > 0) {
                 val itemsToRemove = nonPinnedItems.asReversed().filterIndexed { n, _ -> n < nToRemove }
                 ioScope.launch {
+                    // Pysanka: an image's stored file goes with its item, never left behind
+                    itemsToRemove.forEach { it.close(appContext) }
                     clipHistoryDao?.delete(itemsToRemove)
                 }
             }
@@ -359,6 +365,8 @@ class ClipboardManager(
         }
         if (itemsToRemove.isNotEmpty()) {
             ioScope.launch {
+                // Pysanka: an image's stored file goes with its item, never left behind
+                itemsToRemove.forEach { it.close(appContext) }
                 clipHistoryDao?.delete(itemsToRemove.toList())
             }
         }
@@ -417,35 +425,80 @@ class ClipboardManager(
      *
      * @param items the [ClipboardItem] list with the new items
      */
+    /** Pysanka: what an import did. */
+    data class ImportOutcome(val added: Int, val skipped: Int, val overLimit: Int)
+
+    class HistoryDisabled : Exception()
+
     /**
-     * Pysanka: adds imported items, waiting (a few seconds at most) for the encrypted history to
-     * open. Text already in the history is not added twice; passwords are skipped while
-     * "Don't keep passwords" is on. Returns how many were added and how many skipped.
+     * Pysanka: adds imported items to the history.
+     *
+     * [item] describes a candidate (for an image, with no uri yet); [materialize] turns an accepted
+     * candidate into the item to store (registering its image file); [discard] removes whatever a
+     * candidate stored that will not be used. Text already present is not added twice; videos, very
+     * long texts and (while "Don't keep passwords" is on) sensitive items are skipped. With the
+     * history size limit on, only as many unpinned items as fit are added (the newest), so nothing
+     * already in the history is pushed out. Imported items get fresh times in their original order,
+     * so the automatic clean-up of old items does not remove them at once.
      */
-    suspend fun importItems(items: List<ClipboardItem>): Pair<Int, Int> = withContext(Dispatchers.IO) {
-        var waited = 0
-        while (clipHistoryDao == null && waited < 10_000) {
-            delay(200)
-            waited += 200
-        }
-        val dao = checkNotNull(clipHistoryDao) { "Clipboard is locked" }
-        val skipSensitive = prefs.clipboard.historySkipSensitive.get()
-        val existingTexts = dao.getAll().filter { it.type == ItemType.TEXT }.mapNotNull { it.text }.toHashSet()
-        var added = 0
-        var skipped = 0
-        for (item in items) {
-            val duplicate = item.type == ItemType.TEXT && item.text in existingTexts
-            if (duplicate || item.type == ItemType.VIDEO || (item.isSensitive && skipSensitive)) {
-                skipped++
-                // An image stored for an item that is not added must not stay behind
-                if (item.type != ItemType.TEXT) item.uri?.let { runCatching { appContext.contentResolver.delete(it, null, null) } }
-                continue
+    suspend fun <T> importCandidates(
+        candidates: List<T>,
+        item: (T) -> ClipboardItem,
+        materialize: (T) -> ClipboardItem,
+        discard: (T) -> Unit,
+    ): ImportOutcome = withContext(Dispatchers.IO) {
+        val pending = candidates.toMutableList()
+        try {
+            var waited = 0
+            while (clipHistoryDao == null && waited < 10_000) {
+                delay(200)
+                waited += 200
             }
-            dao.insert(item.copy(id = 0))
-            item.text?.let { existingTexts.add(it) }
-            added++
+            val dao = checkNotNull(clipHistoryDao) { "Clipboard is locked" }
+            if (!prefs.clipboard.historyEnabled.get()) throw HistoryDisabled()
+            val skipSensitive = prefs.clipboard.historySkipSensitive.get()
+            val current = dao.getAll()
+            val texts = current.filter { it.type == ItemType.TEXT }.mapNotNull { it.text }.toHashSet()
+            var skipped = 0
+            val accepted = ArrayList<T>()
+            for (c in candidates.sortedBy { item(it).creationTimestampMs }) {
+                val i = item(c)
+                val bad = i.type == ItemType.VIDEO ||
+                    (i.type == ItemType.TEXT && (i.text == null || i.text.length > MAX_IMPORT_TEXT || i.text in texts)) ||
+                    (i.isSensitive && skipSensitive)
+                if (bad) {
+                    skipped++
+                    discard(c)
+                    pending.remove(c)
+                } else {
+                    accepted.add(c)
+                    i.text?.let { texts.add(it) }
+                }
+            }
+            var overLimit = 0
+            val final = if (prefs.clipboard.historySizeLimitEnabled.get()) {
+                val free = maxOf(0, prefs.clipboard.historySizeLimit.get() - current.count { !it.isPinned })
+                val unpinned = accepted.filter { !item(it).isPinned }
+                val dropped = unpinned.dropLast(free).toHashSet()
+                overLimit = dropped.size
+                dropped.forEach { discard(it); pending.remove(it) }
+                accepted.filter { it !in dropped }
+            } else {
+                accepted
+            }
+            val now = System.currentTimeMillis()
+            for ((n, c) in final.withIndex()) {
+                ensureActive()
+                val stored = materialize(c)
+                dao.insert(stored.copy(id = 0, creationTimestampMs = now - (final.size - n)))
+                pending.remove(c)
+            }
+            ImportOutcome(final.size, skipped, overLimit)
+        } catch (t: Throwable) {
+            // Nothing a failed or cancelled import stored may stay behind
+            pending.forEach { runCatching { discard(it) } }
+            throw t
         }
-        added to skipped
     }
 
     fun restoreHistory(items: List<ClipboardItem>) {

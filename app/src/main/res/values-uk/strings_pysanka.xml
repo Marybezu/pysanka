@@ -26,4 +26,6 @@
     <string name="pysanka__clipboard_copy__not_a_copy">Це не копія буфера</string>
     <string name="pysanka__clipboard_copy__failed">Не вдалося. Нічого не змінено.</string>
     <string name="pysanka__clipboard_copy__working">Працюю… (перевірка пароля триває кілька секунд)</string>
+    <string name="pysanka__clipboard_copy__over_limit">Не вмістилося в обмеження історії, не додано: {n}. Щоб імпортувати все, збільште або вимкніть обмеження в налаштуваннях буфера й імпортуйте знову.</string>
+    <string name="pysanka__clipboard_copy__history_off">Історію буфера вимкнено. Спершу ввімкніть її в налаштуваннях буфера.</string>
 </resources>

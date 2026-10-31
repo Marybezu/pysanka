@@ -154,7 +154,7 @@ public final class SealedFile {
     }
 
     /** Reads until {@code buf} is full or the stream ends; returns how much was read. */
-    static int readFully(InputStream in, byte[] buf) throws IOException {
+    public static int readFully(InputStream in, byte[] buf) throws IOException {
         int n = 0;
         while (n < buf.length) {
             int r = in.read(buf, n, buf.length - n);

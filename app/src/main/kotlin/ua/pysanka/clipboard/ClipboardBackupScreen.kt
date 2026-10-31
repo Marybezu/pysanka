@@ -19,10 +19,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +35,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.stringRes
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -50,45 +51,51 @@ fun ClipboardBackupScreen() = FlorisScreen {
 
     content {
         val context = LocalContext.current
-        val scope = rememberCoroutineScope()
+        val status by ClipboardBackup.status.collectAsState()
+        val busy = status == ClipboardBackup.Status.Working
 
-        var busy by remember { mutableStateOf(false) }
-        var message by remember { mutableStateOf<String?>(null) }
+        // Passwords live only in this screen's memory and are cleared when it closes
+        var password by remember { mutableStateOf("") }
+        var repeat by remember { mutableStateOf("") }
+        var importPassword by remember { mutableStateOf("") }
+        DisposableEffect(Unit) {
+            onDispose {
+                password = ""
+                repeat = ""
+                importPassword = ""
+                ClipboardBackup.clearStatus()
+            }
+        }
 
-        // ------------------------------------------------------------ export
         var text by remember { mutableStateOf(true) }
         var images by remember { mutableStateOf(true) }
         var pinnedOnly by remember { mutableStateOf(false) }
-        var password by remember { mutableStateOf("") }
-        var repeat by remember { mutableStateOf("") }
         var showPassword by remember { mutableStateOf(false) }
-
-        val msgExported = stringRes(R.string.pysanka__clipboard_copy__exported)
-        val msgFailed = stringRes(R.string.pysanka__clipboard_copy__failed)
-        val msgWrongPassword = stringRes(R.string.pysanka__clipboard_copy__wrong_password)
-        val msgImported = stringRes(R.string.pysanka__clipboard_copy__imported)
-        val msgNotCopy = stringRes(R.string.pysanka__clipboard_copy__not_a_copy)
 
         val exportLauncher = rememberLauncherForActivityResult(
             ActivityResultContracts.CreateDocument("application/octet-stream"),
         ) { uri: Uri? ->
+            if (uri == null) {
+                ClipboardBackup.cancelExport()
+            } else {
+                ClipboardBackup.startExport(context, uri)
+                password = ""
+                repeat = ""
+            }
+        }
+
+        var picked by remember { mutableStateOf<Uri?>(null) }
+        var notACopy by remember { mutableStateOf(false) }
+        val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
             if (uri == null) return@rememberLauncherForActivityResult
-            val chars = password.toCharArray()
-            busy = true
-            message = null
-            scope.launch {
-                message = try {
-                    val n = ClipboardBackup.export(context, uri, chars, ClipboardBackup.Options(text, images, pinnedOnly))
-                    password = ""
-                    repeat = ""
-                    msgExported.replace("{n}", n.toString())
-                } catch (e: Exception) {
-                    // A half-written file is useless and could confuse later: remove it
-                    runCatching { android.provider.DocumentsContract.deleteDocument(context.contentResolver, uri) }
-                    msgFailed
-                } finally {
-                    chars.fill(' ')
-                    busy = false
+            notACopy = false
+            ClipboardBackup.clearStatus()
+            ClipboardBackup.detectAsync(context, uri) { kind ->
+                when (kind) {
+                    // A FlorisBoard backup has no password: import right away
+                    ClipboardBackup.Kind.FLORISBOARD -> ClipboardBackup.startImport(context, uri, kind, null)
+                    ClipboardBackup.Kind.PYSANKA -> picked = uri
+                    ClipboardBackup.Kind.UNKNOWN -> notACopy = true
                 }
             }
         }
@@ -115,16 +122,16 @@ fun ClipboardBackupScreen() = FlorisScreen {
                 Text(stringRes(if (showPassword) R.string.pysanka__clipboard_copy__hide else R.string.pysanka__clipboard_copy__show))
             }
             val tooShort = password.length < ClipboardBackup.MIN_PASSWORD_LENGTH
-            val mismatch = repeat.isNotEmpty() && repeat != password
             when {
                 password.isNotEmpty() && tooShort -> Hint(
                     stringRes(R.string.pysanka__clipboard_copy__too_short).replace("{n}", ClipboardBackup.MIN_PASSWORD_LENGTH.toString()),
                 )
-                mismatch -> Hint(stringRes(R.string.pysanka__clipboard_copy__mismatch))
+                repeat.isNotEmpty() && repeat != password -> Hint(stringRes(R.string.pysanka__clipboard_copy__mismatch))
             }
             Button(
                 enabled = !busy && (text || images) && !tooShort && repeat == password,
                 onClick = {
+                    ClipboardBackup.prepareExport(password.toCharArray(), ClipboardBackup.Options(text, images, pinnedOnly))
                     val date = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(Date())
                     exportLauncher.launch("pysanka-clipboard-$date.${ClipboardBackup.FILE_EXTENSION}")
                 },
@@ -132,52 +139,12 @@ fun ClipboardBackupScreen() = FlorisScreen {
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-            // -------------------------------------------------------- import
-            var picked by remember { mutableStateOf<Uri?>(null) }
-            var pickedKind by remember { mutableStateOf<ClipboardBackup.Kind?>(null) }
-            var importPassword by remember { mutableStateOf("") }
-
-            fun runImport(uri: Uri, pw: CharArray?) {
-                busy = true
-                message = null
-                scope.launch {
-                    message = try {
-                        val r = ClipboardBackup.import(context, uri, pw)
-                        picked = null
-                        pickedKind = null
-                        importPassword = ""
-                        msgImported.replace("{added}", r.added.toString()).replace("{skipped}", r.skipped.toString())
-                    } catch (e: ClipboardBackup.WrongPasswordOrDamaged) {
-                        msgWrongPassword
-                    } catch (e: Exception) {
-                        msgFailed
-                    } finally {
-                        pw?.fill(' ')
-                        busy = false
-                    }
-                }
-            }
-
-            val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-                if (uri == null) return@rememberLauncherForActivityResult
-                message = null
-                when (ClipboardBackup.detect(context, uri)) {
-                    // A FlorisBoard backup has no password: import right away
-                    ClipboardBackup.Kind.FLORISBOARD -> runImport(uri, null)
-                    ClipboardBackup.Kind.PYSANKA -> {
-                        picked = uri
-                        pickedKind = ClipboardBackup.Kind.PYSANKA
-                    }
-                    ClipboardBackup.Kind.UNKNOWN -> message = msgNotCopy
-                }
-            }
-
             Text(stringRes(R.string.pysanka__clipboard_copy__import), style = MaterialTheme.typography.titleMedium)
             Text(stringRes(R.string.pysanka__clipboard_copy__import_hint), style = MaterialTheme.typography.bodyMedium)
             OutlinedButton(enabled = !busy, onClick = { importLauncher.launch(arrayOf("*/*")) }) {
                 Text(stringRes(R.string.pysanka__clipboard_copy__pick_file))
             }
-            if (pickedKind == ClipboardBackup.Kind.PYSANKA && picked != null) {
+            picked?.let { uri ->
                 OutlinedTextField(
                     value = importPassword, onValueChange = { importPassword = it }, singleLine = true,
                     label = { Text(stringRes(R.string.pysanka__clipboard_copy__password)) },
@@ -185,16 +152,38 @@ fun ClipboardBackupScreen() = FlorisScreen {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Button(enabled = !busy && importPassword.isNotEmpty(), onClick = { runImport(picked!!, importPassword.toCharArray()) }) {
-                    Text(stringRes(R.string.pysanka__clipboard_copy__import_button))
-                }
+                Button(
+                    enabled = !busy && importPassword.isNotEmpty(),
+                    onClick = {
+                        ClipboardBackup.startImport(context, uri, ClipboardBackup.Kind.PYSANKA, importPassword.toCharArray())
+                        importPassword = ""
+                    },
+                ) { Text(stringRes(R.string.pysanka__clipboard_copy__import_button)) }
             }
 
+            LaunchedEffect(status) {
+                if (status is ClipboardBackup.Status.Imported) picked = null
+            }
             if (busy) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     CircularProgressIndicator(Modifier.padding(4.dp))
                     Text(stringRes(R.string.pysanka__clipboard_copy__working))
                 }
+            }
+            val message = when (val st = status) {
+                is ClipboardBackup.Status.Exported ->
+                    stringRes(R.string.pysanka__clipboard_copy__exported).replace("{n}", st.count.toString())
+                is ClipboardBackup.Status.Imported -> {
+                    stringRes(R.string.pysanka__clipboard_copy__imported)
+                        .replace("{added}", st.added.toString()).replace("{skipped}", st.skipped.toString()) +
+                        if (st.overLimit > 0) "\n" + stringRes(R.string.pysanka__clipboard_copy__over_limit)
+                            .replace("{n}", st.overLimit.toString()) else ""
+                }
+                ClipboardBackup.Status.WrongPassword -> stringRes(R.string.pysanka__clipboard_copy__wrong_password)
+                ClipboardBackup.Status.NotACopy -> stringRes(R.string.pysanka__clipboard_copy__not_a_copy)
+                ClipboardBackup.Status.HistoryOff -> stringRes(R.string.pysanka__clipboard_copy__history_off)
+                ClipboardBackup.Status.Failed -> stringRes(R.string.pysanka__clipboard_copy__failed)
+                else -> if (notACopy) stringRes(R.string.pysanka__clipboard_copy__not_a_copy) else null
             }
             message?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }
         }
