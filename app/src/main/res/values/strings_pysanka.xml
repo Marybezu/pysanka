@@ -121,4 +121,5 @@
     <string name="pysanka__privacy__incognito">Incognito mode</string>
     <string name="pysanka__more__smartbar_summary">Suggestions and quick actions above the keys</string>
     <string name="pysanka__more__extensions_summary">Themes, layouts and language packs from a file</string>
+    <string name="pysanka__tag__nothing">Nothing with this tag yet</string>
 </resources>

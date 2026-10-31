@@ -23,8 +23,17 @@ class AutoTagTest : FunSpec({
     }
     test("phone numbers") {
         tags("+380 (67) 123-45-67") shouldBe setOf(AutoTag.PHONE)
-        tags("call 0671234567 please") shouldBe setOf(AutoTag.PHONE)
+        tags("067 123 45 67") shouldBe setOf(AutoTag.PHONE)
+        tags("Тел.\n+380671234567") shouldBe setOf(AutoTag.PHONE)
         tags("year 2026") shouldBe emptySet()
+    }
+    test("no false phones or codes") {
+        tags("4111 1111 1111 1111") shouldBe emptySet()
+        tags("UA21 3223 1300 0002 6007 2335 6600 1") shouldBe emptySet()
+        tags("2026-10-31 14:30") shouldBe emptySet()
+        tags("1234567890") shouldBe emptySet()
+        tags("2026") shouldBe emptySet()
+        tags("1999") shouldBe emptySet()
     }
     test("tag ids round trip") {
         val item = ClipboardItem.text("x").withTagIds(listOf(7L, 3L))

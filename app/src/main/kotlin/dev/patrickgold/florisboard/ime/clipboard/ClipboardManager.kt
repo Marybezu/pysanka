@@ -543,11 +543,44 @@ class ClipboardManager(
 
     private val tagDao get() = clipHistoryDb?.clipboardTagDao()
 
+    /** Tag changes run one after another, so quick taps cannot mix up the order. */
+    private val tagMutex = Mutex()
+
+    private fun tagJob(block: suspend () -> Unit) {
+        ioScope.launch { tagMutex.withLock { block() } }
+    }
+
+    /**
+     * Pysanka: for import: the ids of tags with these names, creating the missing ones with the
+     * given colours. Names are compared without case.
+     */
+    suspend fun ensureTags(defs: List<Pair<String, Int>>): Map<String, Long> = tagMutex.withLock {
+        withContext(Dispatchers.IO) {
+            val dao = checkNotNull(tagDao) { "Clipboard is locked" }
+            val existing = dao.getAll()
+            val byName = existing.associate { it.name.lowercase() to it.id }.toMutableMap()
+            var position = (existing.maxOfOrNull { it.position } ?: -1) + 1
+            for ((name, color) in defs) {
+                val clean = name.trim().take(40)
+                if (clean.isEmpty() || clean.lowercase() in byName) continue
+                byName[clean.lowercase()] = dao.insert(
+                    dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardTag(name = clean, color = color, position = position++),
+                )
+            }
+            byName
+        }
+    }
+
+    /** Pysanka: for export: the owner's tags as they are stored. */
+    suspend fun allTags(): List<dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardTag> =
+        withContext(Dispatchers.IO) { tagDao?.getAll() ?: emptyList() }
+
+
     fun addTag(name: String, color: Int) {
         val clean = name.trim().take(40)
         if (clean.isEmpty()) return
-        ioScope.launch {
-            val dao = tagDao ?: return@launch
+        tagJob {
+            val dao = tagDao ?: return@tagJob
             val position = (dao.getAll().maxOfOrNull { it.position } ?: -1) + 1
             dao.insert(dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardTag(name = clean, color = color, position = position))
         }
@@ -556,21 +589,21 @@ class ClipboardManager(
     fun updateTag(id: Long, name: String, color: Int) {
         val clean = name.trim().take(40)
         if (clean.isEmpty()) return
-        ioScope.launch {
-            val dao = tagDao ?: return@launch
-            val tag = dao.getAll().firstOrNull { it.id == id } ?: return@launch
+        tagJob {
+            val dao = tagDao ?: return@tagJob
+            val tag = dao.getAll().firstOrNull { it.id == id } ?: return@tagJob
             dao.update(tag.copy(name = clean, color = color))
         }
     }
 
     /** Moves a tag one place earlier ([up]) or later in the slider. */
     fun moveTag(id: Long, up: Boolean) {
-        ioScope.launch {
-            val dao = tagDao ?: return@launch
+        tagJob {
+            val dao = tagDao ?: return@tagJob
             val list = dao.getAll().toMutableList()
             val i = list.indexOfFirst { it.id == id }
             val j = if (up) i - 1 else i + 1
-            if (i < 0 || j !in list.indices) return@launch
+            if (i < 0 || j !in list.indices) return@tagJob
             java.util.Collections.swap(list, i, j)
             list.forEachIndexed { n, t -> if (t.position != n) dao.update(t.copy(position = n)) }
         }
@@ -578,8 +611,8 @@ class ClipboardManager(
 
     /** Deletes a tag; the items it was on stay, only without it. */
     fun deleteTag(id: Long) {
-        ioScope.launch {
-            val dao = tagDao ?: return@launch
+        tagJob {
+            val dao = tagDao ?: return@tagJob
             dao.untagAll(id)
             dao.clearEmptyTags()
             dao.delete(id)

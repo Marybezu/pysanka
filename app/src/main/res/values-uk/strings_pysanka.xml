@@ -120,4 +120,5 @@
     <string name="pysanka__privacy__incognito">Режим інкогніто</string>
     <string name="pysanka__more__smartbar_summary">Підказки й швидкі дії над клавішами</string>
     <string name="pysanka__more__extensions_summary">Теми, розкладки й мовні пакети з файлу</string>
+    <string name="pysanka__tag__nothing">З цим тегом поки нічого немає</string>
 </resources>

@@ -170,6 +170,9 @@ object ClipboardBackup {
                 ItemType.VIDEO -> false
             }
         }
+        // The owner's tags travel with the copy, by name (ids differ from phone to phone)
+        val tagList = clipboardManager.allTags()
+        val tagNames = tagList.associate { it.id to it.name }
         val salt = ByteArray(SALT_BYTES).also { SecureRandom().nextBytes(it) }
         val key = deriveKey(password, salt)
         var count = 0
@@ -187,6 +190,7 @@ object ClipboardBackup {
                             .put("time", item.creationTimestampMs)
                             .put("sensitive", item.isSensitive)
                             .put("mime", JSONArray(item.mimeTypes))
+                        item.tagIds().mapNotNull { tagNames[it] }.takeIf { it.isNotEmpty() }?.let { o.put("tags", JSONArray(it)) }
                         if (item.type == ItemType.TEXT) {
                             o.put("type", "text").put("text", item.text)
                         } else {
@@ -207,7 +211,8 @@ object ClipboardBackup {
                         count++
                     }
                     zip.putNextEntry(ZipEntry(ITEMS))
-                    zip.write(JSONObject().put("format", 1).put("items", list).toString().toByteArray())
+                    val tagDefs = JSONArray(tagList.map { JSONObject().put("name", it.name).put("color", it.color) })
+                    zip.write(JSONObject().put("format", 1).put("tags", tagDefs).put("items", list).toString().toByteArray())
                     zip.closeEntry()
                 }
             }
@@ -248,7 +253,9 @@ object ClipboardBackup {
     }
 
     /** One item read from a file, before anything is added. */
-    private class Candidate(val item: ClipboardItem, val file: String?, val displayName: String) {
+    private class Candidate(
+        val item: ClipboardItem, val file: String?, val displayName: String, val tagNames: List<String> = emptyList(),
+    ) {
         var stored: ClipboardFileStorage.Cloned? = null
     }
 
@@ -270,27 +277,32 @@ object ClipboardBackup {
         val list = json.optJSONArray("items") ?: throw WrongPasswordOrDamaged()
         val candidates = ArrayList<Candidate>()
         val files = HashSet<String>()
+        val tagDefs = json.optJSONArray("tags")?.let { a ->
+            (0 until minOf(a.length(), 200)).mapNotNull { a.optJSONObject(it) }
+                .map { it.optString("name").take(40) to it.optInt("color") }.filter { it.first.isNotBlank() }
+        } ?: emptyList()
         for (i in 0 until minOf(list.length(), MAX_ITEMS)) {
             val o = list.optJSONObject(i) ?: continue
             val time = o.optLong("time", System.currentTimeMillis())
             val pinned = o.optBoolean("pinned")
             val sensitive = o.optBoolean("sensitive")
+            val names = o.optJSONArray("tags")?.let { a -> (0 until minOf(a.length(), 50)).map { a.optString(it) } } ?: emptyList()
             when (o.optString("type")) {
                 "text" -> if (o.has("text") && !o.isNull("text")) {
-                    candidates.add(Candidate(textItem(o.optString("text"), time, pinned, sensitive), null, ""))
+                    candidates.add(Candidate(textItem(o.optString("text"), time, pinned, sensitive), null, "", names))
                 }
                 "image" -> {
                     val name = o.optString("file")
                     // The same file named twice is used once
                     if (!name.startsWith(IMAGES) || !files.add(name)) continue
                     val mime = o.optJSONArray("mime")?.let { a -> List(a.length()) { a.optString(it) } } ?: emptyList()
-                    candidates.add(Candidate(imageItem(mime, time, pinned, sensitive), name, "Image"))
+                    candidates.add(Candidate(imageItem(mime, time, pinned, sensitive), name, "Image", names))
                 }
             }
         }
         // Pass 2: only the images the list names
         storeImages(context, candidates) { wanted -> readZipEntries(context, uri, wanted, nameOf = { it }) { raw -> openPysanka(raw, key) } }
-        return add(context, candidates)
+        return add(context, candidates, tagDefs)
     }
 
     private suspend fun importFloris(context: Context, uri: Uri): ClipboardManager.ImportOutcome {
@@ -416,13 +428,23 @@ object ClipboardBackup {
         while (input.read(buf) >= 0) Unit
     }
 
-    private suspend fun add(context: Context, candidates: List<Candidate>): ClipboardManager.ImportOutcome {
+    private suspend fun add(
+        context: Context, candidates: List<Candidate>, tagDefs: List<Pair<String, Int>> = emptyList(),
+    ): ClipboardManager.ImportOutcome {
         val clipboardManager by context.clipboardManager()
         // An image whose file did not make it (missing, too large, over budget) is not added
         val (usable, missing) = candidates.partition { it.file == null || it.stored != null }
         val skippedMissing = missing.size
         val outcome = try {
-            importAll(context, clipboardManager, usable)
+            // Tags named in the copy are matched to the owner's tags by name, or created
+            val tagIds = if (candidates.any { it.tagNames.isNotEmpty() }) {
+                val wantedNames = candidates.flatMap { it.tagNames }.toSet()
+                val defs = tagDefs + wantedNames.filter { n -> tagDefs.none { it.first.equals(n, ignoreCase = true) } }.map { it to 0 }
+                clipboardManager.ensureTags(defs)
+            } else {
+                emptyMap()
+            }
+            importAll(context, clipboardManager, usable, tagIds)
         } catch (t: Throwable) {
             // Files not yet handed to the history are removed
             candidates.forEach { c -> c.stored?.let { ClipboardFileStorage.deleteById(context, it.id) }; c.stored = null }
@@ -432,7 +454,7 @@ object ClipboardBackup {
     }
 
     private suspend fun importAll(
-        context: Context, clipboardManager: ClipboardManager, usable: List<Candidate>,
+        context: Context, clipboardManager: ClipboardManager, usable: List<Candidate>, tagIds: Map<String, Long>,
     ): ClipboardManager.ImportOutcome {
         val provider = provider(context)
         return clipboardManager.importCandidates(
@@ -440,12 +462,14 @@ object ClipboardBackup {
             item = { it.item },
             materialize = { c ->
                 val stored = c.stored
+                val ids = c.tagNames.mapNotNull { tagIds[it.trim().lowercase()] }
+                val base = if (ids.isEmpty()) c.item else c.item.withTagIds(ids)
                 if (stored == null) {
-                    c.item
+                    base
                 } else {
                     val uri = provider.registerImported(ClipboardFileInfo(stored.id, c.displayName, stored.size, 0, c.item.mimeTypes))
                     c.stored = null // now owned by the history
-                    c.item.copy(uri = uri)
+                    base.copy(uri = uri)
                 }
             },
             discard = { c -> c.stored?.let { ClipboardFileStorage.deleteById(context, it.id) }; c.stored = null },

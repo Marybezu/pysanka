@@ -59,7 +59,8 @@ enum class AutoTag(@StringRes val label: Int) {
             LINK -> AutoTagPatterns.link.containsMatchIn(text)
             EMAIL -> AutoTagPatterns.email.containsMatchIn(text)
             CODE -> AutoTagPatterns.code.matches(text.trim())
-            PHONE -> !AutoTagPatterns.code.matches(text.trim()) && AutoTagPatterns.phone.containsMatchIn(text)
+            PHONE -> !AutoTagPatterns.code.matches(text.trim()) &&
+                AutoTagPatterns.phone.findAll(text).any { AutoTagPatterns.digits(it.value) in 10..13 }
             IMAGE -> false
         }
     }
@@ -69,11 +70,20 @@ internal object AutoTagPatterns {
     val link = Regex("""(?i)\b(?:https?://|www\.)\S+""")
     val email = Regex("""(?i)\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b""")
 
-    /** A one-time code: 4–8 digits, maybe split in two by a space or a dash ("123 456"). */
-    val code = Regex("""\d{4,8}|\d{3,4}[ -]\d{3,4}""")
+    /**
+     * A one-time code: the whole item is 4–8 digits, maybe split in two ("123 456"). A bare year
+     * (19xx, 20xx) is not taken for a code.
+     */
+    val code = Regex("""(?!(?:19|20)\d\d$)\d{4,8}|\d{3,4}[ -]\d{3,4}""")
 
-    /** A phone number: an optional +, then at least 9 digits with spaces, dashes or brackets. */
-    val phone = Regex("""(?<![\w])\+?\d(?:[ \-()]*\d){8,14}(?![\w])""")
+    /**
+     * A phone number: the whole item (or a line of it) starts with + or 0 or a bracket and has
+     * 10–13 digits, with spaces, dashes or brackets between. Card numbers (16 digits), IBANs,
+     * dates and times do not match.
+     */
+    val phone = Regex("""(?m)^\s*(?:\+|\(?0)[\d ()\-]{8,20}\s*$""")
+
+    fun digits(s: String) = s.count { it.isDigit() }
 }
 
 /** Pysanka: what the tag slider is filtering by: nothing (all), an automatic tag or an own tag. */
