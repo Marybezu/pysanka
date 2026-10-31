@@ -1,0 +1,8 @@
+# Third-party material
+
+- Pysanka is based on **FlorisBoard** by The FlorisBoard Contributors
+  (https://github.com/florisboard/florisboard), Apache License 2.0. The full history of FlorisBoard
+  is kept in this repository; files from FlorisBoard keep their copyright headers. Pysanka is an
+  independent project and is not affiliated with or endorsed by FlorisBoard.
+- Libraries used by FlorisBoard (AndroidX, Kotlin, Jetpack Compose and others) are used as
+  dependencies under their own licences; the in-app "Open-source licences" screen lists them.

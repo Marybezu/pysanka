@@ -45,7 +45,8 @@ configure<LibraryExtension> {
         }
 
         ndk {
-            //abiFilters += listOf("armeabi-v7a", "arm64-v8a")
+            // Pysanka: 64-bit ARM only (every phone GrapheneOS supports, and nearly all current Android phones)
+            abiFilters += listOf("arm64-v8a")
         }
     }
 

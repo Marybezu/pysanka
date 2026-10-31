@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Pysanka: no internet, ever. Removed even if a library asks for it; CI also fails if it appears. -->
+    <uses-permission android:name="android.permission.INTERNET" tools:node="remove"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove"/>
+
     <!-- Permission needed to vibrate if the user has key press vibration enabled -->
     <uses-permission android:name="android.permission.VIBRATE"/>
 
@@ -23,9 +27,8 @@
 
     <application
         android:name="dev.patrickgold.florisboard.FlorisApplication"
-        android:allowBackup="true"
-        android:dataExtractionRules="@xml/backup_rules"
-        android:fullBackupContent="@xml/backup_rules"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/floris_app_icon"
         android:label="@string/floris_app_name"
         android:enableOnBackInvokedCallback="true"

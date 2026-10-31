@@ -1,158 +1,51 @@
-<img align="left" width="80" height="80"
-src=".github/repo_icon.png" alt="App icon">
+<img src=".github/repo_icon.png" width="96" alt="">
 
-# FlorisBoard [![Crowdin](https://badges.crowdin.net/florisboard/localized.svg)](https://crowdin.florisboard.org) [![Matrix badge](https://img.shields.io/badge/chat-%23florisboard%3amatrix.org-blue)](https://matrix.to/#/#florisboard:matrix.org) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) [![FlorisBoard CI](https://github.com/florisboard/florisboard/actions/workflows/android.yml/badge.svg?event=push)](https://github.com/florisboard/florisboard/actions/workflows/android.yml)
+# Писанка · Pysanka
 
-**FlorisBoard** is a free and open-source keyboard for Android 8.0+
-devices. It aims at being modern, user-friendly and customizable while
-fully respecting your privacy. Currently in beta state.
+Приватна клавіатура для Android без доступу до інтернету. Набір, swipe, буфер обміну, а за бажанням — локальний ШІ, що редагує текст прямо на телефоні. Українська й англійська в інтерфейсі, розкладки для багатьох мов. Безкоштовно, без реклами й акаунтів.
 
-<table>
-<tr>
-<th style="text-align: center; width: 50%">
-<h3>Stable <a href="https://github.com/florisboard/florisboard/releases/latest"><img alt="Latest stable release" src="https://img.shields.io/github/v/release/florisboard/florisboard?sort=semver&display_name=tag&color=28a745"></a></h3>
-</th>
-<th style="text-align: center; width: 50%">
-<h3>Preview <a href="https://github.com/florisboard/florisboard/releases"><img alt="Latest preview release" src="https://img.shields.io/github/v/release/florisboard/florisboard?include_prereleases&sort=semver&display_name=tag&color=fd7e14"></a></h3>
-</th>
-</tr>
-<tr>
-<td style="vertical-align: top">
-<p><i>Major versions only</i><br><br>Updates are more polished, new features are matured and tested through to ensure a stable experience.</p>
-</td>
-<td style="vertical-align: top">
-<p><i>Major + Alpha/Beta/Rc versions</i><br><br>Updates contain new features that may not be fully matured yet and bugs are more likely to occur. Allows you to give early feedback.</p>
-</td>
-</tr>
-<tr>
-<td style="vertical-align: top">
-<p>
-<a href="https://apt.izzysoft.de/fdroid/index/apk/dev.patrickgold.florisboard"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="64" alt="IzzySoft repo badge"></a>
-<a href="https://f-droid.org/packages/dev.patrickgold.florisboard"><img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" height="64" alt="F-Droid badge"></a>
-</p>
-<p>
+> **Статус: у розробці.** Першого випуску ще немає. Помилки й побажання: [Issues](../../issues).
 
-**Google Play**: Join the [FlorisBoard Test Group](https://groups.google.com/g/florisboard-closed-beta-test), then visit the [testing page](https://play.google.com/apps/testing/dev.patrickgold.florisboard). Once joined and installed, updates will be delivered like for any other app. ([Store entry](https://play.google.com/store/apps/details?id=dev.patrickgold.florisboard))
+## Що буде
 
-</p>
-<p>
+- 🔒 **Приватність.** Дозволу на інтернет немає, і збірка зупиняється, якщо він з'явиться. Нічого не потрапляє в хмарну копію чи на інший телефон.
+- 📋 **Зашифрований буфер.** Історія тексту й зображень, кольорові теги, закріплення, пошук, шаблони; скріншоти автоматично, якщо ввімкнути. Паролі з менеджера паролів не зберігаються.
+- 🔍 **Текст із фото й скріншотів** розпізнається на телефоні.
+- 🤖 **Локальний ШІ (Gemma 4), за бажанням:** стиль, граматика й пунктуація, підсумок, переклад, перевірка русизмів, інструменти для соцмереж.
+- 🎙️ **Диктування** на телефоні (Whisper), за бажанням.
 
-**Obtainium**: [Auto-import stable config][obtainium_stable]
+Зараз це FlorisBoard з новою назвою, іконкою й посиленою приватністю. Функції з'являтимуться поступово.
 
-</p>
-<p>
+## Прозорість
 
-**Manual**: Download and install the APK from the release page.
+- **Основа:** [FlorisBoard](https://github.com/florisboard/florisboard) (Apache 2.0), історію змін збережено. Pysanka — незалежний проєкт.
+- **Збірка:** APK збирається з цього коду в GitHub Actions окремо від підпису й підписується лише після схвалення авторки. Контрольні суми залежностей і обгортки Gradle перевіряються.
+- **Підпис:** відбиток сертифіката SHA-256 `ea082ca6d8620c201948d08a9572c0b74a75101eb71b2752ceddcb4807d038ce`.
+- **Як створено:** код написано за допомогою ШІ (Claude, Anthropic) під керівництвом і з тестуванням авторки.
 
-</p>
-</td>
-<td style="vertical-align: top">
-<p><a href="https://apt.izzysoft.de/fdroid/index/apk/dev.patrickgold.florisboard.beta"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="64" alt="IzzySoft repo badge"></a></p>
-<p>
+Kotlin · Jetpack Compose · Rust. Сторонні матеріали — [NOTICE.md](NOTICE.md). Ліцензія Apache 2.0.
 
-**Google Play**: Join the [FlorisBoard Test Group](https://groups.google.com/g/florisboard-closed-beta-test), then visit the [preview testing page](https://play.google.com/apps/testing/dev.patrickgold.florisboard.beta). Once joined and installed, updates will be delivered like for any other app. ([Store entry](https://play.google.com/store/apps/details?id=dev.patrickgold.florisboard.beta))
+---
 
-</p>
-<p>
+# Pysanka · English
 
-**Obtainium**: [Auto-import preview config][obtainium_preview]
+A private keyboard for Android with no internet access. Typing, swipe, clipboard and, if you wish, an on-device AI that edits text right on the phone. Ukrainian and English interface, layouts for many languages. Free, no ads, no accounts.
 
-</p>
-<p>
+> **Status: in development.** No release yet. Bugs and wishes: [Issues](../../issues).
 
-**Manual**: Download and install the APK from the release page.
+## Privacy
 
-</p>
-</td>
-</tr>
-</table>
+- No internet permission; the build fails if one appears. Nothing goes to a cloud backup or to another phone.
+- Planned: an encrypted clipboard with coloured tags, pins, search and snippets (screenshots optionally); passwords from password managers are never stored.
+- Planned, optional: on-device AI (Gemma 4) for style, grammar, summaries, translation and social-media tools; on-device dictation (Whisper); text recognition from photos and screenshots.
 
-Beginning with v0.7 FlorisBoard will enter the public beta on Google Play.
+Today this is FlorisBoard with a new name, icon and stronger privacy defaults. Features will arrive step by step.
 
-## Highlighted features
-- Integrated clipboard manager / history
-- Advanced theming support and customization
-- Integrated extension support (still evolving)
-- Emoji keyboard / history / suggestions
+## Transparency
 
-> [!IMPORTANT]
-> Word suggestions/spell checking are not included in the current releases
-> and are a major goal for the v0.6 milestone.
+- **Based on** [FlorisBoard](https://github.com/florisboard/florisboard) (Apache 2.0), with its history kept. Pysanka is an independent project.
+- **Build:** the APK is built from this code in GitHub Actions, separately from signing, and is signed only after the author's approval. Dependency and Gradle wrapper checksums are verified.
+- **Signing:** certificate SHA-256 `ea082ca6d8620c201948d08a9572c0b74a75101eb71b2752ceddcb4807d038ce`.
+- **How it was made:** the code was written with AI (Claude, Anthropic) under the author's direction and testing.
 
-Feature roadmap: See [ROADMAP.md](ROADMAP.md)
-
-## Contributing
-Want to contribute to FlorisBoard? That's great to hear! There are lots of
-different ways to help out, please see the [contribution guidelines](CONTRIBUTING.md) for more info.
-
-## Addons Store
-The official [Addons Store](https://beta.addons.florisboard.org) offers the possibility for the community to share and download FlorisBoard extensions.
-Instructions on how to publish addons can be found [here](https://docs.florisboard.org/publishing).
-
-Many thanks to Ali ([@4H1R](https://github.com/4H1R)) for implementing the store!
-
-> [!NOTE]
-> During the initial beta release phase, the Addons Store _will_ only accept theme extensions.
-> Later on we plan to add support for language packs and keyboard extensions.
-
-## List of permissions FlorisBoard requests
-Please refer to this [page](https://docs.florisboard.org/permissions)
-to get more information on this topic.
-
-## APK signing certificate hashes
-
-The package names and SHA-256 hashes of the signature certificate are listed below, so you can verify both FlorisBoard variants with apksigner by using `apksigner verify --print-certs florisboard-<version>-<track>.apk` when you download the APK.
-If you have [AppVerifier](https://github.com/soupslurpr/AppVerifier) installed, you can alternatively copy both the package name and the hash of the corresponding track and share them to AppVerifier.
-
-##### Stable track:
-
-dev.patrickgold.florisboard<br>
-0B:80:71:64:50:8E:AF:EB:1F:BB:81:5B:E7:A2:3C:77:FE:68:9D:94:B1:43:75:C9:9B:DA:A9:B6:57:7F:D6:D6
-
-##### Preview track:
-
-dev.patrickgold.florisboard.beta<br>
-0B:80:71:64:50:8E:AF:EB:1F:BB:81:5B:E7:A2:3C:77:FE:68:9D:94:B1:43:75:C9:9B:DA:A9:B6:57:7F:D6:D6
-
-
-## Used libraries, components and icons
-* [AndroidX libraries](https://github.com/androidx/androidx) by
-  [Android Jetpack](https://github.com/androidx)
-* [AboutLibraries](https://github.com/mikepenz/AboutLibraries) by
-  [mikepenz](https://github.com/mikepenz)
-* [Google Material icons](https://github.com/google/material-design-icons) by
-  [Google](https://github.com/google)
-* [JetPref preference library](https://github.com/patrickgold/jetpref) by
-  [patrickgold](https://github.com/patrickgold)
-* [KotlinX coroutines library](https://github.com/Kotlin/kotlinx.coroutines) by
-  [Kotlin](https://github.com/Kotlin)
-* [KotlinX serialization library](https://github.com/Kotlin/kotlinx.serialization) by
-  [Kotlin](https://github.com/Kotlin)
-
-Many thanks to [Nikolay Anzarov](https://www.behance.net/nikolayanzarov) ([@BloodRaven0](https://github.com/BloodRaven0)) for designing and providing the main app icons to this project!
-
-## License
-```
-Copyright 2020-2026 The FlorisBoard Contributors
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
-
-Thanks to [The FlorisBoard Contributors](https://github.com/florisboard/florisboard/graphs/contributors) for making this project possible!
-
-<!-- BEGIN SECTION: obtainium_links -->
-<!-- auto-generated link templates, do NOT edit by hand -->
-<!-- see fastlane/update-readme.sh -->
-[obtainium_preview]: https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://app/%7B%22id%22%3A%22dev.patrickgold.florisboard.beta%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fflorisboard%2Fflorisboard%22%2C%22author%22%3A%22florisboard%22%2C%22name%22%3A%22FlorisBoard%20Preview%22%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Atrue%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22preview%5C%22%7D%22%7D%0A
-[obtainium_stable]: https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://app/%7B%22id%22%3A%22dev.patrickgold.florisboard%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fflorisboard%2Fflorisboard%22%2C%22author%22%3A%22florisboard%22%2C%22name%22%3A%22FlorisBoard%20Stable%22%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Afalse%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22stable%5C%22%7D%22%7D%0A
-<!-- END SECTION: obtainium_links -->
+Licence: Apache 2.0. Third-party material: [NOTICE.md](NOTICE.md).

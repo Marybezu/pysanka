@@ -28,7 +28,10 @@ plugins {
     alias(libs.plugins.kotlinx.kover)
 }
 
-val projectVersionName = providers.gradleProperty("projectVersionName").get()
+// Pysanka: the version people see (major.minor.patch) is set by hand in version.txt before each release;
+// versionCode comes from the CI run number, so every build installs over the previous one.
+val projectVersionName = rootProject.file("version.txt").readText().trim()
+val ciVersionCode = (System.getenv("VERSION_CODE") ?: "1").toInt()
 val projectVersionNameSuffix = projectVersionName.substringAfter("-", "").let { suffix ->
     if (suffix.isNotEmpty()) {
         "-$suffix"
@@ -63,10 +66,10 @@ configure<ApplicationExtension> {
     }
 
     defaultConfig {
-        applicationId = "dev.patrickgold.florisboard"
+        applicationId = "ua.pysanka"
         minSdk = providers.gradleProperty("projectMinSdk").get().toInt()
         targetSdk = providers.gradleProperty("projectTargetSdk").get().toInt()
-        versionCode = providers.gradleProperty("projectVersionCode").get().toInt()
+        versionCode = ciVersionCode
         versionName = projectVersionName.substringBefore("-")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
