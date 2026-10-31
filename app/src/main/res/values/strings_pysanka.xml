@@ -30,4 +30,6 @@
     <string name="pysanka__clipboard_copy__over_limit">Over the history size limit, not added: {n}. To import everything, raise or turn off the limit in clipboard settings and import again.</string>
     <string name="pysanka__clipboard_copy__history_off">Clipboard history is turned off. Turn it on in clipboard settings first.</string>
     <string name="pysanka__ext__info">Themes, layouts and language packs are added from an extension file (.flex) that you bring yourself: Pysanka never goes online.</string>
+    <string name="pysanka__about__based_on__title">Based on FlorisBoard</string>
+    <string name="pysanka__about__based_on__summary">Pysanka is built on FlorisBoard by The FlorisBoard Contributors (Apache 2.0); an independent project</string>
 </resources>
