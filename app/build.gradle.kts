@@ -198,6 +198,8 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.runtime)
+    // Pysanka: the clipboard databases are encrypted with SQLCipher
+    implementation(libs.sqlcipher.android) { artifact { type = "aar" } }
     implementation(libs.androidx.window.core)
     implementation(libs.cache4k)
     implementation(libs.k3lp.core)

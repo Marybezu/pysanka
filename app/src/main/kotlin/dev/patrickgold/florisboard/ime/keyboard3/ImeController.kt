@@ -284,6 +284,8 @@ class ImeController(
                         }
                     )
             )
+            // Pysanka: nothing copied from a password field or in incognito goes into the history
+            clipboardManager.keepOutOfHistory = state.flags.isIncognitoMode || keyVariation == KeyVariation.PASSWORD
             resetContent(initialSelection, initialSurrounding)
             expectedContentQueue.clear()
         }

@@ -71,18 +71,27 @@ class ClipboardMediaProvider : ContentProvider() {
         const val MimeTypes = "mime_types"
     }
 
-    fun init() {
-        clipboardFilesDao = ClipboardFilesDatabase.new(context!!).clipboardFilesDao()
-
-        for (clipboardFileInfo in clipboardFilesDao?.getAll() ?: emptyList()) {
-            cachedFileInfos[clipboardFileInfo.id] = clipboardFileInfo
+    /**
+     * Pysanka: the file list is encrypted, so it is opened only once the clipboard vault is
+     * (after the phone is unlocked), on first use rather than when the process starts.
+     */
+    @Synchronized
+    fun init(): Boolean {
+        if (clipboardFilesDao != null) return true
+        val ctx = context ?: return false
+        // Room refuses the main thread; a call from there waits for this one-time setup instead
+        return kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+            if (!ua.pysanka.clipboard.SecureClipboard.ensureOpen(ctx)) return@runBlocking false
+            val dao = ClipboardFilesDatabase.new(ctx).clipboardFilesDao()
+            for (clipboardFileInfo in dao.getAll()) {
+                cachedFileInfos[clipboardFileInfo.id] = clipboardFileInfo
+            }
+            clipboardFilesDao = dao
+            true
         }
     }
 
     override fun onCreate(): Boolean {
-        ioScope.launch {
-            init()
-        }
         return true
     }
 
@@ -94,6 +103,7 @@ class ClipboardMediaProvider : ContentProvider() {
         sortOrder: String?
     ): Cursor? {
         val id = tryOrNull { ContentUris.parseId(uri) } ?: return null
+        if (!init()) return null
         if (projection != null) {
             if (projection.contains(MediaStore.Images.Media.ORIENTATION)) {
                 clipboardFilesDao?.getCursorByIdWithColumns(id, MediaStore.Images.Media.ORIENTATION)
@@ -108,6 +118,7 @@ class ClipboardMediaProvider : ContentProvider() {
     override fun getType(uri: Uri): String? {
         return when (Matcher.match(uri)) {
             IMAGE_CLIP_ITEM, VIDEO_CLIP_ITEM -> {
+                init()
                 cachedFileInfos.getOrDefault(ContentUris.parseId(uri), null)?.mimeTypes?.getOrNull(0)
             }
             IMAGE_CLIPS_TABLE -> "${ContentResolver.CURSOR_DIR_BASE_TYPE}/vnd.florisboard.image_clip_table"
@@ -119,6 +130,7 @@ class ClipboardMediaProvider : ContentProvider() {
     override fun getStreamTypes(uri: Uri, mimeTypeFilter: String): Array<String>? {
         return when (Matcher.match(uri)) {
             IMAGE_CLIP_ITEM, VIDEO_CLIP_ITEM -> {
+                init()
                 cachedFileInfos.getOrDefault(ContentUris.parseId(uri), null)?.mimeTypes?.toTypedArray()
             }
             else -> null
@@ -126,17 +138,23 @@ class ClipboardMediaProvider : ContentProvider() {
     }
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
-        val id = ContentUris.parseId(uri)
-        val file = ClipboardFileStorage.getFileForId(context!!, id)
-
         // Nothing has permission to write anyway.
-        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        if (mode != "r") throw SecurityException("Clipboard files are read-only")
+        val id = ContentUris.parseId(uri)
+        if (!init()) throw java.io.FileNotFoundException("Clipboard is locked")
+        // Pysanka: the stored file is encrypted; the app gets the original bytes
+        return try {
+            ClipboardFileStorage.openPlainDescriptor(context!!, id)
+        } catch (e: Exception) {
+            throw java.io.FileNotFoundException("Clipboard file unavailable")
+        }
     }
 
     override fun insert(uri: Uri, values: ContentValues?): Uri {
         when (val m = Matcher.match(uri)) {
             IMAGE_CLIPS_TABLE, VIDEO_CLIPS_TABLE -> {
                 return try {
+                    check(init()) { "Clipboard is locked" }
                     values as ContentValues
                     val mediaUri = Uri.parse(values.getAsString(Columns.MediaUri))
                     // Get the orientation of the image
@@ -151,8 +169,7 @@ class ClipboardMediaProvider : ContentProvider() {
                         ExifInterface.ORIENTATION_ROTATE_180 -> rotation = 180
                         ExifInterface.ORIENTATION_ROTATE_270 -> rotation = 270
                     }
-                    val id = ClipboardFileStorage.cloneUri(context!!, mediaUri)
-                    val size = ClipboardFileStorage.getFileForId(context!!, id).length()
+                    val (id, size) = ClipboardFileStorage.cloneUri(context!!, mediaUri)
                     val mimeTypes = values.getAsString(Columns.MimeTypes).split(",")
                     val displayName = values.getAsString(OpenableColumns.DISPLAY_NAME)
                     val fileInfo = ClipboardFileInfo(id, displayName, size, rotation, mimeTypes)
@@ -178,6 +195,7 @@ class ClipboardMediaProvider : ContentProvider() {
         when (Matcher.match(uri)) {
             IMAGE_CLIP_ITEM, VIDEO_CLIP_ITEM -> {
                 val id = ContentUris.parseId(uri)
+                init()
                 ClipboardFileStorage.deleteById(context!!, id)
                 cachedFileInfos.remove(id)
                 context?.revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)

@@ -339,6 +339,8 @@ abstract class ClipboardHistoryDatabase : RoomDatabase() {
                 .databaseBuilder(
                     context, ClipboardHistoryDatabase::class.java, CLIPBOARD_HISTORY_TABLE,
                 )
+                // Pysanka: encrypted with SQLCipher; the caller has opened the clipboard vault
+                .openHelperFactory(ua.pysanka.clipboard.SecureClipboard.openHelperFactory())
                 .fallbackToDestructiveMigration()
                 .build()
         }
@@ -387,6 +389,8 @@ abstract class ClipboardFilesDatabase : RoomDatabase() {
                 .databaseBuilder(
                     context, ClipboardFilesDatabase::class.java, CLIPBOARD_FILES_TABLE,
                 )
+                // Pysanka: encrypted with SQLCipher; the caller has opened the clipboard vault
+                .openHelperFactory(ua.pysanka.clipboard.SecureClipboard.openHelperFactory())
                 .fallbackToDestructiveMigration()
                 .build()
         }

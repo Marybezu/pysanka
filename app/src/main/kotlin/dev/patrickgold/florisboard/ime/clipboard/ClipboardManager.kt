@@ -100,6 +100,10 @@ class ClipboardManager(
     val currentHistory: ClipboardHistory
         get() = historyFlow.value
 
+    /** Pysanka: set by the keyboard while a password field or incognito is active. */
+    @Volatile
+    var keepOutOfHistory: Boolean = false
+
     private val primaryClipLastFromCallbackGuard = Mutex(locked = false)
     private var primaryClipLastFromCallback: ClipData? = null
     val primaryClipFlow: StateFlow<ClipboardItem?>
@@ -123,6 +127,12 @@ class ClipboardManager(
     fun initializeForContext(context: Context) {
         ioScope.launch {
             if (clipHistoryDb == null) {
+                // Pysanka: the history is encrypted; while the phone is locked the vault stays shut,
+                // so try again as soon as it is unlocked
+                if (!ua.pysanka.clipboard.SecureClipboard.ensureOpen(context)) {
+                    retryWhenUnlocked(context.applicationContext)
+                    return@launch
+                }
                 clipHistoryDb = ClipboardHistoryDatabase.new(context.applicationContext)
                 withContext(Dispatchers.Main) {
                     clipHistoryDao?.getAllAsFlow()?.collect { items ->
@@ -131,6 +141,28 @@ class ClipboardManager(
                 }
             }
         }
+    }
+
+    private var unlockReceiver: android.content.BroadcastReceiver? = null
+
+    @Synchronized
+    private fun retryWhenUnlocked(appContext: Context) {
+        if (unlockReceiver != null) return
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(c: Context?, intent: android.content.Intent?) {
+                synchronized(this@ClipboardManager) {
+                    runCatching { appContext.unregisterReceiver(this) }
+                    unlockReceiver = null
+                }
+                initializeForContext(appContext)
+            }
+        }
+        unlockReceiver = receiver
+        // A system broadcast; registering for it needs no permission
+        androidx.core.content.ContextCompat.registerReceiver(
+            appContext, receiver, android.content.IntentFilter(android.content.Intent.ACTION_USER_PRESENT),
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
     }
 
     private fun updateHistory(items: List<ClipboardItem>) {
@@ -229,6 +261,9 @@ class ClipboardManager(
      * Adds a new item to the clipboard history (if enabled).
      */
     private fun insertOrMoveBeginning(newItem: ClipboardItem) {
+        // Pysanka: passwords and codes marked sensitive (password managers do this), and anything
+        // copied in a password field or in incognito, are never kept in the history
+        if (newItem.isSensitive || keepOutOfHistory) return
         if (prefs.clipboard.historyEnabled.get()) {
             val historyElement = currentHistory.all.firstOrNull { item ->
                 item.type == ItemType.TEXT && item.text == newItem.text && item.isSensitive == newItem.isSensitive

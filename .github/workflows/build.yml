@@ -62,7 +62,7 @@ jobs:
           # Every library is checked against gradle/verification-metadata.xml (refreshed only by deps.yml);
           # the build fails on any changed library, and without the file.
           test -f gradle/verification-metadata.xml || { echo "gradle/verification-metadata.xml is missing" | tee build.log; exit 1; }
-          ./gradlew --no-daemon assembleRelease 2>&1 | tee build.log
+          ./gradlew --no-daemon :app:testReleaseUnitTest --tests 'ua.pysanka.*' assembleRelease 2>&1 | tee build.log
 
       - name: Check permissions (no internet, only what is expected)
         shell: bash
