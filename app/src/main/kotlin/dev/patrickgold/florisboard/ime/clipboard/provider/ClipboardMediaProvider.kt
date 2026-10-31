@@ -44,8 +44,10 @@ import androidx.core.net.toUri
  * Database accesses are performed async.
  */
 class ClipboardMediaProvider : ContentProvider() {
+    @Volatile
     private var clipboardFilesDao: ClipboardFilesDao? = null
-    private val cachedFileInfos: HashMap<Long, ClipboardFileInfo> = hashMapOf()
+    // Pysanka: filled in the background and read from the main thread
+    private val cachedFileInfos = java.util.concurrent.ConcurrentHashMap<Long, ClipboardFileInfo>()
     private val ioScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     companion object {
@@ -98,6 +100,9 @@ class ClipboardMediaProvider : ContentProvider() {
         return true
     }
 
+    /** Pysanka: opens the encrypted file list now (call off the main thread), so later calls never wait. */
+    fun warmUp(): Boolean = initBlocking()
+
     override fun onCreate(): Boolean {
         return true
     }
@@ -126,7 +131,7 @@ class ClipboardMediaProvider : ContentProvider() {
         return when (Matcher.match(uri)) {
             IMAGE_CLIP_ITEM, VIDEO_CLIP_ITEM -> {
                 init()
-                cachedFileInfos.getOrDefault(ContentUris.parseId(uri), null)?.mimeTypes?.getOrNull(0)
+                cachedFileInfos[ContentUris.parseId(uri)]?.mimeTypes?.getOrNull(0)
             }
             IMAGE_CLIPS_TABLE -> "${ContentResolver.CURSOR_DIR_BASE_TYPE}/vnd.florisboard.image_clip_table"
             VIDEO_CLIPS_TABLE -> "${ContentResolver.CURSOR_DIR_BASE_TYPE}/vnd.florisboard.video_clip_table"
@@ -138,7 +143,7 @@ class ClipboardMediaProvider : ContentProvider() {
         return when (Matcher.match(uri)) {
             IMAGE_CLIP_ITEM, VIDEO_CLIP_ITEM -> {
                 init()
-                cachedFileInfos.getOrDefault(ContentUris.parseId(uri), null)?.mimeTypes?.toTypedArray()
+                cachedFileInfos[ContentUris.parseId(uri)]?.mimeTypes?.toTypedArray()
             }
             else -> null
         }

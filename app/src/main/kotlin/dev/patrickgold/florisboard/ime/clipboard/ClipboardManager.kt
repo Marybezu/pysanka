@@ -157,9 +157,13 @@ class ClipboardManager(
                 // Pysanka: open the encrypted file list now, in the background, so pasting an
                 // image later (a call on the main thread) never waits for it
                 runCatching {
-                    context.applicationContext.contentResolver.getType(
-                        dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider.IMAGE_CLIPS_URI,
-                    )
+                    val client = context.applicationContext.contentResolver
+                        .acquireContentProviderClient(dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider.AUTHORITY)
+                    try {
+                        (client?.localContentProvider as? dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider)?.warmUp()
+                    } finally {
+                        client?.close()
+                    }
                 }
                 withContext(Dispatchers.Main) {
                     clipHistoryDao?.getAllAsFlow()?.collect { items ->
@@ -271,7 +275,11 @@ class ClipboardManager(
                         systemPrimaryClip.description.hasMimeType("video/*") &&
                         !systemPrimaryClip.description.hasMimeType("image/*")
                     val keep = !isVideo && mayKeep(ClipboardItem.isSensitive(systemPrimaryClip), incognito, passwordField)
-                    val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = keep)
+                    val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = keep).let {
+                        // Kept although copied in a password field ("Don't keep passwords" off): mark it
+                        // sensitive, so it is masked and the timed clean-up of sensitive items applies
+                        if (passwordField && !it.isSensitive) it.copy(isSensitive = true) else it
+                    }
                     primaryClip = item
                     // An image that could not be stored (too large, unreadable) gets id 0: not kept
                     val stored = item.type == ItemType.TEXT ||
@@ -287,7 +295,9 @@ class ClipboardManager(
      */
     private fun addNewClip(item: ClipboardItem) {
         // Pysanka: see mayKeep (a copy from the keyboard itself happens in the field open right now)
-        if (mayKeep(item.isSensitive, fieldIncognito, fieldPassword)) insertOrMoveBeginning(item)
+        if (mayKeep(item.isSensitive, fieldIncognito, fieldPassword)) {
+            insertOrMoveBeginning(if (fieldPassword && !item.isSensitive) item.copy(isSensitive = true) else item)
+        }
         updatePrimaryClip(item)
     }
 

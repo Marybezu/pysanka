@@ -83,11 +83,6 @@ object ClipboardFileStorage {
     /** Pysanka: each file is sealed to its own id, so two stored files cannot be swapped unnoticed. */
     private fun label(id: Long): ByteArray = java.nio.ByteBuffer.allocate(8).putLong(id).array()
 
-    /** Pysanka: removes decrypted copies left behind if the app stopped while handing one out. */
-    fun clearOpenCopies(context: Context) {
-        File(context.noBackupFilesDir, OPEN_DIR).listFiles()?.forEach { it.delete() }
-    }
-
     /** Pysanka: the original bytes of a stored file. */
     fun openStream(context: Context, id: Long): InputStream {
         check(SecureClipboard.ensureOpen(context)) { "Clipboard is locked" }

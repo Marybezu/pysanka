@@ -107,8 +107,9 @@ object ClipboardVault {
         } catch (e: UserNotAuthenticatedException) {
             State.Locked
         } catch (e: InvalidKeyException) {
-            // The phone is locked (the key works only while it is unlocked)
-            State.Locked
+            // Usually the phone is locked (the key works only while it is unlocked); if it is not,
+            // this counts as a failed attempt (missOrLost checks the lock itself)
+            missOrLost(context, ks, file, wipe)
         } catch (e: AEADBadTagException) {
             missOrLost(context, ks, file, wipe)
         } catch (e: IllegalArgumentException) {
