@@ -54,7 +54,8 @@ fun ImportExtensionBox(navController: NavController) {
             text = stringRes(id = R.string.ext__home__info),
             style = MaterialTheme.typography.bodySmall,
         )
-        Row(
+        // Pysanka: one button under the other, so long words (Ukrainian "Імпортувати") are never squeezed
+        androidx.compose.foundation.layout.Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 6.dp),
@@ -66,7 +67,6 @@ fun ImportExtensionBox(navController: NavController) {
                 icon = Icons.Default.Shop,
                 text = stringRes(id = R.string.ext__home__visit_store),
             )
-            Spacer(modifier = Modifier.weight(1f))
             FlorisTextButton(
                 onClick = {
                     navController.navigate(Routes.Ext.Import(ExtensionImportScreenType.EXT_ANY, null))
