@@ -86,6 +86,9 @@ data class QuickActionArrangement(
         val Default = QuickActionArrangement(
             stickyAction = QuickAction.InsertK3Descriptor(ImeActions.ExternalVoiceInput),
             dynamicActions = listOf(
+                // Pysanka: text from a photo / the camera come first
+                QuickAction.InsertK3Descriptor(ImeActions.PysankaTextFromPhoto),
+                QuickAction.InsertK3Descriptor(ImeActions.PysankaTextFromCamera),
                 QuickAction.InsertK3Descriptor(ImeActions.ToggleFloatingWindow),
                 QuickAction.InsertK3Descriptor(ImeActions.ToggleResizeMode),
                 QuickAction.InsertK3Descriptor(ImeActions.Undo),

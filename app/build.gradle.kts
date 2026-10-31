@@ -74,6 +74,11 @@ configure<ApplicationExtension> {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        // Pysanka: 64-bit ARM only (also keeps other ABIs of bundled native libraries out of the APK)
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
+
         buildConfigField("String", "BUILD_COMMIT_HASH", "\"${getGitCommitHash().get()}\"")
         buildConfigField("String", "FLADDONS_API_VERSION", "\"v~draft2\"")
         buildConfigField("String", "FLADDONS_STORE_URL", "\"beta.addons.florisboard.org\"")
@@ -202,6 +207,11 @@ dependencies {
     implementation(libs.sqlcipher.android) { artifact { type = "aar" } }
     // Pysanka: Argon2id (password -> key) for clipboard copies
     implementation(libs.bouncycastle.bcprov)
+    // Pysanka: runs the text recognition models on the phone
+    implementation(libs.onnxruntime.android)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
     implementation(libs.androidx.window.core)
     implementation(libs.cache4k)
     implementation(libs.k3lp.core)

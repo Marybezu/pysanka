@@ -463,7 +463,11 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                             .florisScrollbar(lazyListState, isVertical = true).weight(1f),
                         state = lazyListState,
                     ) {
-                        items(subtypePresets) { subtypePreset ->
+                        // Pysanka: the languages people here write in most come first, then the rest
+                        val orderedPresets = subtypePresets.sortedWith(
+                            compareBy({ ua.pysanka.settings.PopularLanguages.rank(it.locale.languageTag()) }, { it.locale.displayName() }),
+                        )
+                        items(orderedPresets) { subtypePreset ->
                             JetPrefListItem(
                                 modifier = Modifier.clickable {
                                     subtypeEditor.applySubtype(subtypePreset.toSubtype())

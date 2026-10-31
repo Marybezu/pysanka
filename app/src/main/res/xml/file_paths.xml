@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
+    <!-- Pysanka: a photo the system camera takes for text recognition (deleted right after) -->
     <cache-path
-        name="backup"
-        path="backup-and-restore/"/>
+        name="ocr"
+        path="ocr/"/>
 </paths>

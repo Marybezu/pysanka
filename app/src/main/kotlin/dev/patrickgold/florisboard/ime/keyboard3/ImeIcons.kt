@@ -19,6 +19,10 @@ package dev.patrickgold.florisboard.ime.keyboard3
 import org.k3lp.lib.text.K3Descriptor
 
 object ImeIcons {
+    // Pysanka
+    val PysankaTextFromPhoto = flIcon("pysanka_text_from_photo")
+    val PysankaTextFromCamera = flIcon("pysanka_text_from_camera")
+
     val ArrowDown = flIcon("arrow_down")
     val ArrowLeft = flIcon("arrow_left")
     val ArrowRight = flIcon("arrow_right")

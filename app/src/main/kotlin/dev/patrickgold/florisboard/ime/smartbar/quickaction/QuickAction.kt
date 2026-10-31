@@ -99,6 +99,8 @@ fun QuickAction.computeDisplayName(imeState: ImeState): String {
             ImeActions.Settings -> R.string.quick_action__settings
             ImeActions.ShowMediaPanel -> R.string.quick_action__ime_ui_mode_media
             ImeActions.ShowClipboardPanel -> R.string.quick_action__ime_ui_mode_clipboard
+            ImeActions.PysankaTextFromPhoto -> R.string.pysanka__ocr__from_photo
+            ImeActions.PysankaTextFromCamera -> R.string.pysanka__ocr__from_camera
             ImeActions.HideImeWindow -> R.string.quick_action__ime_hide_ui
             ImeActions.SwitchToNextSubtype -> R.string.quick_action__language_switch
             ImeActions.ToggleActionsOverflow -> R.string.quick_action__toggle_actions_overflow
@@ -139,6 +141,8 @@ fun QuickAction.computeTooltip(imeState: ImeState): String {
             ImeActions.Settings -> R.string.quick_action__settings__tooltip
             ImeActions.ShowMediaPanel -> R.string.quick_action__ime_ui_mode_media__tooltip
             ImeActions.ShowClipboardPanel -> R.string.quick_action__ime_ui_mode_clipboard__tooltip
+            ImeActions.PysankaTextFromPhoto -> R.string.pysanka__ocr__from_photo__tooltip
+            ImeActions.PysankaTextFromCamera -> R.string.pysanka__ocr__from_camera__tooltip
             ImeActions.HideImeWindow -> R.string.quick_action__ime_hide_ui__tooltip
             ImeActions.SwitchToNextSubtype -> R.string.quick_action__language_switch__tooltip
             ImeActions.ToggleActionsOverflow -> R.string.quick_action__toggle_actions_overflow__tooltip

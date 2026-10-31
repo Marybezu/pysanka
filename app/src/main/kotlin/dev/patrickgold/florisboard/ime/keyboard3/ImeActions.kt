@@ -72,6 +72,10 @@ object ImeActions {
 
     val ExternalVoiceInput = flAction("external_voice_input")
 
+    // Pysanka: text from a photo / from the camera
+    val PysankaTextFromPhoto = flAction("pysanka_text_from_photo")
+    val PysankaTextFromCamera = flAction("pysanka_text_from_camera")
+
     val NoopDragMarker = flAction("noop_drag_marker")
     val NoopSpacer = flAction("noop_spacer")
 
@@ -109,6 +113,8 @@ object ImeActions {
         CompactLayoutToRight,
         ToggleResizeMode,
         ExternalVoiceInput,
+        PysankaTextFromPhoto,
+        PysankaTextFromCamera,
     )
 
     val Repeatable = listOf(

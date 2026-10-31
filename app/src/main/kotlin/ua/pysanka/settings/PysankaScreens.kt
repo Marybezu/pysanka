@@ -183,6 +183,7 @@ fun PysankaPrivacyScreen() = FlorisScreen {
                 R.string.pysanka__privacy__fact_encrypted,
                 R.string.pysanka__privacy__fact_backup,
                 R.string.pysanka__privacy__fact_incognito,
+                R.string.pysanka__privacy__fact_ocr,
             )) {
                 androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -194,6 +195,11 @@ fun PysankaPrivacyScreen() = FlorisScreen {
             prefs.clipboard.historySkipSensitive,
             title = stringRes(R.string.pysanka__clipboard__skip_sensitive__label),
             summary = stringRes(R.string.pysanka__clipboard__skip_sensitive__summary),
+        )
+        SwitchPreference(
+            prefs.pysankaOcr.liveCamera,
+            title = stringRes(R.string.pysanka__ocr__live_camera),
+            summary = stringRes(R.string.pysanka__ocr__live_camera_summary),
         )
         ListPreference(
             prefs.suggestion.incognitoMode,

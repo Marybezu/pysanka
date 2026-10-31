@@ -84,6 +84,16 @@ open class ImeEditor(
         ic.endBatchEdit()
     }
 
+    /** Pysanka: puts text at the cursor as it is (text picked from a photo). */
+    fun pysankaInsertText(text: String): Boolean {
+        val ic = ic.get() ?: return false
+        ic.beginBatchEdit()
+        ic.finishComposingText()
+        val ok = ic.commitText(text, 1)
+        ic.endBatchEdit()
+        return ok
+    }
+
     fun deleteSurroundingText(charsBefore: Int, charsAfter: Int) {
         val ic = ic.get() ?: return
         ic.deleteSurroundingText(charsBefore, charsAfter)

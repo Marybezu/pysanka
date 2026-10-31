@@ -1,15 +1,15 @@
-**Писанка 0.3.0** — приватна клавіатура для Android без доступу до інтернету. Тестова версія.
+**Писанка 0.4.0** — приватна клавіатура для Android без доступу до інтернету. Тестова версія.
 
-- 🏷️ **Теги в буфері.** Повзунок над історією: «Усе», автоматичні теги (Зображення, Посилання, Номери, Коди, Пошта) і ваші кольорові теги. Тег на запис — довге натискання → «Теги». Керування — Налаштування → Буфер → «Теги буфера». Копія буфера переносить теги.
-- 🧭 **Простіші налаштування.** Головна з плитками, що показують стан: Мови, Набір, Вигляд, Звук і вібрація, Буфер, Емодзі, окремо **Приватність**. Рідкісне — у «Більше». Вирізано інструменти розробника, порожні екрани, зайві технічні параметри; зрозуміліші українські назви.
-- 🔒 Як і раніше: без інтернету, буфер зашифровано, «Не зберігати паролі» на ваш вибір, імпорт буфера з резервної копії FlorisBoard (Буфер → Копія буфера).
+- 📷 **Текст із фото й камери.** Кнопки на панелі над клавіатурою: вибираєте фото (без дозволу на галерею — Писанка бачить лише вибране) або наводите камеру, торкаєтеся потрібних слів → «Вставити», «Копіювати» чи «В історію». Розпізнавання на телефоні, без інтернету: українська, англійська й більшість європейських мов, змішаний текст теж.
+- 🎥 **Жива камера — на ваш вибір** (Налаштування → Приватність). Без неї: «Останні фото» або камера телефона.
+- 🌍 **Мови:** при додаванні мови спершу популярні (польська, німецька, чеська, румунська, італійська, іспанська…); нові розкладки — нідерландська й естонська.
 
 📲 Завантажте файл .apk нижче й відкрийте його на телефоні. 🔄 Для оновлень — Obtainium: «Додати застосунок» → `github.com/Marybezu/pysanka`.
 
 ---
 
-**Pysanka 0.3.0** — a private keyboard for Android with no internet access. Test version.
+**Pysanka 0.4.0** — a private keyboard for Android with no internet access. Test version.
 
-- Clipboard tags: a slider above the history with automatic tags (images, links, phone numbers, codes, emails) and your own coloured tags; carried by the clipboard copy.
-- Simpler settings: a home with tiles showing their state, a Privacy section, rare settings under "More"; developer tools and empty screens removed.
-- Still: no internet, encrypted clipboard, "Don't keep passwords" is your choice, clipboard import from a FlorisBoard backup.
+- Text from a photo or the camera: pick a photo (no gallery permission) or point the camera, tap the words, then insert, copy or keep in the history. On-device recognition for Ukrainian, English and most European languages, mixed text included.
+- Live camera is optional (Settings → Privacy); without it, recent photos or the phone's camera app.
+- Languages: popular ones listed first; new Dutch and Estonian layouts.

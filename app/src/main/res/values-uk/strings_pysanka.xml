@@ -121,4 +121,27 @@
     <string name="pysanka__more__smartbar_summary">Підказки й швидкі дії над клавішами</string>
     <string name="pysanka__more__extensions_summary">Теми, розкладки й мовні пакети з файлу</string>
     <string name="pysanka__tag__nothing">З цим тегом поки нічого немає</string>
+    <string name="pysanka__ocr__title">Текст із фото</string>
+    <string name="pysanka__ocr__from_photo">Текст із фото</string>
+    <string name="pysanka__ocr__from_photo__tooltip">Вибрати фото й виділити текст</string>
+    <string name="pysanka__ocr__from_camera">Текст із камери</string>
+    <string name="pysanka__ocr__from_camera__tooltip">Навести камеру на текст і виділити його</string>
+    <string name="pysanka__ocr__choose_title">Текст із камери</string>
+    <string name="pysanka__ocr__choose_hint">Живу камеру вимкнено (Налаштування → Приватність). Можна вибрати свіже фото або зняти камерою телефона й потім вибрати знімок.</string>
+    <string name="pysanka__ocr__recent_photos">Останні фото</string>
+    <string name="pysanka__ocr__take_photo">Зняти</string>
+    <string name="pysanka__ocr__close">Закрити</string>
+    <string name="pysanka__ocr__working">Читаю текст…</string>
+    <string name="pysanka__ocr__nothing">На цьому зображенні тексту не знайдено.</string>
+    <string name="pysanka__ocr__failed">Не вдалося прочитати зображення.</string>
+    <string name="pysanka__ocr__selected">Вибрано слів: {n} з {all}. Торкайтеся слів або проводьте по них, щоб змінити.</string>
+    <string name="pysanka__ocr__all">Усе</string>
+    <string name="pysanka__ocr__none">Нічого</string>
+    <string name="pysanka__ocr__insert">Вставити</string>
+    <string name="pysanka__ocr__copy">Копіювати</string>
+    <string name="pysanka__ocr__to_history">В історію</string>
+    <string name="pysanka__ocr__live_hint">Наведіть на текст і натисніть кнопку</string>
+    <string name="pysanka__ocr__live_camera">Жива камера для тексту</string>
+    <string name="pysanka__ocr__live_camera_summary">Навели камеру — і одразу вибираєте текст. Потрібен дозвіл на камеру; без нього працюють останні фото й камера телефона.</string>
+    <string name="pysanka__privacy__fact_ocr">Текст із фото розпізнається на телефоні; Писанка бачить лише те фото, яке ви вибрали</string>
 </resources>
