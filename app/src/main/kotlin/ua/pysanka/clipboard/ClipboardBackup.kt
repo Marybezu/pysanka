@@ -206,6 +206,8 @@ object ClipboardBackup {
                                 zip.closeEntry()
                             }
                             o.put("type", "image").put("file", name)
+                            // Text recognised in a screenshot travels with it
+                            item.text?.let { o.put("text", it) }
                         }
                         list.put(o)
                         count++
@@ -296,7 +298,8 @@ object ClipboardBackup {
                     // The same file named twice is used once
                     if (!name.startsWith(IMAGES) || !files.add(name)) continue
                     val mime = o.optJSONArray("mime")?.let { a -> List(a.length()) { a.optString(it) } } ?: emptyList()
-                    candidates.add(Candidate(imageItem(mime, time, pinned, sensitive), name, "Image", names))
+                    val seen = if (o.has("text") && !o.isNull("text")) o.optString("text").take(ua.pysanka.clipboard.Screenshots.MAX_TEXT) else null
+                    candidates.add(Candidate(imageItem(mime, time, pinned, sensitive, seen), name, "Image", names))
                 }
             }
         }
@@ -488,8 +491,8 @@ object ClipboardBackup {
         mimeTypes = listOf("text/plain"), isSensitive = sensitive,
     )
 
-    private fun imageItem(mime: List<String>, time: Long, pinned: Boolean, sensitive: Boolean) = ClipboardItem(
-        type = ItemType.IMAGE, text = null, uri = null, creationTimestampMs = time, isPinned = pinned,
+    private fun imageItem(mime: List<String>, time: Long, pinned: Boolean, sensitive: Boolean, text: String? = null) = ClipboardItem(
+        type = ItemType.IMAGE, text = text, uri = null, creationTimestampMs = time, isPinned = pinned,
         mimeTypes = mime.filter { it.startsWith("image/") }.ifEmpty { listOf("image/png") }, isSensitive = sensitive,
     )
 

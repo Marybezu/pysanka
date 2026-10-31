@@ -175,6 +175,8 @@ class ClipboardManager(
                         client?.close()
                     }
                 }
+                // Pysanka: new screenshots into the history, if the owner turned that on
+                ua.pysanka.clipboard.Screenshots.follow(context.applicationContext, this@ClipboardManager, ioScope)
                 withContext(Dispatchers.Main) {
                     clipHistoryDao?.getAllAsFlow()?.collect { items ->
                         updateHistory(items)
@@ -506,6 +508,52 @@ class ClipboardManager(
             pending.forEach { runCatching { discard(it) } }
             throw t
         }
+    }
+
+    // ------------------------------------------------------------ Pysanka: screenshots
+
+    /** Whether the encrypted history is open (it stays shut until the phone is first unlocked). */
+    fun isHistoryOpen(): Boolean = clipHistoryDao != null
+
+    /**
+     * Pysanka: stores the screenshot at [uri] encrypted and adds it to the history with [tagId]
+     * (see [ua.pysanka.clipboard.Screenshots]). The system clipboard is not changed. Returns the
+     * new item's id, or null if it was not added. Call off the main thread.
+     */
+    fun addScreenshot(context: Context, uri: android.net.Uri, mime: String, name: String, tagId: Long?): Long? {
+        val dao = clipHistoryDao ?: return null
+        if (!prefs.clipboard.historyEnabled.get()) return null
+        val stored = context.contentResolver.openInputStream(uri)?.use {
+            dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage.storeStream(appContext, it)
+        } ?: return null
+        try {
+            val client = checkNotNull(appContext.contentResolver.acquireContentProviderClient(
+                dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider.AUTHORITY))
+            val provider = try {
+                client.localContentProvider as dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider
+            } finally {
+                client.close()
+            }
+            val itemUri = provider.registerImported(
+                dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileInfo(stored.id, name.take(200), stored.size, 0, listOf(mime)),
+            )
+            val item = ClipboardItem(
+                type = ItemType.IMAGE, text = null, uri = itemUri, creationTimestampMs = System.currentTimeMillis(),
+                isPinned = false, mimeTypes = listOf(mime), isSensitive = false,
+            ).let { if (tagId != null) it.withTagIds(listOf(tagId)) else it }
+            return dao.insert(item)
+        } catch (t: Throwable) {
+            // Not in the history: its file goes too
+            runCatching { dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage.deleteById(appContext, stored.id) }
+            throw t
+        }
+    }
+
+    /** Pysanka: keeps the text recognised on a screenshot with it, for finding it later. */
+    fun setImageText(id: Long, text: String) {
+        val dao = clipHistoryDao ?: return
+        val item = dao.getAll().firstOrNull { it.id == id && it.type == ItemType.IMAGE } ?: return
+        dao.update(item.copy(text = text))
     }
 
     fun restoreHistory(items: List<ClipboardItem>) {

@@ -143,5 +143,10 @@
     <string name="pysanka__ocr__live_hint">Наведіть на текст і натисніть кнопку</string>
     <string name="pysanka__ocr__live_camera">Жива камера для тексту</string>
     <string name="pysanka__ocr__live_camera_summary">Наведіть камеру й одразу вибирайте текст. Потрібен дозвіл на камеру; без нього працюють останні фото й камера телефона.</string>
-    <string name="pysanka__privacy__fact_ocr">Текст із фото й камери розпізнається на телефоні; з галереї Писанка бачить лише фото, яке ви вибрали</string>
+    <string name="pysanka__privacy__fact_ocr">Текст із фото й камери розпізнається на телефоні; з галереї Писанка бачить лише фото, яке ви вибрали (і нові скріншоти, якщо ви це ввімкнули)</string>
+    <string name="pysanka__screenshots__tag">Скріншоти</string>
+    <string name="pysanka__screenshots__label">Скріншоти в історію</string>
+    <string name="pysanka__screenshots__summary">Кожен новий скріншот потрапляє в історію зашифрованим, із тегом «Скріншоти» й розпізнаним на телефоні текстом. Старіші скріншоти не додаються. Потрібен доступ до фото; на GrapheneOS через Storage Scopes можна дозволити лише теку зі скріншотами.</string>
+    <string name="pysanka__screenshots__no_access">Немає доступу до фото: торкніться, щоб дозволити</string>
+    <string name="pysanka__screenshots__denied">Без доступу до фото скріншоти не додаються. Дозволити можна в налаштуваннях застосунку.</string>
 </resources>

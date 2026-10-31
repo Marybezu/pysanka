@@ -4,13 +4,13 @@
 
 Приватна клавіатура для Android без доступу до інтернету. Набір, swipe, буфер обміну, а за бажанням — локальний ШІ, що редагує текст прямо на телефоні. Українська й англійська в інтерфейсі, розкладки для багатьох мов. Безкоштовно, без реклами й акаунтів.
 
-> **Статус: у розробці.** Першого випуску ще немає. Помилки й побажання: [Issues](../../issues).
+> **Статус: у розробці, тестові версії** — у [Releases](../../releases). Помилки й побажання: [Issues](../../issues).
 
 ## Що буде
 
 - 🔒 **Приватність.** Дозволу на інтернет немає, і збірка зупиняється, якщо він з'явиться. Нічого не потрапляє в хмарну копію чи на інший телефон.
-- 📋 **Зашифрований буфер** ✅ Історія тексту й зображень зашифрована (SQLCipher + AES-256, ключ в апаратному сховищі). «Не зберігати паролі» — на ваш вибір. Копія буфера під паролем та імпорт із FlorisBoard. Кольорові теги й автотеги (посилання, номери, коди). Далі: пошук, шаблони, скріншоти автоматично.
-- 🔍 **Текст із фото й скріншотів** розпізнається на телефоні.
+- 📋 **Зашифрований буфер** ✅ Історія тексту й зображень зашифрована (SQLCipher + AES-256, ключ в апаратному сховищі). «Не зберігати паролі» — на ваш вибір. Копія буфера під паролем та імпорт із FlorisBoard. Кольорові теги й автотеги (посилання, номери, коди). Нові скріншоти автоматично, з розпізнаним текстом (за бажанням). Далі: пошук, шаблони.
+- 🔍 **Текст із фото й камери** ✅ розпізнається на телефоні.
 - 🤖 **Локальний ШІ (Gemma 4), за бажанням:** стиль, граматика й пунктуація, підсумок, переклад, перевірка русизмів, інструменти для соцмереж.
 - 🎙️ **Диктування** на телефоні (Whisper), за бажанням.
 
@@ -31,13 +31,14 @@ Kotlin · Jetpack Compose · Rust. Сторонні матеріали — [NOTI
 
 A private keyboard for Android with no internet access. Typing, swipe, clipboard and, if you wish, an on-device AI that edits text right on the phone. Ukrainian and English interface, layouts for many languages. Free, no ads, no accounts.
 
-> **Status: in development.** No release yet. Bugs and wishes: [Issues](../../issues).
+> **Status: in development, test versions** in [Releases](../../releases). Bugs and wishes: [Issues](../../issues).
 
 ## Privacy
 
 - No internet permission; the build fails if one appears. Nothing goes to a cloud backup or to another phone.
-- Encrypted clipboard history (SQLCipher + AES-256, hardware-backed key); "Don't keep passwords" is your choice; password-protected clipboard copy and import from FlorisBoard. Coloured and automatic tags. Planned: search, snippets, screenshots automatically.
-- Planned, optional: on-device AI (Gemma 4) for style, grammar, summaries, translation and social-media tools; on-device dictation (Whisper); text recognition from photos and screenshots.
+- Encrypted clipboard history (SQLCipher + AES-256, hardware-backed key); "Don't keep passwords" is your choice; password-protected clipboard copy and import from FlorisBoard. Coloured and automatic tags. New screenshots automatically, with recognised text (optional). Planned: search, snippets.
+- Planned, optional: on-device AI (Gemma 4) for style, grammar, summaries, translation and social-media tools; on-device dictation (Whisper).
+- On-device text recognition from photos and the camera.
 
 Today this is a keyboard built on FlorisBoard with simpler settings, stronger privacy and an encrypted clipboard with tags. Features will arrive step by step.
 
