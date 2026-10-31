@@ -55,24 +55,27 @@ object ClipboardFileStorage {
      * @return The file's name, which is a unique long, and its original size
      */
     @Synchronized
-    fun cloneUri(context: Context, uri: Uri): Cloned {
+    fun cloneUri(context: Context, uri: Uri): Cloned =
+        context.contentResolver.openInputStream(uri)!!.use { storeStream(context, it) }
+
+    /** Pysanka: stores (encrypted) whatever [input] holds, up to [MAX_IMAGE_BYTES]; also used by import. */
+    @Synchronized
+    fun storeStream(context: Context, input: InputStream): Cloned {
         check(SecureClipboard.ensureOpen(context)) { "Clipboard is locked" }
         val id = System.nanoTime()
         val file = context.clipboardFilesDir.subFile(id.toString())
         var size = 0L
         try {
-            context.contentResolver.openInputStream(uri)!!.use { raw ->
-                val counting = object : FilterInputStream(raw) {
-                    override fun read(): Int = super.read().also { if (it >= 0) count(1) }
-                    override fun read(b: ByteArray, off: Int, len: Int): Int =
-                        super.read(b, off, len).also { if (it > 0) count(it.toLong()) }
-                    private fun count(n: Long) {
-                        size += n
-                        if (size > MAX_IMAGE_BYTES) throw java.io.IOException("Too large for the clipboard history")
-                    }
+            val counting = object : FilterInputStream(input) {
+                override fun read(): Int = super.read().also { if (it >= 0) count(1) }
+                override fun read(b: ByteArray, off: Int, len: Int): Int =
+                    super.read(b, off, len).also { if (it > 0) count(it.toLong()) }
+                private fun count(n: Long) {
+                    size += n
+                    if (size > MAX_IMAGE_BYTES) throw java.io.IOException("Too large for the clipboard history")
                 }
-                file.outputStream().use { out -> SealedFile.seal(ClipboardVault.fileKey(), label(id), counting, out) }
             }
+            file.outputStream().use { out -> SealedFile.seal(ClipboardVault.fileKey(), label(id), counting, out) }
         } catch (e: Exception) {
             file.delete()
             throw e

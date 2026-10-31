@@ -57,6 +57,76 @@ public final class SealedFile {
         Arrays.fill(next, (byte) 0);
     }
 
+    /**
+     * An output stream that seals everything written to it into {@code out}, in the same format as
+     * {@link #seal}. Closing it writes the last chunk and closes {@code out}; without close the file
+     * is incomplete and will not open.
+     */
+    public static OutputStream writer(SecretKey key, byte[] label, OutputStream out) throws IOException {
+        return new Writer(key, label.clone(), out);
+    }
+
+    private static final class Writer extends OutputStream {
+        private final SecretKey key;
+        private final byte[] label;
+        private final byte[] prefix = new byte[PREFIX];
+        private final OutputStream out;
+        private final byte[] buf = new byte[CHUNK];
+        private int len;
+        private long index;
+        private boolean closed;
+
+        Writer(SecretKey key, byte[] label, OutputStream out) throws IOException {
+            this.key = key;
+            this.label = label;
+            this.out = out;
+            RANDOM.nextBytes(prefix);
+            out.write(MAGIC);
+            out.write(prefix);
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            write(new byte[] {(byte) b}, 0, 1);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int n) throws IOException {
+            if (closed) throw new IOException("Closed");
+            while (n > 0) {
+                // A full buffer is sealed only once more data arrives: only then is it known not to be the last
+                if (len == CHUNK) emit(false);
+                int m = Math.min(n, CHUNK - len);
+                System.arraycopy(b, off, buf, len, m);
+                len += m;
+                off += m;
+                n -= m;
+            }
+        }
+
+        private void emit(boolean last) throws IOException {
+            try {
+                out.write(cipher(Cipher.ENCRYPT_MODE, key, prefix, index, last, label).doFinal(buf, 0, len));
+            } catch (GeneralSecurityException e) {
+                throw new IOException(e);
+            }
+            index++;
+            len = 0;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (closed) return;
+            closed = true;
+            try {
+                emit(true);
+            } finally {
+                Arrays.fill(buf, (byte) 0);
+                out.close();
+            }
+        }
+    }
+
     /** A stream of the original bytes. Throws IOException on a wrong key or any change to the file. */
     public static InputStream open(SecretKey key, byte[] label, InputStream in) throws IOException {
         byte[] head = new byte[MAGIC.length + PREFIX];

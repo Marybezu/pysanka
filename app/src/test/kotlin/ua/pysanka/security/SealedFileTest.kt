@@ -25,6 +25,15 @@ class SealedFileTest : FunSpec({
         }
     }
 
+    for (size in listOf(0, chunk, 2 * chunk + 5)) {
+        test("streaming writer, $size bytes, written in small pieces") {
+            val data = Random(size + 100).nextBytes(size)
+            val out = ByteArrayOutputStream()
+            SealedFile.writer(key, label, out).use { w -> data.toList().chunked(1000).forEach { w.write(it.toByteArray()) } }
+            SealedFile.readAll(key, label, ByteArrayInputStream(out.toByteArray())) shouldBe data
+        }
+    }
+
     test("wrong key fails") {
         val sealed = seal(Random(1).nextBytes(1000))
         shouldThrow<IOException> { SealedFile.readAll(otherKey, label, ByteArrayInputStream(sealed)) }

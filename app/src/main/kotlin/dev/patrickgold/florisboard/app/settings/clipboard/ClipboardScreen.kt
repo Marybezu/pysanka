@@ -18,6 +18,8 @@ package dev.patrickgold.florisboard.app.settings.clipboard
 
 import androidx.compose.runtime.Composable
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.clipboard.CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
@@ -25,6 +27,7 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
+import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import org.florisboard.lib.compose.pluralsRes
@@ -35,6 +38,8 @@ import org.florisboard.lib.compose.stringRes
 fun ClipboardScreen() = FlorisScreen {
     title = stringRes(R.string.settings__clipboard__title)
     previewFieldVisible = true
+
+    val navController = LocalNavController.current
 
     content {
         SwitchPreference(
@@ -164,6 +169,15 @@ fun ClipboardScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label),
                 summary = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary),
                 enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
+            )
+        }
+
+        // Pysanka: a password-protected copy of the history, and import from FlorisBoard
+        PreferenceGroup(title = stringRes(R.string.pysanka__clipboard_copy__title)) {
+            Preference(
+                title = stringRes(R.string.pysanka__clipboard_copy__title),
+                summary = stringRes(R.string.pysanka__clipboard_copy__summary),
+                onClick = { navController.navigate(Routes.Settings.ClipboardCopy) },
             )
         }
     }

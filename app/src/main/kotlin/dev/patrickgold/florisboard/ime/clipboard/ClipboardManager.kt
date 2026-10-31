@@ -417,6 +417,37 @@ class ClipboardManager(
      *
      * @param items the [ClipboardItem] list with the new items
      */
+    /**
+     * Pysanka: adds imported items, waiting (a few seconds at most) for the encrypted history to
+     * open. Text already in the history is not added twice; passwords are skipped while
+     * "Don't keep passwords" is on. Returns how many were added and how many skipped.
+     */
+    suspend fun importItems(items: List<ClipboardItem>): Pair<Int, Int> = withContext(Dispatchers.IO) {
+        var waited = 0
+        while (clipHistoryDao == null && waited < 10_000) {
+            delay(200)
+            waited += 200
+        }
+        val dao = checkNotNull(clipHistoryDao) { "Clipboard is locked" }
+        val skipSensitive = prefs.clipboard.historySkipSensitive.get()
+        val existingTexts = dao.getAll().filter { it.type == ItemType.TEXT }.mapNotNull { it.text }.toHashSet()
+        var added = 0
+        var skipped = 0
+        for (item in items) {
+            val duplicate = item.type == ItemType.TEXT && item.text in existingTexts
+            if (duplicate || item.type == ItemType.VIDEO || (item.isSensitive && skipSensitive)) {
+                skipped++
+                // An image stored for an item that is not added must not stay behind
+                if (item.type != ItemType.TEXT) item.uri?.let { runCatching { appContext.contentResolver.delete(it, null, null) } }
+                continue
+            }
+            dao.insert(item.copy(id = 0))
+            item.text?.let { existingTexts.add(it) }
+            added++
+        }
+        added to skipped
+    }
+
     fun restoreHistory(items: List<ClipboardItem>) {
         ioScope.launch {
             val currentHistory = currentHistory.all

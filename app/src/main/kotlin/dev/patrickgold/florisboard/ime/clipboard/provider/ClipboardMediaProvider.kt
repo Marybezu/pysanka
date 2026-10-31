@@ -103,6 +103,17 @@ class ClipboardMediaProvider : ContentProvider() {
     /** Pysanka: opens the encrypted file list now (call off the main thread), so later calls never wait. */
     fun warmUp(): Boolean = initBlocking()
 
+    /**
+     * Pysanka: records an image that import stored with [ClipboardFileStorage.storeStream].
+     * Call off the main thread. Returns its content URI.
+     */
+    fun registerImported(info: ClipboardFileInfo): Uri {
+        check(initBlocking()) { "Clipboard is locked" }
+        clipboardFilesDao!!.insert(info)
+        cachedFileInfos[info.id] = info
+        return ContentUris.withAppendedId(IMAGE_CLIPS_URI, info.id)
+    }
+
     override fun onCreate(): Boolean {
         return true
     }

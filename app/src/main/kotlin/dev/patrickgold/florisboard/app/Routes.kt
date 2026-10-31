@@ -173,6 +173,11 @@ object Routes {
         @Deeplink("settings/clipboard")
         object Clipboard
 
+        // Pysanka: export and import of the clipboard history
+        @Serializable
+        @Deeplink("settings/clipboard/copy")
+        object ClipboardCopy
+
         @Serializable
         @Deeplink("settings/media")
         object Media
@@ -317,6 +322,7 @@ object Routes {
             composableWithDeepLink(Settings.Gestures::class) { GesturesScreen() }
 
             composableWithDeepLink(Settings.Clipboard::class) { ClipboardScreen() }
+            composableWithDeepLink(Settings.ClipboardCopy::class) { ua.pysanka.clipboard.ClipboardBackupScreen() }
 
             composableWithDeepLink(Settings.Media::class) { MediaScreen() }
 

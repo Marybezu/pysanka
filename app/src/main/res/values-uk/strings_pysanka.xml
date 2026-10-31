@@ -2,4 +2,28 @@
 <resources>
     <string name="pysanka__clipboard__skip_sensitive__label">Не зберігати паролі</string>
     <string name="pysanka__clipboard__skip_sensitive__summary">Скопійоване з менеджера паролів (позначене як чутливе) і з полів пароля не потрапляє в історію</string>
+    <string name="pysanka__clipboard_copy__title">Копія буфера</string>
+    <string name="pysanka__clipboard_copy__summary">Зберегти історію у файл під паролем або імпортувати її (зокрема з резервної копії FlorisBoard)</string>
+    <string name="pysanka__clipboard_copy__export">Експорт</string>
+    <string name="pysanka__clipboard_copy__export_hint">Файл завжди захищено паролем: в історії бувають паролі й коди. Без пароля його не відкриє ніхто, зокрема й ви, тож збережіть пароль надійно.</string>
+    <string name="pysanka__clipboard_copy__text">Текст</string>
+    <string name="pysanka__clipboard_copy__images">Зображення</string>
+    <string name="pysanka__clipboard_copy__pinned_only">Лише закріплене</string>
+    <string name="pysanka__clipboard_copy__password">Пароль</string>
+    <string name="pysanka__clipboard_copy__repeat">Повторіть пароль</string>
+    <string name="pysanka__clipboard_copy__show">Показати пароль</string>
+    <string name="pysanka__clipboard_copy__hide">Сховати пароль</string>
+    <string name="pysanka__clipboard_copy__too_short">Щонайменше {n} символів</string>
+    <string name="pysanka__clipboard_copy__mismatch">Паролі різні</string>
+    <string name="pysanka__clipboard_copy__export_button">Обрати, куди зберегти</string>
+    <string name="pysanka__clipboard_copy__exported">Збережено записів: {n}</string>
+    <string name="pysanka__clipboard_copy__import">Імпорт</string>
+    <string name="pysanka__clipboard_copy__import_hint">Копія буфера Pysanka (попросить пароль) або резервна копія FlorisBoard (.zip). Текст, що вже є в історії, не додається вдруге; поки ввімкнено «Не зберігати паролі», паролі пропускаються.</string>
+    <string name="pysanka__clipboard_copy__pick_file">Обрати файл</string>
+    <string name="pysanka__clipboard_copy__import_button">Імпортувати</string>
+    <string name="pysanka__clipboard_copy__imported">Додано: {added}, пропущено: {skipped}</string>
+    <string name="pysanka__clipboard_copy__wrong_password">Неправильний пароль або файл пошкоджено</string>
+    <string name="pysanka__clipboard_copy__not_a_copy">Це не копія буфера</string>
+    <string name="pysanka__clipboard_copy__failed">Не вдалося. Нічого не змінено.</string>
+    <string name="pysanka__clipboard_copy__working">Працюю… (перевірка пароля триває кілька секунд)</string>
 </resources>

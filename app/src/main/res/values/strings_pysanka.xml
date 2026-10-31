@@ -3,4 +3,28 @@
 <resources>
     <string name="pysanka__clipboard__skip_sensitive__label">Don\'t keep passwords</string>
     <string name="pysanka__clipboard__skip_sensitive__summary">Copies that a password manager marks as sensitive, and copies made in a password field, stay out of the history</string>
+    <string name="pysanka__clipboard_copy__title">Clipboard copy</string>
+    <string name="pysanka__clipboard_copy__summary">Save the history to a password-protected file, or import it (also from a FlorisBoard backup)</string>
+    <string name="pysanka__clipboard_copy__export">Export</string>
+    <string name="pysanka__clipboard_copy__export_hint">The file is always protected with a password: the history can hold passwords and codes. Without the password nobody can open it, including you, so keep it safe.</string>
+    <string name="pysanka__clipboard_copy__text">Text</string>
+    <string name="pysanka__clipboard_copy__images">Images</string>
+    <string name="pysanka__clipboard_copy__pinned_only">Only pinned</string>
+    <string name="pysanka__clipboard_copy__password">Password</string>
+    <string name="pysanka__clipboard_copy__repeat">Repeat the password</string>
+    <string name="pysanka__clipboard_copy__show">Show password</string>
+    <string name="pysanka__clipboard_copy__hide">Hide password</string>
+    <string name="pysanka__clipboard_copy__too_short">At least {n} characters</string>
+    <string name="pysanka__clipboard_copy__mismatch">The passwords are different</string>
+    <string name="pysanka__clipboard_copy__export_button">Choose where to save</string>
+    <string name="pysanka__clipboard_copy__exported">Saved: {n} items</string>
+    <string name="pysanka__clipboard_copy__import">Import</string>
+    <string name="pysanka__clipboard_copy__import_hint">A Pysanka clipboard copy (asks for its password) or a FlorisBoard backup (.zip). Text already in the history is not added twice; while “Don\'t keep passwords” is on, passwords are skipped.</string>
+    <string name="pysanka__clipboard_copy__pick_file">Choose a file</string>
+    <string name="pysanka__clipboard_copy__import_button">Import</string>
+    <string name="pysanka__clipboard_copy__imported">Added: {added}, skipped: {skipped}</string>
+    <string name="pysanka__clipboard_copy__wrong_password">Wrong password, or the file is damaged</string>
+    <string name="pysanka__clipboard_copy__not_a_copy">This file is not a clipboard copy</string>
+    <string name="pysanka__clipboard_copy__failed">Did not work. Nothing was changed.</string>
+    <string name="pysanka__clipboard_copy__working">Working… (the password check takes a few seconds)</string>
 </resources>
