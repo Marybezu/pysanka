@@ -38,6 +38,9 @@ object ClipboardFileStorage {
     const val CLIPBOARD_FILES_PATH = "clipboard_files"
     const val OPEN_DIR = "clipboard_open"
 
+    /** Pysanka: largest image kept in the history (screenshots are a few MB). */
+    const val MAX_IMAGE_BYTES = 20L * 1024 * 1024
+
     private val Context.clipboardFilesDir: FsFile
         get() = FsFile(this.noBackupFilesDir, "clipboard_files").also { it.mkdirs() }
 
@@ -60,9 +63,13 @@ object ClipboardFileStorage {
         try {
             context.contentResolver.openInputStream(uri)!!.use { raw ->
                 val counting = object : FilterInputStream(raw) {
-                    override fun read(): Int = super.read().also { if (it >= 0) size++ }
+                    override fun read(): Int = super.read().also { if (it >= 0) count(1) }
                     override fun read(b: ByteArray, off: Int, len: Int): Int =
-                        super.read(b, off, len).also { if (it > 0) size += it }
+                        super.read(b, off, len).also { if (it > 0) count(it.toLong()) }
+                    private fun count(n: Long) {
+                        size += n
+                        if (size > MAX_IMAGE_BYTES) throw java.io.IOException("Too large for the clipboard history")
+                    }
                 }
                 file.outputStream().use { out -> SealedFile.seal(ClipboardVault.fileKey(), label(id), counting, out) }
             }

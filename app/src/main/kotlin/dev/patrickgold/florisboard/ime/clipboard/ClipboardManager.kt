@@ -265,10 +265,18 @@ class ClipboardManager(
                 if (!isEqual) {
                     // Pysanka: decide before anything is stored, so a clip that stays out of the
                     // history never leaves an (encrypted) copy of its image behind either
-                    val keep = mayKeep(ClipboardItem.isSensitive(systemPrimaryClip), incognito, passwordField)
+                    // Pysanka: videos never enter the history (they can be gigabytes); images do, up to
+                    // ClipboardFileStorage.MAX_IMAGE_BYTES
+                    val isVideo = systemPrimaryClip.getItemAt(0).uri != null &&
+                        systemPrimaryClip.description.hasMimeType("video/*") &&
+                        !systemPrimaryClip.description.hasMimeType("image/*")
+                    val keep = !isVideo && mayKeep(ClipboardItem.isSensitive(systemPrimaryClip), incognito, passwordField)
                     val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = keep)
                     primaryClip = item
-                    if (keep) insertOrMoveBeginning(item)
+                    // An image that could not be stored (too large, unreadable) gets id 0: not kept
+                    val stored = item.type == ItemType.TEXT ||
+                        item.uri?.let { runCatching { android.content.ContentUris.parseId(it) }.getOrNull() }?.let { it > 0 } == true
+                    if (keep && stored) insertOrMoveBeginning(item)
                 }
             }
         }
