@@ -134,6 +134,11 @@ fun ClipboardScreen() = FlorisScreen {
             )
         }
 
+        // Pysanka: new screenshots into the history (asks for access to photos)
+        PreferenceGroup(title = stringRes(R.string.pysanka__screenshots__tag)) {
+            ua.pysanka.clipboard.ScreenshotsSetting()
+        }
+
         // Pysanka: the owner's tags for the history
         PreferenceGroup(title = stringRes(R.string.pysanka__tag__screen_title)) {
             Preference(

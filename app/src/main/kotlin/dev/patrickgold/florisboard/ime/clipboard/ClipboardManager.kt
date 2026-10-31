@@ -175,6 +175,8 @@ class ClipboardManager(
                         client?.close()
                     }
                 }
+                // Pysanka: new screenshots into the history, if the owner turned that on
+                ua.pysanka.clipboard.Screenshots.follow(context.applicationContext, this@ClipboardManager, ioScope)
                 withContext(Dispatchers.Main) {
                     clipHistoryDao?.getAllAsFlow()?.collect { items ->
                         updateHistory(items)
@@ -479,7 +481,7 @@ class ClipboardManager(
                     pending.remove(c)
                 } else {
                     accepted.add(c)
-                    i.text?.let { texts.add(it) }
+                    if (i.type == ItemType.TEXT) i.text?.let { texts.add(it) }
                 }
             }
             var overLimit = 0
@@ -506,6 +508,58 @@ class ClipboardManager(
             pending.forEach { runCatching { discard(it) } }
             throw t
         }
+    }
+
+    // ------------------------------------------------------------ Pysanka: screenshots
+
+    /** Whether the encrypted history is open (it stays shut until the phone is first unlocked). */
+    fun isHistoryOpen(): Boolean = clipHistoryDao != null
+
+    /**
+     * Pysanka: stores the screenshot at [uri] encrypted and adds it to the history with [tagId]
+     * (see [ua.pysanka.clipboard.Screenshots]). The system clipboard is not changed. Returns the
+     * new item's id, or null if it was not added. Call off the main thread.
+     */
+    fun addScreenshot(context: Context, uri: android.net.Uri, mime: String, tagId: Long?): Long? {
+        val dao = clipHistoryDao ?: return null
+        if (!prefs.clipboard.historyEnabled.get()) return null
+        val stored = context.contentResolver.openInputStream(uri)?.use {
+            dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage.storeStream(appContext, it)
+        } ?: return null
+        var itemUri: android.net.Uri? = null
+        try {
+            val client = checkNotNull(appContext.contentResolver.acquireContentProviderClient(
+                dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider.AUTHORITY))
+            val provider = try {
+                client.localContentProvider as dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider
+            } finally {
+                client.close()
+            }
+            // A plain name: the original one may tell the app and the time, and an app it is pasted into could read it
+            val name = "Screenshot." + (android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: "png")
+            itemUri = provider.registerImported(
+                dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileInfo(stored.id, name, stored.size, 0, listOf(mime)),
+            )
+            val item = ClipboardItem(
+                type = ItemType.IMAGE, text = null, uri = itemUri, creationTimestampMs = System.currentTimeMillis(),
+                isPinned = false, mimeTypes = listOf(mime), isSensitive = false,
+            ).let { if (tagId != null) it.withTagIds(listOf(tagId)) else it }
+            return dao.insert(item)
+        } catch (t: Throwable) {
+            // Not in the history: its file (and its entry in the file list) goes too
+            val registered = itemUri
+            if (registered != null) {
+                runCatching { appContext.contentResolver.delete(registered, null, null) }
+            } else {
+                runCatching { dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage.deleteById(appContext, stored.id) }
+            }
+            throw t
+        }
+    }
+
+    /** Pysanka: keeps the text recognised on a screenshot with it, for finding it later. */
+    fun setImageText(id: Long, text: String) {
+        clipHistoryDao?.setImageText(id, text)
     }
 
     fun restoreHistory(items: List<ClipboardItem>) {
@@ -621,19 +675,19 @@ class ClipboardManager(
 
     fun setItemTags(item: ClipboardItem, ids: Collection<Long>) {
         ioScope.launch {
-            clipHistoryDao?.update(item.withTagIds(ids))
+            clipHistoryDao?.setTags(item.id, item.withTagIds(ids).tags)
         }
     }
 
     fun pinClip(item: ClipboardItem) {
         ioScope.launch {
-            clipHistoryDao?.update(item.copy(isPinned = true))
+            clipHistoryDao?.setPinned(item.id, true)
         }
     }
 
     fun unpinClip(item: ClipboardItem) {
         ioScope.launch {
-            clipHistoryDao?.update(item.copy(isPinned = false))
+            clipHistoryDao?.setPinned(item.id, false)
         }
     }
 

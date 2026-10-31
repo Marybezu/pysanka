@@ -169,6 +169,35 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
     }
 
+    // Pysanka: new screenshots into the clipboard history (needs the photos permission)
+    val pysankaScreenshots = PysankaScreenshots()
+    inner class PysankaScreenshots {
+        val enabled = boolean(
+            key = "pysanka__screenshots__enabled",
+            default = false,
+        )
+        /** Only screenshots added from this time on (MediaStore seconds); -1 = off. */
+        val since = long(
+            key = "pysanka__screenshots__since",
+            default = -1L,
+        )
+        /** The permission was gone while on: when it is back, start from that moment. */
+        val blocked = boolean(
+            key = "pysanka__screenshots__blocked",
+            default = false,
+        )
+        /** Largest MediaStore id already looked at. */
+        val lastId = long(
+            key = "pysanka__screenshots__last_id",
+            default = 0L,
+        )
+        /** The "Screenshots" tag, so renaming it keeps it in use. */
+        val tagId = long(
+            key = "pysanka__screenshots__tag_id",
+            default = -1L,
+        )
+    }
+
     val correction = Correction()
     inner class Correction {
         val autoSpacePunctuation = boolean(

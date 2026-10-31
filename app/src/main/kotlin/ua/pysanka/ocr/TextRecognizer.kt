@@ -87,8 +87,25 @@ class TextRecognizer private constructor(private val context: Context) {
         readers = r
     }
 
-    /** Frees the models' memory (about 60 MB) when the screen that used them closes. */
-    suspend fun release() = mutex.withLock {
+    /** Screens using the models now; their memory is freed only when none is. */
+    private val holders = java.util.concurrent.atomic.AtomicInteger(0)
+
+    /** A screen starts using the models. */
+    fun hold() {
+        holders.incrementAndGet()
+    }
+
+    /** That screen is gone; frees the models if no other screen uses them. */
+    suspend fun letGo() {
+        if (holders.updateAndGet { maxOf(0, it - 1) } == 0) release()
+    }
+
+    /** Frees the models' memory (about 60 MB) if no screen is using them (after a batch of screenshots). */
+    suspend fun releaseIfUnused() {
+        if (holders.get() == 0) release()
+    }
+
+    private suspend fun release() = mutex.withLock {
         det?.close(); det = null
         readers?.forEach { it.session.close() }; readers = null
     }

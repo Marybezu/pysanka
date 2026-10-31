@@ -144,5 +144,10 @@
     <string name="pysanka__ocr__live_hint">Point at the text and tap the button</string>
     <string name="pysanka__ocr__live_camera">Live camera for text</string>
     <string name="pysanka__ocr__live_camera_summary">Point the camera and pick text right away. Needs the camera permission; without it, recent photos and the phone\'s camera app still work.</string>
-    <string name="pysanka__privacy__fact_ocr">Text from photos and the camera is read on the phone; from the gallery Pysanka sees only the photo you pick</string>
+    <string name="pysanka__privacy__fact_ocr">Text from photos and the camera is read on the phone; from the gallery Pysanka sees only the photo you pick (and new screenshots, if you turned that on)</string>
+    <string name="pysanka__screenshots__tag">Screenshots</string>
+    <string name="pysanka__screenshots__label">Screenshots into the history</string>
+    <string name="pysanka__screenshots__summary">Each new screenshot goes into the history, encrypted, tagged “Screenshots”, with the text read from it on the phone. Older screenshots stay out. Needs access to photos; on GrapheneOS you can allow only the Screenshots folder with Storage Scopes.</string>
+    <string name="pysanka__screenshots__no_access">No access to photos: tap to allow</string>
+    <string name="pysanka__screenshots__denied">Without access to photos screenshots cannot be added. You can allow it in the app\'s settings.</string>
 </resources>

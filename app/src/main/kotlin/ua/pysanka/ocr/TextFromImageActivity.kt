@@ -109,13 +109,18 @@ class TextFromImageActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Paired with letGo in every onDestroy, so the count is right however the screen ends
+        TextRecognizer.get(this).hold()
         // What is on a photo of a document is as private as what is typed
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         val source = intent.getStringExtra(EXTRA_SOURCE) ?: SOURCE_PHOTO
         setContent {
-            FlorisAppTheme(theme = AppTheme.AUTO) {
-                Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    TextFromImageScreen(source) { finish() }
+            // The app's texts (stringRes) are read through this; without it the screen fails at once
+            org.florisboard.lib.compose.ProvideLocalizedResources(this, appName = dev.patrickgold.florisboard.R.string.app_name) {
+                FlorisAppTheme(theme = AppTheme.AUTO) {
+                    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                        TextFromImageScreen(source) { finish() }
+                    }
                 }
             }
         }
@@ -123,11 +128,9 @@ class TextFromImageActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        // The models take about 60 MB; free them once the screen is really gone
-        if (isFinishing) {
-            val recognizer = TextRecognizer.get(this)
-            kotlinx.coroutines.CoroutineScope(Dispatchers.Default).launch { recognizer.release() }
-        }
+        // The models take about 60 MB; freed when no screen uses them (a rotation holds them again at once)
+        val recognizer = TextRecognizer.get(this)
+        kotlinx.coroutines.CoroutineScope(Dispatchers.Default).launch { recognizer.letGo() }
     }
 }
 
