@@ -76,9 +76,9 @@
     <string name="quick_action__settings" comment="Please mind the limited available space for the quick action strings">Налаштування</string>
     <string name="quick_action__settings__tooltip">Відкрити налаштування</string>
     <string name="quick_action__undo" comment="Please mind the limited available space for the quick action strings">Скасувати</string>
-    <string name="quick_action__undo__tooltip">Скасувати останній ввід</string>
+    <string name="quick_action__undo__tooltip">Скасувати останню дію</string>
     <string name="quick_action__redo" comment="Please mind the limited available space for the quick action strings">Повторити</string>
-    <string name="quick_action__redo__tooltip">Відновити останній ввід</string>
+    <string name="quick_action__redo__tooltip">Повторити скасовану дію</string>
     <string name="quick_action__toggle_actions_overflow" comment="Please mind the limited available space for the quick action strings">Більше дій</string>
     <string name="quick_action__toggle_actions_overflow__tooltip">Показати або приховати додаткові дії</string>
     <string name="quick_action__toggle_incognito_mode" comment="Please mind the limited available space for the quick action strings">Інкогніто</string>
@@ -377,8 +377,8 @@
     <string name="settings__udm__dialog__shortcut_error_invalid" comment="Error label for the shortcut in the user dictionary add/edit dialog">Введіть коротку назву, що відповідає {regex}</string>
     <string name="settings__udm__dialog__locale_label" comment="Label for the language code in the user dictionary add/edit dialog">Код мови (необов\'язково)</string>
     <string name="settings__udm__dialog__locale_error_invalid" comment="Error label for the language code in the user dictionary add/edit dialog">Цей мовний код не відповідає очікуваному синтаксису. Код має бути або тільки мовою (як uk), або мовою і країною (як uk_UA), або мовою, країною і абеткою (як uk-Ua-cyrrilic).</string>
-    <string name="settings__gestures__title" comment="Title of Gestures screen">Жести та безперервний ввід</string>
-    <string name="pref__glide__title" comment="Preference group title">Безперервний ввід</string>
+    <string name="settings__gestures__title" comment="Title of Gestures screen">Жести й набір проведенням</string>
+    <string name="pref__glide__title" comment="Preference group title">Набір проведенням</string>
     <string name="pref__glide__enabled__label" comment="Preference title">Набір проведенням (свайп)</string>
     <string name="pref__glide__enabled__summary" comment="Preference summary">Введіть слово, провівши пальцем по буквах</string>
     <string name="pref__glide__show_trail__label" comment="Preference title">Показувати безперервний слід</string>

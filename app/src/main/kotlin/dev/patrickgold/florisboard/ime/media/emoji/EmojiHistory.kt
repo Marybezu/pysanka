@@ -76,7 +76,8 @@ object EmojiHistoryHelper {
     private var emojiGuard = Mutex(locked = false)
 
     suspend fun markEmojiUsed(prefs: FlorisPreferenceModel, emoji: Emoji): Unit = emojiGuard.withLock {
-        if (!prefs.emoji.historyEnabled.get()) {
+        // Pysanka: nothing is remembered from incognito or private fields
+        if (!prefs.emoji.historyEnabled.get() || ua.pysanka.privacy.FieldPrivacy.isPrivate) {
             return
         }
 

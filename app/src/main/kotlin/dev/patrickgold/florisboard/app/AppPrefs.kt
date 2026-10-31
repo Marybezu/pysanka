@@ -745,6 +745,12 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
     override fun migrate(entry: PreferenceMigrationEntry): PreferenceMigrationEntry {
         return when (entry.key) {
+            // Pysanka: settings whose screens were removed always stay at their defaults, so a value
+            // set in an earlier build can never get stuck where nobody can change it
+            in PYSANKA_FIXED_KEYS -> entry.reset()
+            // Pysanka: Russian is no longer offered as the settings language
+            "other__settings_language" -> if (entry.rawValue == "ru") entry.reset() else entry.keepAsIs()
+
 
             // Migrate media prefs to emoji prefs
             // Keep migration rule until: 0.6 dev cycle
@@ -929,3 +935,51 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         }
     }
 }
+
+/** Pysanka: keys of settings that have no screen any more (see [AppPrefs.migrate]). */
+private val PYSANKA_FIXED_KEYS = setOf(
+            "clipboard__use_internal_clipboard",
+            "clipboard__sync_to_floris",
+            "clipboard__sync_to_system",
+            "clipboard__history_num_grid_columns_portrait",
+            "clipboard__history_num_grid_columns_landscape",
+            "devtools__enabled",
+            "devtools__show_primary_clip",
+            "devtools__show_input_state_overlay",
+            "devtools__show_spelling_overlay",
+            "devtools__show_inline_autofill_overlay",
+            "devtools__show_touch_boundaries",
+            "devtools__show_drag_and_drop_helpers",
+            "devtools__show_window_resize_handle_boundaries",
+            "emoji__history_pinned_update_strategy",
+            "emoji__history_pinned_max_size",
+            "emoji__history_recent_update_strategy",
+            "emoji__history_recent_max_size",
+            "emoji__suggestion_update_history",
+            "emoji__suggestion_candidate_show_name",
+            "emoji__suggestion_query_min_length",
+            "emoji__suggestion_candidate_max_count",
+            "gestures__swipe_distance_threshold",
+            "gestures__swipe_velocity_threshold",
+            "glide__preview_refresh_delay",
+            "input_feedback__audio_feat_key_press",
+            "input_feedback__audio_feat_key_long_press",
+            "input_feedback__audio_feat_key_repeated_action",
+            "input_feedback__audio_feat_gesture_swipe",
+            "input_feedback__audio_feat_gesture_moving_swipe",
+            "input_feedback__haptic_feat_key_press",
+            "input_feedback__haptic_feat_key_long_press",
+            "input_feedback__haptic_feat_key_repeated_action",
+            "input_feedback__haptic_feat_gesture_swipe",
+            "input_feedback__haptic_feat_gesture_moving_swipe",
+            "keyboard__multi_tap_timeout_use_system",
+            "keyboard__multi_tap_timeout",
+            "keyboard__multi_tap_highlight_enabled",
+            "keyboard__flick_key_hint_enabled",
+            "keyboard__flick_key_hint_placement",
+            "other__settings_theme",
+            "other__accent_color",
+            "other__show_app_icon",
+            "smartbar__flip_toggles",
+            "smartbar__shared_actions_auto_expand_collapse",
+)

@@ -75,7 +75,7 @@
     <string name="pysanka__settings__sound">Sound and vibration</string>
     <string name="pysanka__settings__sound_summary">Vibration: {haptic} · sound: {audio}</string>
     <string name="pysanka__settings__clipboard">Clipboard</string>
-    <string name="pysanka__settings__clipboard_summary">History on · tags: {tags} · copy</string>
+    <string name="pysanka__settings__clipboard_summary">History on · tags: {tags} · backup</string>
     <string name="pysanka__settings__clipboard_summary_off">History off</string>
     <string name="pysanka__settings__emoji">Emoji</string>
     <string name="pysanka__settings__emoji_summary">History: {history} · skin tone</string>
@@ -108,7 +108,7 @@
     <string name="pysanka__look__number_row">Number row</string>
     <string name="pysanka__look__key_hints">Symbol hints on keys</string>
     <string name="pysanka__look__key_hints_summary">What a long press types</string>
-    <string name="pysanka__look__font_size">Letter size on keys</string>
+    <string name="pysanka__look__font_size">Letter size on keys (portrait)</string>
     <string name="pysanka__look__more_keyboard">All keyboard settings</string>
     <string name="pysanka__look__more_keyboard_summary">Height, key spacing, long-press time, space bar, landscape</string>
     <string name="pysanka__sound__haptic">Vibration on key press</string>
@@ -116,8 +116,8 @@
     <string name="pysanka__sound__volume">Volume</string>
     <string name="pysanka__privacy__fact_offline">No internet permission: nothing you type can leave the phone</string>
     <string name="pysanka__privacy__fact_encrypted">Clipboard history is encrypted; the key is in the phone\'s hardware</string>
-    <string name="pysanka__privacy__fact_backup">Nothing goes to a cloud backup or to another phone</string>
-    <string name="pysanka__privacy__fact_incognito">In incognito and private fields nothing is learned or kept</string>
+    <string name="pysanka__privacy__fact_backup">Nothing goes automatically to a cloud backup or to another phone</string>
+    <string name="pysanka__privacy__fact_incognito">In incognito and private fields (such as a private browser tab) nothing goes into the clipboard or emoji history</string>
     <string name="pysanka__privacy__incognito">Incognito mode</string>
     <string name="pysanka__more__smartbar_summary">Suggestions and quick actions above the keys</string>
     <string name="pysanka__more__extensions_summary">Themes, layouts and language packs from a file</string>

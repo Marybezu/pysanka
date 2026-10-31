@@ -31,6 +31,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -162,11 +163,17 @@ private fun WideTile(
         ),
         border = if (highlighted) BorderStroke(1.dp, MaterialTheme.colorScheme.primary) else null,
     ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        // A tile that cannot be used yet is dimmed; the highlighted one uses its container's text colour
+        val alpha = if (enabled) 1f else 0.45f
+        val textColor = if (highlighted) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+        Row(
+            Modifier.padding(14.dp).alpha(alpha),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Column {
                 Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(summary, style = MaterialTheme.typography.bodySmall, color = textColor)
             }
         }
     }
