@@ -176,10 +176,15 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "pysanka__screenshots__enabled",
             default = false,
         )
-        /** Newest MediaStore id already looked at; -1 = not started (older screenshots stay out). */
+        /** Only screenshots added from this time on (MediaStore seconds); -1 = off. */
+        val since = long(
+            key = "pysanka__screenshots__since",
+            default = -1L,
+        )
+        /** Largest MediaStore id already looked at. */
         val lastId = long(
             key = "pysanka__screenshots__last_id",
-            default = -1L,
+            default = 0L,
         )
         /** The "Screenshots" tag, so renaming it keeps it in use. */
         val tagId = long(

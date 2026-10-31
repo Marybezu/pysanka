@@ -242,7 +242,8 @@ data class ClipboardItem(
 
     fun stringRepresentation(): String {
         return when {
-            text != null -> text
+            // Pysanka: an image may hold the text recognised on it; it is still shown as an image
+            type == ItemType.TEXT && text != null -> text
             uri != null -> "(Image) $uri"
             else -> "#ERROR"
         }
@@ -304,6 +305,17 @@ interface ClipboardHistoryDao {
 
     @Query("DELETE FROM $CLIPBOARD_HISTORY_TABLE WHERE ${BaseColumns._ID} = :id")
     fun delete(id: Long)
+
+    // Pysanka: changes of one field only, so two changes at once never undo each other
+    /** The text recognised on an image (type 2). */
+    @Query("UPDATE $CLIPBOARD_HISTORY_TABLE SET text = :text WHERE ${BaseColumns._ID} = :id AND type = 2")
+    fun setImageText(id: Long, text: String)
+
+    @Query("UPDATE $CLIPBOARD_HISTORY_TABLE SET isPinned = :pinned WHERE ${BaseColumns._ID} = :id")
+    fun setPinned(id: Long, pinned: Boolean)
+
+    @Query("UPDATE $CLIPBOARD_HISTORY_TABLE SET pysanka_tags = :tags WHERE ${BaseColumns._ID} = :id")
+    fun setTags(id: Long, tags: String)
 
     @Query("DELETE FROM $CLIPBOARD_HISTORY_TABLE WHERE ${BaseColumns._ID} = :id AND not isPinned ")
     fun deleteIfUnpinned(id: Long)

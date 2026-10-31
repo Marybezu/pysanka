@@ -54,7 +54,7 @@ fun ScreenshotsSetting() {
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         granted = ok
         if (ok) {
-            scope.launch { prefs.pysankaScreenshots.enabled.set(true); Screenshots.refresh() }
+            scope.launch { Screenshots.turnOn() }
         } else {
             Toast.makeText(context, R.string.pysanka__screenshots__denied, Toast.LENGTH_LONG).show()
         }
@@ -62,9 +62,9 @@ fun ScreenshotsSetting() {
     val on = enabled && granted
     val toggle = {
         if (on) {
-            scope.launch { prefs.pysankaScreenshots.enabled.set(false); Screenshots.refresh() }
+            scope.launch { Screenshots.turnOff() }
         } else if (granted) {
-            scope.launch { prefs.pysankaScreenshots.enabled.set(true); Screenshots.refresh() }
+            scope.launch { Screenshots.turnOn() }
         } else {
             ask.launch(Screenshots.permission)
         }

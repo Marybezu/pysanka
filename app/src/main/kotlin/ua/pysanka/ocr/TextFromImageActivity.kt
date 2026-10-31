@@ -109,6 +109,8 @@ class TextFromImageActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Once per screen (not again when it is only recreated, e.g. on rotation)
+        if (savedInstanceState == null) TextRecognizer.get(this).hold()
         // What is on a photo of a document is as private as what is typed
         window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         val source = intent.getStringExtra(EXTRA_SOURCE) ?: SOURCE_PHOTO
@@ -129,7 +131,7 @@ class TextFromImageActivity : ComponentActivity() {
         // The models take about 60 MB; free them once the screen is really gone
         if (isFinishing) {
             val recognizer = TextRecognizer.get(this)
-            kotlinx.coroutines.CoroutineScope(Dispatchers.Default).launch { recognizer.release() }
+            kotlinx.coroutines.CoroutineScope(Dispatchers.Default).launch { recognizer.letGo() }
         }
     }
 }

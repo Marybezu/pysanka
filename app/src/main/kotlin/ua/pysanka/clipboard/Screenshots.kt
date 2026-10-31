@@ -7,6 +7,8 @@ import android.content.pm.PackageManager
 import android.database.ContentObserver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.BitmapRegionDecoder
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -17,29 +19,35 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.stringRes
 import ua.pysanka.ocr.TextRecognizer
+import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.min
 
 /**
  * Pysanka: new screenshots go into the clipboard history by themselves, when the owner turns this
  * on (Settings → Clipboard) and lets Pysanka see photos.
  *
- * - Only screenshots taken after it was turned on: the newest MediaStore id is remembered when it
- *   starts, and only images with a larger id in a "Screenshots" folder are taken.
+ * - Only screenshots added after it was turned on ("since", in MediaStore's DATE_ADDED seconds),
+ *   only from a folder named Screenshots, and only ones whose time taken matches the time added
+ *   (a restored or copied old screenshot gets a new "added" time but keeps its old "taken" time).
+ * - "Since" moves to now whenever adding was blocked: the permission missing, the history turned
+ *   off or back on, incognito forced on or off. So what was taken meanwhile never comes in later.
+ * - More than [MAX_PER_SCAN] at once means a copy or a restore, not screenshots: none is taken.
  * - Each is stored encrypted like any image in the history, tagged "Screenshots", and the text
- *   recognised on it (on the phone) is kept with it for finding it later.
- * - The system clipboard is not changed. Nothing is taken while the history or this option is off
- *   or incognito is forced on.
+ *   recognised on it (on the phone) is kept with it, in the same encrypted database.
+ * - The system clipboard and the gallery are not changed.
  */
 object Screenshots {
     /** Longest recognised text kept with a screenshot. */
@@ -48,11 +56,14 @@ object Screenshots {
     /** Colour index of the "Screenshots" tag when it is created. */
     private const val TAG_COLOR = 5
 
-    /** At most this many screenshots per look (more at once means a restore or a copy, not screenshots). */
     private const val MAX_PER_SCAN = 10
 
-    /** Older ones (by when they were added) are not taken. */
-    private const val MAX_AGE_SECONDS = 24 * 60 * 60L
+    /** How far "taken" may be from "added" (a screenshot is written within seconds). */
+    private const val MAX_TAKEN_GAP_MS = 10 * 60 * 1000L
+
+    /** Tall (scrolling) screenshots are read in parts of this height relative to their width. */
+    private const val TILE_RATIO = 2
+    private const val MAX_TILES = 12
 
     val permission: String
         get() = if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE
@@ -61,101 +72,138 @@ object Screenshots {
         ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
 
     private val prefs by FlorisPreferenceStore
+
+    /** One lock for starting, stopping and looking, so turning it off never races a look. */
     private val mutex = Mutex()
     @Volatile
     private var observer: ContentObserver? = null
-    /** Touched only on the main thread (where the observer is called). */
-    private var pending: Job? = null
+    /** "Something changed in the photos"; many reports in a row become one look. */
+    private val signals = Channel<Unit>(Channel.CONFLATED)
 
     @Volatile
     private var followed: Triple<Context, ClipboardManager, CoroutineScope>? = null
 
+    private fun nowSeconds() = System.currentTimeMillis() / 1000
+
+    /** Called by the settings switch when the owner turns it on (with the permission granted). */
+    suspend fun turnOn() {
+        prefs.pysankaScreenshots.since.set(nowSeconds())
+        prefs.pysankaScreenshots.lastId.set(0L)
+        prefs.pysankaScreenshots.enabled.set(true)
+        refresh()
+    }
+
+    suspend fun turnOff() {
+        prefs.pysankaScreenshots.enabled.set(false)
+        prefs.pysankaScreenshots.since.set(-1L)
+        prefs.pysankaScreenshots.lastId.set(0L)
+        refresh()
+    }
+
     /**
      * Follows the setting for as long as [scope] lives: watches while it is on and the permission
-     * is there, and stops watching when it is turned off. Called once the history is open.
+     * is there. Called once the history is open.
      */
     fun follow(context: Context, manager: ClipboardManager, scope: CoroutineScope) {
-        followed = Triple(context.applicationContext, manager, scope)
+        val app = context.applicationContext
+        followed = Triple(app, manager, scope)
+        // Looks, one after another; reports that arrive during a look lead to one more look
         scope.launch {
-            prefs.pysankaScreenshots.enabled.asFlow().collectLatest { refresh() }
+            for (s in signals) {
+                delay(1500) // the system reports a new screenshot several times while it is written
+                signals.tryReceive()
+                scan(app, manager)
+            }
+        }
+        scope.launch {
+            prefs.pysankaScreenshots.enabled.asFlow().distinctUntilChanged().collect { refresh() }
+        }
+        // History or incognito changed: nothing taken before now comes in later
+        scope.launch {
+            combine(prefs.clipboard.historyEnabled.asFlow(), prefs.suggestion.incognitoMode.asFlow()) { a, b -> a to b }
+                .distinctUntilChanged().drop(1)
+                .collect { mutex.withLock { if (prefs.pysankaScreenshots.enabled.get()) prefs.pysankaScreenshots.since.set(nowSeconds()) } }
         }
     }
 
     /** Looks at the setting and the permission again (after the owner granted or took it back). */
     fun refresh() {
-        val (app, manager, scope) = followed ?: return
+        val (app, _, scope) = followed ?: return
         scope.launch {
-            // One lock for starting, stopping and looking, so turning it off never races a look
             mutex.withLock {
-                if (prefs.pysankaScreenshots.enabled.get() && hasPermission(app)) start(app, manager, scope) else stop(app)
+                val on = prefs.pysankaScreenshots.enabled.get()
+                if (on && hasPermission(app)) {
+                    start(app)
+                } else {
+                    stop(app)
+                    // On, but the permission is gone: what is taken until it is back stays out
+                    if (on) prefs.pysankaScreenshots.since.set(nowSeconds())
+                }
             }
         }
     }
 
-    private suspend fun start(context: Context, manager: ClipboardManager, scope: CoroutineScope) {
+    private suspend fun start(context: Context) {
         if (observer != null) return
-        if (prefs.pysankaScreenshots.lastId.get() < 0) {
-            // First start: everything already on the phone stays out
-            prefs.pysankaScreenshots.lastId.set(newestId(context))
-        }
+        if (prefs.pysankaScreenshots.since.get() < 0) prefs.pysankaScreenshots.since.set(nowSeconds())
         val o = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean, uri: Uri?) {
-                // The system reports a new screenshot several times while it is written; look once it settles
-                pending?.cancel()
-                pending = scope.launch {
-                    delay(1500)
-                    scan(context, manager)
-                }
+                signals.trySend(Unit)
             }
         }
         runCatching {
             context.contentResolver.registerContentObserver(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true, o)
             observer = o
         }
-        // Screenshots taken while the keyboard was not running
-        scope.launch { scan(context, manager) }
+        // Screenshots taken while the keyboard was not running (but allowed)
+        signals.trySend(Unit)
     }
 
-    private suspend fun stop(context: Context) {
+    private fun stop(context: Context) {
         observer?.let { runCatching { context.contentResolver.unregisterContentObserver(it) } }
         observer = null
-        withContext(Dispatchers.Main) { pending?.cancel(); pending = null }
-        // Turned off: next time it starts afresh, so screenshots taken meanwhile stay out
-        if (!prefs.pysankaScreenshots.enabled.get()) prefs.pysankaScreenshots.lastId.set(-1L)
     }
 
-    private fun newestId(context: Context): Long = runCatching {
-        context.contentResolver.query(
-            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, arrayOf(MediaStore.Images.Media._ID),
-            null, null, "${MediaStore.Images.Media._ID} DESC",
-        )?.use { c -> if (c.moveToFirst()) c.getLong(0) else 0L }
-    }.getOrNull() ?: 0L
-
-    private data class Found(val id: Long, val mime: String, val name: String)
+    private data class Found(val id: Long, val mime: String)
 
     private fun allowed(): Boolean =
         prefs.pysankaScreenshots.enabled.get() && prefs.clipboard.historyEnabled.get() &&
             prefs.suggestion.incognitoMode.get() != IncognitoMode.FORCE_ON
 
+    /** Like runCatching, but a cancelled job stays cancelled. */
+    private inline fun <T> attempt(block: () -> T): T? = try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Throwable) {
+        null
+    }
+
     private suspend fun scan(context: Context, manager: ClipboardManager) = mutex.withLock {
-        if (!allowed() || !hasPermission(context) || !manager.isHistoryOpen()) return@withLock
-        val (seen, found) = findNew(context) ?: return@withLock
+        if (observer == null || !hasPermission(context) || !manager.isHistoryOpen()) return@withLock
+        val since = prefs.pysankaScreenshots.since.get()
+        if (since < 0) return@withLock
+        val (seen, found) = findNew(context, since) ?: return@withLock
         // Move the mark first: a screenshot that fails to store is not tried again and again
         if (seen > prefs.pysankaScreenshots.lastId.get()) prefs.pysankaScreenshots.lastId.set(seen)
-        if (found.isEmpty()) return@withLock
-        val take = found.takeLast(MAX_PER_SCAN)
-        val tagId = runCatching { tagId(context, manager) }.getOrNull()
+        if (!allowed()) {
+            // Blocked now: these stay out for good
+            prefs.pysankaScreenshots.since.set(nowSeconds())
+            return@withLock
+        }
+        if (found.isEmpty() || found.size > MAX_PER_SCAN) return@withLock
+        val tagId = attempt { tagId(context, manager) }
         try {
-            for (f in take) {
+            for (f in found) {
                 if (!allowed()) break
                 val uri = ContentUris.withAppendedId(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, f.id)
-                val itemId = runCatching { manager.addScreenshot(context, uri, f.mime, f.name, tagId) }.getOrNull() ?: continue
-                val text = runCatching { recognize(context, uri) }.getOrNull()
-                if (!text.isNullOrBlank()) manager.setImageText(itemId, text.take(MAX_TEXT))
+                val itemId = attempt { manager.addScreenshot(context, uri, f.mime, tagId) } ?: continue
+                val text = attempt { recognize(context, uri) }
+                if (!text.isNullOrBlank()) attempt { manager.setImageText(itemId, text.take(MAX_TEXT)) }
             }
         } finally {
-            // The models take about 60 MB; the keyboard should not keep them
-            runCatching { TextRecognizer.get(context).release() }
+            // The models take about 60 MB; the keyboard does not keep them (unless a screen uses them)
+            attempt { TextRecognizer.get(context).releaseIfUnused() }
         }
     }
 
@@ -163,74 +211,109 @@ object Screenshots {
      * The largest id looked at, and the new screenshots to take, oldest first; null if the phone's
      * photos could not be read now.
      */
-    private fun findNew(context: Context): Pair<Long, List<Found>>? {
+    private fun findNew(context: Context, since: Long): Pair<Long, List<Found>>? {
         val last = prefs.pysankaScreenshots.lastId.get()
-        val cols = mutableListOf(
+        val cols = arrayOf(
             MediaStore.Images.Media._ID, MediaStore.Images.Media.MIME_TYPE,
-            MediaStore.Images.Media.DISPLAY_NAME, MediaStore.Images.Media.DATE_ADDED,
+            MediaStore.Images.Media.DATE_ADDED, MediaStore.Images.Media.DATE_TAKEN,
         )
-        val where = StringBuilder("${MediaStore.Images.Media._ID} > ?")
-        val args = mutableListOf(last.toString())
-        if (Build.VERSION.SDK_INT >= 29) {
-            cols += MediaStore.Images.Media.IS_PENDING
-            where.append(" AND ${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?")
-            args += "%Screenshots%"
+        // Rows still being written are not listed on Android 10+; they come with a later report
+        val folder = if (Build.VERSION.SDK_INT >= 29) {
+            "${MediaStore.Images.Media.RELATIVE_PATH} LIKE ?" to "%Screenshots%"
         } else {
             @Suppress("DEPRECATION")
-            where.append(" AND ${MediaStore.Images.Media.DATA} LIKE ?")
-            args += "%/Screenshots/%"
+            "${MediaStore.Images.Media.DATA} LIKE ?" to "%/Screenshots/%"
         }
+        val where = "${MediaStore.Images.Media._ID} > ? AND ${MediaStore.Images.Media.DATE_ADDED} >= ? AND ${folder.first}"
+        val args = arrayOf(last.toString(), since.toString(), folder.second)
+        val cursor = attempt {
+            context.contentResolver.query(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cols, where, args, "${MediaStore.Images.Media._ID} ASC",
+            )
+        } ?: return null
         val out = ArrayList<Found>()
         var seen = last
-        val now = System.currentTimeMillis() / 1000
-        val cursor = runCatching {
-            context.contentResolver.query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cols.toTypedArray(), where.toString(), args.toTypedArray(),
-                "${MediaStore.Images.Media._ID} ASC",
-            )
-        }.getOrNull() ?: return null
         cursor.use { c ->
             while (c.moveToNext()) {
-                // One still being written stops the look here; it is taken once it is finished
-                if (Build.VERSION.SDK_INT >= 29 && c.getInt(4) != 0) break
                 val id = c.getLong(0)
                 seen = max(seen, id)
                 val mime = c.getString(1) ?: continue
-                if (!mime.startsWith("image/") || now - c.getLong(3) > MAX_AGE_SECONDS) continue
-                out.add(Found(id, mime, c.getString(2) ?: "Screenshot"))
+                if (!mime.startsWith("image/")) continue
+                val takenMs = if (c.isNull(3)) 0L else c.getLong(3)
+                if (takenMs > 0 && abs(c.getLong(2) * 1000 - takenMs) > MAX_TAKEN_GAP_MS) continue
+                out.add(Found(id, mime))
             }
         }
         return seen to out
     }
 
-    /** The "Screenshots" tag: the one used before (even if renamed), or one with that name. */
+    /**
+     * The "Screenshots" tag: the one made before (even if renamed). If the owner deleted it, new
+     * screenshots come without a tag (they still show under the automatic "Images").
+     */
     private suspend fun tagId(context: Context, manager: ClipboardManager): Long? {
         val known = prefs.pysankaScreenshots.tagId.get()
-        if (known > 0 && manager.allTags().any { it.id == known }) return known
+        if (known > 0) return known.takeIf { id -> manager.allTags().any { it.id == id } }
         val name = context.stringRes(R.string.pysanka__screenshots__tag)
         val id = manager.ensureTags(listOf(name to TAG_COLOR))[name.trim().lowercase()] ?: return null
         prefs.pysankaScreenshots.tagId.set(id)
         return id
     }
 
+    /** The text on the screenshot; a tall (scrolling) one is read in parts so small text stays readable. */
     private suspend fun recognize(context: Context, uri: Uri): String? {
-        val bitmap = decode(context, uri) ?: return null
-        return try {
-            TextRecognizer.get(context).recognize(bitmap).joinToString("\n") { it.text }
-        } finally {
-            bitmap.recycle()
-        }
-    }
-
-    private fun decode(context: Context, uri: Uri): Bitmap? {
         val cr = context.contentResolver
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         cr.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return null
-        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
-        var sample = 1
-        while (max(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 2400) sample *= 2
-        return cr.openInputStream(uri)?.use {
-            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
+        val w = bounds.outWidth
+        val h = bounds.outHeight
+        if (w <= 0 || h <= 0) return null
+        val recognizer = TextRecognizer.get(context)
+        if (h <= w * TILE_RATIO * 5 / 4) {
+            var sample = 1
+            while (max(w, h) / (sample * 2) >= 2400) sample *= 2
+            val bitmap = cr.openInputStream(uri)?.use {
+                BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
+            } ?: return null
+            return try {
+                recognizer.recognize(bitmap).joinToString("\n") { it.text }
+            } finally {
+                bitmap.recycle()
+            }
+        }
+        val input = cr.openInputStream(uri) ?: return null
+        return input.use { stream ->
+            val decoder = if (Build.VERSION.SDK_INT >= 31) {
+                BitmapRegionDecoder.newInstance(stream)
+            } else {
+                @Suppress("DEPRECATION")
+                BitmapRegionDecoder.newInstance(stream, false)
+            } ?: return null
+            try {
+                var sample = 1
+                while (w / (sample * 2) >= 1200) sample *= 2
+                val tile = w * TILE_RATIO
+                val lines = ArrayList<String>()
+                var top = 0
+                var n = 0
+                while (top < h && n < MAX_TILES) {
+                    val part = decoder.decodeRegion(
+                        Rect(0, top, w, min(h, top + tile)), BitmapFactory.Options().apply { inSampleSize = sample },
+                    )
+                    if (part != null) {
+                        try {
+                            recognizer.recognize(part).mapTo(lines) { it.text }
+                        } finally {
+                            part.recycle()
+                        }
+                    }
+                    top += tile
+                    n++
+                }
+                lines.joinToString("\n")
+            } finally {
+                decoder.recycle()
+            }
         }
     }
 }

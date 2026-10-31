@@ -452,6 +452,8 @@ class NlpManager(context: Context) {
                     // Check if content is empty
                     && contentText.isBlank()
                     // Check if clipboard content has any valid characters
+                    // Pysanka: an image may hold recognised text; it is never offered as text
+                    && currentItem.type == ItemType.TEXT
                     && !currentItem.text.isNullOrBlank()
                     && !blankStrRegex.matches(currentItem.text)
             }

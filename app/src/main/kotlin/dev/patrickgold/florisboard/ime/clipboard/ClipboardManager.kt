@@ -481,7 +481,7 @@ class ClipboardManager(
                     pending.remove(c)
                 } else {
                     accepted.add(c)
-                    i.text?.let { texts.add(it) }
+                    if (i.type == ItemType.TEXT) i.text?.let { texts.add(it) }
                 }
             }
             var overLimit = 0
@@ -520,12 +520,13 @@ class ClipboardManager(
      * (see [ua.pysanka.clipboard.Screenshots]). The system clipboard is not changed. Returns the
      * new item's id, or null if it was not added. Call off the main thread.
      */
-    fun addScreenshot(context: Context, uri: android.net.Uri, mime: String, name: String, tagId: Long?): Long? {
+    fun addScreenshot(context: Context, uri: android.net.Uri, mime: String, tagId: Long?): Long? {
         val dao = clipHistoryDao ?: return null
         if (!prefs.clipboard.historyEnabled.get()) return null
         val stored = context.contentResolver.openInputStream(uri)?.use {
             dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage.storeStream(appContext, it)
         } ?: return null
+        var itemUri: android.net.Uri? = null
         try {
             val client = checkNotNull(appContext.contentResolver.acquireContentProviderClient(
                 dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider.AUTHORITY))
@@ -534,8 +535,10 @@ class ClipboardManager(
             } finally {
                 client.close()
             }
-            val itemUri = provider.registerImported(
-                dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileInfo(stored.id, name.take(200), stored.size, 0, listOf(mime)),
+            // A plain name: the original one may tell the app and the time, and an app it is pasted into could read it
+            val name = "Screenshot." + (android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: "png")
+            itemUri = provider.registerImported(
+                dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileInfo(stored.id, name, stored.size, 0, listOf(mime)),
             )
             val item = ClipboardItem(
                 type = ItemType.IMAGE, text = null, uri = itemUri, creationTimestampMs = System.currentTimeMillis(),
@@ -543,17 +546,20 @@ class ClipboardManager(
             ).let { if (tagId != null) it.withTagIds(listOf(tagId)) else it }
             return dao.insert(item)
         } catch (t: Throwable) {
-            // Not in the history: its file goes too
-            runCatching { dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage.deleteById(appContext, stored.id) }
+            // Not in the history: its file (and its entry in the file list) goes too
+            val registered = itemUri
+            if (registered != null) {
+                runCatching { appContext.contentResolver.delete(registered, null, null) }
+            } else {
+                runCatching { dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage.deleteById(appContext, stored.id) }
+            }
             throw t
         }
     }
 
     /** Pysanka: keeps the text recognised on a screenshot with it, for finding it later. */
     fun setImageText(id: Long, text: String) {
-        val dao = clipHistoryDao ?: return
-        val item = dao.getAll().firstOrNull { it.id == id && it.type == ItemType.IMAGE } ?: return
-        dao.update(item.copy(text = text))
+        clipHistoryDao?.setImageText(id, text)
     }
 
     fun restoreHistory(items: List<ClipboardItem>) {
@@ -669,19 +675,19 @@ class ClipboardManager(
 
     fun setItemTags(item: ClipboardItem, ids: Collection<Long>) {
         ioScope.launch {
-            clipHistoryDao?.update(item.withTagIds(ids))
+            clipHistoryDao?.setTags(item.id, item.withTagIds(ids).tags)
         }
     }
 
     fun pinClip(item: ClipboardItem) {
         ioScope.launch {
-            clipHistoryDao?.update(item.copy(isPinned = true))
+            clipHistoryDao?.setPinned(item.id, true)
         }
     }
 
     fun unpinClip(item: ClipboardItem) {
         ioScope.launch {
-            clipHistoryDao?.update(item.copy(isPinned = false))
+            clipHistoryDao?.setPinned(item.id, false)
         }
     }
 
