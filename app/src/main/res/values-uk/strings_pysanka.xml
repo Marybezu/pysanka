@@ -158,7 +158,7 @@
     <string name="pysanka__ai__replace">Замінити</string>
     <string name="pysanka__ai__insert">Вставити</string>
     <string name="pysanka__ai__fix_with_ai">Виправити ШІ</string>
-    <string name="pysanka__ai__action_fix">Граматика й пунктуація</string>
+    <string name="pysanka__ai__action_fix">Граматика</string>
     <string name="pysanka__ai__action_fix_ocr">Виправити розпізнане</string>
     <string name="pysanka__ai__action_russisms">Прибрати русизми</string>
     <string name="pysanka__ai__action_friendly">Дружніше</string>
@@ -202,7 +202,7 @@
     <string name="pysanka__ai__action_notes">Упорядкувати нотатки</string>
     <string name="pysanka__ai__action_letter">Лист за описом</string>
     <string name="pysanka__ai__action_replies">Варіанти відповіді</string>
-    <string name="pysanka__ai__action_tone">Як це прозвучить?</string>
+    <string name="pysanka__ai__action_tone">Як це звучить?</string>
     <string name="pysanka__ai__action_redact">Приховати особисте</string>
     <string name="pysanka__ai__source_count">Текст, знаків: {n}</string>
     <string name="pysanka__ai__stop">Зупинити</string>

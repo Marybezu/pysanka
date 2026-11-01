@@ -159,7 +159,7 @@
     <string name="pysanka__ai__replace">Replace</string>
     <string name="pysanka__ai__insert">Insert</string>
     <string name="pysanka__ai__fix_with_ai">Fix with AI</string>
-    <string name="pysanka__ai__action_fix">Grammar &amp; punctuation</string>
+    <string name="pysanka__ai__action_fix">Grammar</string>
     <string name="pysanka__ai__action_fix_ocr">Fix recognised text</string>
     <string name="pysanka__ai__action_russisms">Russianisms</string>
     <string name="pysanka__ai__action_friendly">Friendlier</string>
@@ -203,7 +203,7 @@
     <string name="pysanka__ai__action_notes">Tidy notes</string>
     <string name="pysanka__ai__action_letter">Letter from a description</string>
     <string name="pysanka__ai__action_replies">Reply options</string>
-    <string name="pysanka__ai__action_tone">How will it sound?</string>
+    <string name="pysanka__ai__action_tone">How it sounds</string>
     <string name="pysanka__ai__action_redact">Hide personal data</string>
     <string name="pysanka__ai__source_count">Text ({n} characters)</string>
     <string name="pysanka__ai__stop">Stop</string>
