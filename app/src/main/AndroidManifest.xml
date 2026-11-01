@@ -37,9 +37,6 @@
         android:theme="@style/FlorisAppTheme"
         tools:targetApi="tiramisu">
 
-        <!-- Allow app to be profiled for benchmarking and baseline profile generation -->
-        <profileable android:shell="true"/>
-
         <!-- IME service -->
         <service
             android:name="dev.patrickgold.florisboard.FlorisImeService"
@@ -78,7 +75,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Pysanka: not BROWSABLE, so no web page can open the settings -->
                 <data android:scheme="ui" android:host="florisboard" android:pathPrefix="/" />
             </intent-filter>
             <intent-filter android:label="Import Extension">
@@ -91,6 +88,7 @@
             <intent-filter android:label="Import Extension">
                 <action android:name="android.intent.action.SEND"/>
                 <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="content"/>
                 <data android:mimeType="application/vnd.florisboard.extension+zip"/>
                 <data android:mimeType="application/octet-stream"/><!-- Firefox looking at you :eyes: -->
             </intent-filter>
@@ -120,18 +118,6 @@
             android:label="@string/crash_dialog__title"
             android:configChanges="orientation|screenSize"
             android:theme="@style/CrashDialogTheme"/>
-
-        <!-- Copy to Clipboard Activity -->
-        <activity
-            android:name="dev.patrickgold.florisboard.ime.clipboard.FlorisCopyToClipboardActivity"
-            android:theme="@style/FlorisAppTheme.Transparent"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.SEND"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="image/*"/>
-            </intent-filter>
-        </activity>
 
         <!-- Clipboard Media File Provider -->
         <provider

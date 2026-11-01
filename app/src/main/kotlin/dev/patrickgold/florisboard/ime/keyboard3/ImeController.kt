@@ -621,6 +621,7 @@ class ImeController(
             // Pysanka: a copy made while no field is open is not judged by the last field
             clipboardManager.setFieldPrivacy(incognito = false, passwordField = false)
             ua.pysanka.privacy.FieldPrivacy.isPrivate = false
+            ua.pysanka.privacy.FieldPrivacy.isPassword = false
             resetContent()
             state = state.copy(editor = ImeEditor.Disconnected)
             expectedContentQueue.clear()

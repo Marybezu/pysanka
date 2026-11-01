@@ -310,7 +310,11 @@ class ClipboardManager(
                     val isVideo = systemPrimaryClip.getItemAt(0).uri != null &&
                         systemPrimaryClip.description.hasMimeType("video/*") &&
                         !systemPrimaryClip.description.hasMimeType("image/*")
-                    val keep = !isVideo && mayKeep(ClipboardItem.isSensitive(systemPrimaryClip), incognito, passwordField)
+                    // Pysanka: one of the history's own pictures (pasted from it) is already there; any
+                    // other app copying such an address does not get a second entry pointing to it
+                    val ours = systemPrimaryClip.getItemAt(0).uri?.authority ==
+                        dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider.AUTHORITY
+                    val keep = !isVideo && !ours && mayKeep(ClipboardItem.isSensitive(systemPrimaryClip), incognito, passwordField)
                     val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = keep).let {
                         // Kept although copied in a password field ("Don't keep passwords" off): mark it
                         // sensitive, so it is masked and the timed clean-up of sensitive items applies

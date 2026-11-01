@@ -4,8 +4,4 @@
     <files-path
         name="capture"
         path="capture/"/>
-    <!-- Nothing else is shared through this provider at the moment -->
-    <cache-path
-        name="shared"
-        path="shared/"/>
 </paths>

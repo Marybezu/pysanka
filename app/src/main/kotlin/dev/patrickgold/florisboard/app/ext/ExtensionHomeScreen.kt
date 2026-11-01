@@ -38,12 +38,9 @@ fun ExtensionHomeScreen() = FlorisScreen {
 
     val navController = LocalNavController.current
     val extensionController = LocalExtensionController.current
-    val extensionIndex by extensionController.activeIndex.collectAsState()
 
     content {
         ImportExtensionBox(navController)
-
-        UpdateBox(extensionIndex)
 
         Preference(
             icon = Icons.Default.Palette,

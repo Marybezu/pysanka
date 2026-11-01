@@ -325,7 +325,14 @@ fun ClipboardInputLayout(
                     value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching {
                         check(file.exists()) { "Unable to resolve image at ${file.absolutePath}" }
                         // Pysanka: the stored file is encrypted
-                        val rawBitmap = ClipboardFileStorage.openStream(context, id).use { BitmapFactory.decodeStream(it) }
+                        // Pysanka: small enough for a tile (a tall screenshot would be tens of MB at full size)
+                        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        ClipboardFileStorage.openStream(context, id).use { BitmapFactory.decodeStream(it, null, bounds) }
+                        var sample = 1
+                        while (bounds.outWidth / (sample * 2) >= 480 || bounds.outHeight / (sample * 2) >= 1600) sample *= 2
+                        val rawBitmap = ClipboardFileStorage.openStream(context, id).use {
+                            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
+                        }
                         checkNotNull(rawBitmap) { "Unable to decode image at ${file.absolutePath}" }
                         rawBitmap.asImageBitmap()
                     } }
@@ -338,51 +345,6 @@ fun ClipboardInputLayout(
                         bitmap = bitmap.getOrThrow(),
                         contentDescription = null,
                         contentScale = ContentScale.FillWidth,
-                    )
-                } else {
-                    SnyggText(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = bitmap.exceptionOrNull()?.message ?: "Unknown error",
-                    )
-                }
-            } else if (item.type == ItemType.VIDEO) {
-                val id = ContentUris.parseId(item.uri!!)
-                val file = ClipboardFileStorage.getFileForId(context, id)
-                // Pysanka: decrypted in the background, so the keyboard never stalls on a big file
-                val bitmap = produceState<Result<androidx.compose.ui.graphics.ImageBitmap>?>(null, id) {
-                    value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching {
-                        check(file.exists()) { "Unable to resolve video at ${file.absolutePath}" }
-                        // Pysanka: the stored file is encrypted; read a frame from a short-lived decrypted copy
-                        val rawBitmap = ClipboardFileStorage.openPlainDescriptor(context, id).use { pfd ->
-                            val dataRetriever = MediaMetadataRetriever()
-                            try {
-                                dataRetriever.setDataSource(pfd.fileDescriptor)
-                                dataRetriever.getFrameAtTime(0)
-                            } finally {
-                                dataRetriever.release()
-                            }
-                        }
-                        checkNotNull(rawBitmap) { "Unable to decode video at ${file.absolutePath}" }
-                        rawBitmap.asImageBitmap()
-                    } }
-                }.value
-                if (bitmap == null) {
-                    // Still decrypting
-                } else if (bitmap.isSuccess) {
-                    Image(
-                        modifier = Modifier.fillMaxWidth(),
-                        bitmap = bitmap.getOrThrow(),
-                        contentDescription = null,
-                        contentScale = ContentScale.FillWidth,
-                    )
-                    Icon(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(start = 4.dp, bottom = 4.dp)
-                            .background(Color.White, CircleShape),
-                        imageVector = Icons.Default.Videocam,
-                        contentDescription = null,
-                        tint = Color.Black,
                     )
                 } else {
                     SnyggText(

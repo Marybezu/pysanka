@@ -165,7 +165,7 @@ class FlorisAppActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
 
-        if (intent.action == Intent.ACTION_VIEW && intent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true) {
+        if (intent.action == Intent.ACTION_VIEW && intent.data?.scheme == "ui") {
             intentToBeHandled = intent
             return
         }
@@ -224,13 +224,18 @@ class FlorisAppActivity : ComponentActivity() {
         LaunchedEffect(intentToBeHandled) {
             val intent = intentToBeHandled
             if (intent != null) {
-                if (intent.action == Intent.ACTION_VIEW && intent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true) {
+                if (intent.action == Intent.ACTION_VIEW && intent.data?.scheme == "ui") {
                     navController.handleDeepLink(intent)
                 } else {
                     val uri = if (intent.action == Intent.ACTION_VIEW) {
                         intent.data!!
                     } else {
                         intent.clipData!!.getItemAt(0).uri
+                    }
+                    // Pysanka: an extension is imported only from a content:// file another app hands over
+                    if (uri?.scheme != "content") {
+                        intentToBeHandled = null
+                        return@LaunchedEffect
                     }
                     try {
                         val storage = appContext.storageController.activeStorage.value as AndroidStorage

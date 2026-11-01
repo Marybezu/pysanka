@@ -152,7 +152,6 @@ class FlorisApplication : Application() {
                 context = this@FlorisApplication,
                 datastoreName = FlorisPreferenceModel.NAME,
             )
-            Log.i("PREFS", result.toString())
             preferenceStoreLoaded.value = true
         }
         clipboardManager.value.initializeForContext(this)

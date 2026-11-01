@@ -328,7 +328,6 @@ private fun copy(context: Context, text: String) {
 fun openAiSettings(context: Context) {
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("ui://florisboard/settings/pysanka/ai")).apply {
         setPackage(context.packageName)
-        addCategory(Intent.CATEGORY_BROWSABLE)
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
     runCatching { context.startActivity(intent) }

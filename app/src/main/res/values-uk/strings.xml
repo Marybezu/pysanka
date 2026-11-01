@@ -9,28 +9,28 @@
     <string name="one_handed__move_start_btn_content_description" comment="Content description for the one-handed move to left button">Перемістити клавіатуру вліво.</string>
     <string name="one_handed__move_end_btn_content_description" comment="Content description for the one-handed move to right button">Перемістити клавіатуру вправо.</string>
     <!-- Media strings -->
-    <string name="settings__media__title">Емоджі</string>
-    <string name="media__tab__emojis" comment="Tab description for emojis in the media UI">Емоджі</string>
+    <string name="settings__media__title">Емодзі</string>
+    <string name="media__tab__emojis" comment="Tab description for emojis in the media UI">Емодзі</string>
     <string name="media__tab__emoticons" comment="Tab description for emoticons in the media UI">Смайлики</string>
     <string name="media__tab__kaomoji" comment="Tab description for kaomoji in the media UI">Каомоджі</string>
-    <string name="prefs__media__emoji_preferred_skin_tone">Бажаний відтінок шкіри емоджі</string>
-    <string name="prefs__media__emoji_preferred_hair_style">Бажана зачіска емоджі</string>
-    <string name="prefs__media__emoji_history__title" comment="Preference group title">Історія емоджі</string>
-    <string name="prefs__media__emoji_history_enabled" comment="Preference title">Увімкнути історію емоджі</string>
-    <string name="prefs__media__emoji_history_enabled__summary" comment="Preference summary">Зберігайте нещодавно використані емоджі для швидкого доступу</string>
+    <string name="prefs__media__emoji_preferred_skin_tone">Бажаний відтінок шкіри емодзі</string>
+    <string name="prefs__media__emoji_preferred_hair_style">Бажана зачіска емодзі</string>
+    <string name="prefs__media__emoji_history__title" comment="Preference group title">Історія емодзі</string>
+    <string name="prefs__media__emoji_history_enabled" comment="Preference title">Увімкнути історію емодзі</string>
+    <string name="prefs__media__emoji_history_enabled__summary" comment="Preference summary">Зберігайте нещодавно використані емодзі для швидкого доступу</string>
     <string name="prefs__media__emoji_history_pinned_update_strategy" comment="Preference title">Оновлення стратегії (Закріплено)</string>
     <string name="prefs__media__emoji_history_recent_update_strategy" comment="Preference title">Оновлення стратегії (Нещодавно)</string>
     <string name="prefs__media__emoji_history_max_size">Максимум речей, які можна зберігати</string>
-    <string name="prefs__media__emoji_history_pinned_reset">Скинути закріплені емоджі</string>
-    <string name="prefs__media__emoji_history_reset">Скинути поточні емоджі</string>
-    <string name="prefs__media__emoji_suggestion__title" comment="Preference group title">Пропозиції емоджі</string>
-    <string name="prefs__media__emoji_suggestion_enabled" comment="Preference title">Увімкнути пропозиції емоджі</string>
-    <string name="prefs__media__emoji_suggestion_enabled__summary" comment="Preference summary">Підказує емоджі під час введення тексту</string>
+    <string name="prefs__media__emoji_history_pinned_reset">Скинути закріплені емодзі</string>
+    <string name="prefs__media__emoji_history_reset">Скинути поточні емодзі</string>
+    <string name="prefs__media__emoji_suggestion__title" comment="Preference group title">Пропозиції емодзі</string>
+    <string name="prefs__media__emoji_suggestion_enabled" comment="Preference title">Увімкнути пропозиції емодзі</string>
+    <string name="prefs__media__emoji_suggestion_enabled__summary" comment="Preference summary">Підказує емодзі під час введення тексту</string>
     <string name="prefs__media__emoji_suggestion_type" comment="Preference title">Тип спрацювання</string>
-    <string name="prefs__media__emoji_suggestion_update_history" comment="Preference title">Оновлення історії емоджі</string>
-    <string name="prefs__media__emoji_suggestion_update_history__summary" comment="Preference summary">Прийняття запропонованих емоджі додає їх до історії емоджі</string>
-    <string name="prefs__media__emoji_suggestion_candidate_show_name" comment="Preference title">Показування назви емоджі</string>
-    <string name="prefs__media__emoji_suggestion_candidate_show_name__summary" comment="Preference summary">Пропозиції емоджі показують їхню назву</string>
+    <string name="prefs__media__emoji_suggestion_update_history" comment="Preference title">Оновлення історії емодзі</string>
+    <string name="prefs__media__emoji_suggestion_update_history__summary" comment="Preference summary">Прийняття запропонованих емодзі додає їх до історії емодзі</string>
+    <string name="prefs__media__emoji_suggestion_candidate_show_name" comment="Preference title">Показування назви емодзі</string>
+    <string name="prefs__media__emoji_suggestion_candidate_show_name__summary" comment="Preference summary">Пропозиції емодзі показують їхню назву</string>
     <string name="prefs__media__emoji_suggestion_query_min_length" comment="Preference title">Мінімальна довжина запиту</string>
     <string name="prefs__media__emoji_suggestion_candidate_max_count" comment="Preference title">Максимальна кількість пропозицій</string>
     <!-- Emoji strings -->
@@ -43,10 +43,10 @@
     <string name="emoji__category__objects" comment="Emoji category name">Об\'єкти</string>
     <string name="emoji__category__symbols" comment="Emoji category name">Символи</string>
     <string name="emoji__category__flags" comment="Emoji category name">Прапори</string>
-    <string name="emoji__history__empty_message" comment="Message if the emoji history is empty">Нещодавно використані емоджі не знайдено. Як тільки ви почнете вводити їх, вони автоматично з\'являться тут.</string>
-    <string name="emoji__history__phone_locked_message" comment="Message to show if phone is locked">Щоб отримати доступ до історії емоджі, спочатку розблокуйте свій пристрій.</string>
-    <string name="emoji__history__usage_tip" comment="Feature discoverability for actions of emoji history">Порада: Натисніть і утримуйте емоджі в історії емоджі, щоб закріпити або видалити їх!</string>
-    <string name="emoji__history__removal_success_message" comment="Toast message if user has used the delete action on an emoji in the emoji history">Видалено «{emoji}» з історії емоджі</string>
+    <string name="emoji__history__empty_message" comment="Message if the emoji history is empty">Нещодавно використані емодзі не знайдено. Як тільки ви почнете вводити їх, вони автоматично з\'являться тут.</string>
+    <string name="emoji__history__phone_locked_message" comment="Message to show if phone is locked">Щоб отримати доступ до історії емодзі, спочатку розблокуйте свій пристрій.</string>
+    <string name="emoji__history__usage_tip" comment="Feature discoverability for actions of emoji history">Порада: Натисніть і утримуйте емодзі в історії емодзі, щоб закріпити або видалити їх!</string>
+    <string name="emoji__history__removal_success_message" comment="Toast message if user has used the delete action on an emoji in the emoji history">Видалено «{emoji}» з історії емодзі</string>
     <string name="emoji__history__pinned">Закріплено</string>
     <string name="emoji__history__recent">Останні</string>
     <!-- Quick action strings -->
@@ -70,8 +70,8 @@
     <string name="quick_action__clipboard_select_all__tooltip">Виділити все</string>
     <string name="quick_action__ime_ui_mode_clipboard" comment="Please mind the limited available space for the quick action strings">Буфер обміну</string>
     <string name="quick_action__ime_ui_mode_clipboard__tooltip">Відкрити буфер обміну</string>
-    <string name="quick_action__ime_ui_mode_media" comment="Please mind the limited available space for the quick action strings">Емоджі</string>
-    <string name="quick_action__ime_ui_mode_media__tooltip">Відкрити панель емоджі</string>
+    <string name="quick_action__ime_ui_mode_media" comment="Please mind the limited available space for the quick action strings">Емодзі</string>
+    <string name="quick_action__ime_ui_mode_media__tooltip">Відкрити панель емодзі</string>
     <string name="quick_action__language_switch" comment="Please mind the limited available space for the quick action strings">Змінити мову</string>
     <string name="quick_action__settings" comment="Please mind the limited available space for the quick action strings">Налаштування</string>
     <string name="quick_action__settings__tooltip">Відкрити налаштування</string>
@@ -100,17 +100,17 @@
     <string name="quick_actions_editor__subheader_hidden_actions">Приховані дії ({n})</string>
     <string name="select_subtype_panel__header">Вибрати підвид</string>
     <!-- Incognito mode strings -->
-    <string name="incognito_mode__toast_after_enabled">Режим анонімного перегляду увімкнено\n\n{app_name} не перевірятиме слова, поки цей режим активовано</string>
-    <string name="incognito_mode__toast_after_disabled">Режим анонімного перегляду вимкнено за замовчуванням</string>
+    <string name="incognito_mode__toast_after_enabled">Режим інкогніто увімкнено\n\n{app_name} не перевірятиме слова, поки цей режим активовано</string>
+    <string name="incognito_mode__toast_after_disabled">Режим інкогніто вимкнено</string>
     <!-- Settings UI strings -->
     <string name="settings__title" comment="Title of Settings">Налаштування</string>
     <string name="settings__preview_keyboard" comment="Hint for try your setup box">Випробуйте ваші налаштування</string>
     <string name="settings__help" comment="General label for help buttons in Settings">Довідка</string>
     <string name="settings__default" comment="General string which is used when a preference has the default value set">За замовчуванням</string>
-    <string name="settings__system_default" comment="General string which is used when a preference has the system default value set">Системний за замовчуванням</string>
+    <string name="settings__system_default" comment="General string which is used when a preference has the system default value set">Як у системі</string>
     <string name="settings__home__title" comment="Title of the Home screen">Ласкаво просимо до {app_name}</string>
-    <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when Pysanka is not enabled in the system">Pysanka не ввімкнено в системі, тому він не буде доступним як метод вводу в меню вибору методу вводу. Натисніть сюди, щоб виправити це.</string>
-    <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when Pysanka is not selected as the default keyboard">Pysanka не вибрано як стандартний метод вводу. Натисніть сюди, щоб виправити це.</string>
+    <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when Pysanka is not enabled in the system">Писанку не ввімкнено в системі, тож її немає серед клавіатур. Торкніться, щоб виправити.</string>
+    <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when Pysanka is not selected as the default keyboard">Писанку не вибрано як клавіатуру. Торкніться, щоб виправити.</string>
     <string name="settings__localization__title" comment="Title of languages and Layout screen">Мови &amp; Розкладки</string>
     <string name="settings__localization__display_language_names_in__label" comment="Label of Display language names in preference">Показувати назви мов у</string>
     <string name="settings__localization__group_subtypes__label" comment="Label of subtypes group">Підтипи</string>
@@ -154,7 +154,7 @@
     <string name="pref__theme__day" comment="Label of the day group (day means light theme)">Денна тема</string>
     <string name="pref__theme__night" comment="Label of the night group (night means dark theme)">Нічна тема</string>
     <string name="settings__theme_manager__title_manage" comment="Title of the theme manager screen for managing installed and custom themes">Керування встановленими темами</string>
-    <string name="pref__theme__source_assets" comment="Label for the theme source field">Ресурси Pysanka</string>
+    <string name="pref__theme__source_assets" comment="Label for the theme source field">Ресурси Писанки</string>
     <string name="pref__theme__source_internal" comment="Label for the theme source field">Внутрішня пам\'ять</string>
     <string name="pref__theme__source_external" comment="Label for the theme source field">Зовнішнє джерело</string>
     <string name="settings__theme_manager__title_day" comment="Title of the theme manager screen for day theme selection">Виберіть денну тему</string>
@@ -272,7 +272,7 @@
     <string name="pref__input_feedback__audio_feat_gesture_moving_swipe__label" comment="Preference title">Звуки жестів переміщення</string>
     <string name="pref__input_feedback__group_haptic__label" comment="Preference group title">Тактильний відгук / Вібрація</string>
     <string name="pref__input_feedback__haptic_enabled__label" comment="Preference title">Увімкнути тактильний відгук</string>
-    <string name="pref__input_feedback__haptic_enabled__summary_disabled" comment="Preference summary">Ніколи не вмикати вібрацію для вводу, незалежно від налаштувань системи</string>
+    <string name="pref__input_feedback__haptic_enabled__summary_disabled" comment="Preference summary">Ніколи не вмикати вібрацію під час набору, незалежно від налаштувань системи</string>
     <string name="pref__input_feedback__haptic_vibration_mode__label" comment="Preference title">Режим вібрації</string>
     <string name="pref__input_feedback__haptic_vibration_duration__label" comment="Preference title">Тривалість вібрації</string>
     <string name="pref__input_feedback__haptic_vibration_strength__label" comment="Preference title">Сила вібрації</string>
@@ -283,7 +283,7 @@
     <string name="pref__input_feedback__haptic_feat_key_repeated_action__label" comment="Preference title">Вібрація повторювального натискання клавіш</string>
     <string name="pref__input_feedback__haptic_feat_gesture_swipe__label" comment="Preference title">Вібрація жестів змахування</string>
     <string name="pref__input_feedback__haptic_feat_gesture_moving_swipe__label" comment="Preference title">Вібрація жестів переміщення</string>
-    <string name="pref__input_feedback__any_feat_key_press__summary" comment="Preference summary">напр. клавіші, кнопки, вкладки емоджі</string>
+    <string name="pref__input_feedback__any_feat_key_press__summary" comment="Preference summary">напр. клавіші, кнопки, вкладки емодзі</string>
     <string name="pref__input_feedback__any_feat_key_long_press__summary" comment="Preference summary">напр. спливаюче меню</string>
     <string name="pref__input_feedback__any_feat_key_repeated_action__summary" comment="Preference summary">напр. клавіша видалення</string>
     <string name="pref__input_feedback__any_feat_gesture_swipe__summary" comment="Preference summary">не реалізовано</string>
@@ -304,7 +304,7 @@
     <string name="pref__keyboard__group_keypress__label" comment="Preference group title">Натискання клавіші</string>
     <string name="pref__keyboard__popup_enabled__label" comment="Preference title">Видимість спливних вікон</string>
     <string name="pref__keyboard__popup_enabled__summary" comment="Preference summary">Показувати спливаючу підказку при натисканні клавіші</string>
-    <string name="pref__keyboard__merge_hint_popups_enabled__label" comment="Preference title">Акценти включають спливні вікна з символами</string>
+    <string name="pref__keyboard__merge_hint_popups_enabled__label" comment="Preference title">Об'єднати акценти й символи у спливному вікні</string>
     <string name="pref__keyboard__merge_hint_popups_enabled__summary" comment="Preference summary">Додає спливні вікна з символами до акцентів по стандарту у макеті</string>
     <string name="pref__keyboard__long_press_delay__label" comment="Preference title">Затримка при натисканні</string>
     <string name="pref__keyboard__space_bar_switches_to_characters__label" comment="Preference title">Пробіл перемикає на літери</string>
@@ -385,9 +385,9 @@
     <string name="pref__glide__show_trail__summary" comment="Preference summary">Зникає після кожного слова</string>
     <string name="pref__glide_trail_fade_duration">Час зникання безперервного сліду</string>
     <string name="pref__glide_preview_refresh_delay">Затримка оновлення попереднього перегляду</string>
-    <string name="pref__glide__show_preview">Попередній перегляд під час безперервного вводу</string>
+    <string name="pref__glide__show_preview">Попередній перегляд під час безперервного набору</string>
     <string name="pref__glide__immediate_backspace_deletes_word__label">Завжди видаляти слово</string>
-    <string name="pref__glide__immediate_backspace_deletes_word__summary">Натискання кнопки видалення одразу після непереривного проведення пальцем видаляє все слово</string>
+    <string name="pref__glide__immediate_backspace_deletes_word__summary">Натискання кнопки видалення одразу після безперервного проведення пальцем видаляє все слово</string>
     <string name="pref__gestures__general_title" comment="Preference group title">Загальні жести</string>
     <string name="pref__gestures__space_bar_title" comment="Preference group title">Жести пробілу</string>
     <string name="pref__gestures__other_title" comment="Preference group title">Інші жести / Пороги жестів</string>
@@ -416,7 +416,7 @@
     <string name="pref__other__show_app_icon__summary_atleast_q" comment="Summary of Show app icon preference in Other for Android 10+">Завжди ввімкнено на Android 10+ через обмеження системи</string>
     <!-- About UI strings -->
     <string name="about__title" comment="Title of About activity">Про додаток</string>
-    <string name="about__app_icon_content_description" comment="Content description of app icon in About">Значок програми Pysanka</string>
+    <string name="about__app_icon_content_description" comment="Content description of app icon in About">Значок застосунку Писанка</string>
     <string name="about__view_licenses" comment="Label of View licenses button in About">Ліцензії відкритого ПЗ</string>
     <string name="about__view_privacy_policy" comment="Label of View privacy policy button in About">Політика конфіденційності</string>
     <string name="about__view_source_code" comment="Label of View source code button in About">Вихідний код</string>
@@ -431,11 +431,11 @@
     <string name="about__privacy_policy__title" comment="Preference title">Політика конфіденційності</string>
     <string name="about__privacy_policy__summary" comment="Preference summary">Політика приватності для цього проєкту</string>
     <string name="about__project_license__title" comment="Preference title">Ліцензія проєкту</string>
-    <string name="about__project_license__summary" comment="Preference summary">Pysanka має ліцензію {license_name}</string>
+    <string name="about__project_license__summary" comment="Preference summary">Писанка має ліцензію {license_name}</string>
     <string name="about__project_license__error_license_text_failed" comment="Error text for license text loading failure">Помилка: Не вдалося завантажити текст ліцензії.\n-&gt; Причина: {error_message}</string>
     <string name="about__project_license__error_reason_asset_manager_null" comment="Error text if asset manager is null">Посилання на менеджера активами відсутнє</string>
     <string name="about__third_party_licenses__title" comment="Preference title">Ліцензії третіх сторін</string>
-    <string name="about__third_party_licenses__summary" comment="Preference summary">Ліцензії сторонніх бібліотек, включених до цього застосунку</string>
+    <string name="about__third_party_licenses__summary" comment="Preference summary">Ліцензії сторонніх бібліотек, що входять до цього застосунку</string>
     <!-- Setup UI strings -->
     <string name="setup__title" comment="Title of Setup">Ласкаво просимо!</string>
     <string name="setup__intro_message" comment="Short intro message welcoming new users">Дякуємо за використання {app_name}! Це коротке налаштування допоможе вам виконати необхідні кроки для використання {app_name} на вашому пристрої.</string>
@@ -445,11 +445,11 @@
     <string name="setup__enable_ime__description"><i> </i> {app_name}.</string>
     <string name="setup__enable_ime__open_settings_btn">Відкрити системні налаштування</string>
     <string name="setup__select_ime__title">Вибрати {app_name}</string>
-    <string name="setup__select_ime__description">У вашій системі ввімкнено {app_name}. Щоб активно використовувати його, перемкніться на {app_name}, вибравши його у діалоговому вікні вибору вводу!</string>
+    <string name="setup__select_ime__description">У вашій системі ввімкнено {app_name}. Щоб активно використовувати його, перемкніться на {app_name}, вибравши її у вікні вибору клавіатури!</string>
     <string name="setup__select_ime__switch_keyboard_btn">Перемкнути клавіатуру</string>
     <string name="setup__grant_notification_permission__title">Повідомлення про збої в роботі з дозволами</string>
     <string name="setup__grant_notification_permission__description">Починаючи з Android 13+, програми повинні запитувати дозвіл на
-        надсилання сповіщень. У Pysanka цей дозвіл використовується лише для того, щоб відкрити екран звіту про збій у разі збою.
+        надсилання сповіщень. У Писанці цей дозвіл використовується лише для того, щоб відкрити екран звіту про збій у разі збою.
         Цей дозвіл можна будь-коли змінити в налаштуваннях системи.
     </string>
     <string name="setup__grant_notification_permission__btn">Надати дозвіл</string>
@@ -490,18 +490,18 @@
     <string name="backup_and_restore__restore__success">Дані успішно відновлено!</string>
     <string name="backup_and_restore__restore__failure">Не вдалося відновити дані: {error_message}</string>
     <!-- Crash Dialog strings -->
-    <string name="crash_dialog__title" comment="Title of crash dialog">Звіт про помилку Pysanka</string>
-    <string name="crash_dialog__description" comment="Description of crash dialog">Вибачте за незручності, але стався збій у Pysanka через несподівану помилку.</string>
-    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">Якщо ви хочете повідомити про цю помилку, спочатку перевірте відстеження проблем на GitHub, якщо про ваш збій ще не повідомлялося.\nЯкщо ні, скопіюйте згенерований журнал збоїв і створіть нову проблему. Використовуйте шаблон «%s» і заповніть опис, кроки для відтворення, а в кінці вставте згенерований лог збоїв. Це допоможе зробити Pysanka кращим і стабільнішим для всіх. Дякуємо!</string>
+    <string name="crash_dialog__title" comment="Title of crash dialog">Звіт про помилку Писанки</string>
+    <string name="crash_dialog__description" comment="Description of crash dialog">Вибачте за незручності, але стався збій у Писанці через несподівану помилку.</string>
+    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">Якщо ви хочете повідомити про цю помилку, спочатку перевірте відстеження проблем на GitHub, якщо про ваш збій ще не повідомлялося.\nЯкщо ні, скопіюйте згенерований журнал збоїв і створіть нову проблему. Використовуйте шаблон «%s» і заповніть опис, кроки для відтворення, а в кінці вставте згенерований лог збоїв. Це допоможе зробити Писанку кращою і стабільнішою для всіх. Дякуємо!</string>
     <string name="crash_dialog__copy_to_clipboard" comment="Label of Copy to clipboard button in crash dialog">Зкопіювати в системний буфер обміну</string>
     <string name="crash_dialog__copy_to_clipboard_success" comment="Label of Copy to clipboard success message in crash dialog">Зкопійовано в системний буфер обміну</string>
     <string name="crash_dialog__copy_to_clipboard_failure" comment="Label of Copy to clipboard failure message in crash dialog">Не вдається скопіювати до системного буфера обміну: Не знайдено екземпляр диспетчера буфера обміну</string>
     <string name="crash_dialog__open_issue_tracker" comment="Label of Open issue tracker button in crash dialog">Відкрити відстеження проблем (github.com)</string>
     <string name="crash_dialog__close" comment="Label of Close button in crash dialog">Закрити</string>
-    <string name="crash_notification_channel__title" comment="Title of crash notification channel">Звіти про помилки Pysanka</string>
-    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">Pysanka перестав працювати…</string>
+    <string name="crash_notification_channel__title" comment="Title of crash notification channel">Звіти про помилки Писанки</string>
+    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">Писанка перестала працювати…</string>
     <string name="crash_once_notification__body" comment="Body of the notification for a single crash">Натисність, щоб перегянути деталі про помилку</string>
-    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">Здається, Pysanka постійно перестає працювати…</string>
+    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">Здається, Писанка постійно перестає працювати…</string>
     <string name="crash_multiple_notification__body" comment="Body of the notification for consecutive crashes">Повернення до попередньої клавіатури, щоб зупинити нескінченний цикл збою. Натисніть, щоб переглянути деталі про помилку</string>
     <!-- Clipboard strings -->
     <string name="clipboard__header_title">Буфер обміну</string>
@@ -523,7 +523,7 @@
     <string name="clip__pin_item">Закріпити</string>
     <string name="clip__delete_item">Видалити</string>
     <string name="clip__paste_item">Вставити</string>
-    <string name="clip__back_to_text_input">Повернутися до вводу тексту</string>
+    <string name="clip__back_to_text_input">Повернутися до набору тексту</string>
     <string name="clip__cant_paste">Цей додаток не дозволяє вставляти такі дані.</string>
     <string name="clipboard__cleared_primary_clip">Основний запис очищено</string>
     <string name="clipboard__cleared_history">Очищена історія</string>
@@ -623,7 +623,7 @@
     <string name="ext__editor__create_component__from_empty_warning">Створення та налаштування порожнього компонента може бути складним, якщо ви новачок в {app_name} або якщо ви не знайомі з його специфікою. У такому випадку розгляньте можливість копіювання наявного компонента і зміни його на свій розсуд.</string>
     <string name="ext__editor__edit_component__title">Редагувати компонент</string>
     <string name="ext__editor__edit_component__title_theme">Редагувати компонент теми</string>
-    <string name="ext__export__success">Розширення успішно еспортовано!</string>
+    <string name="ext__export__success">Розширення успішно експортовано!</string>
     <string name="ext__export__failure">Не вдалося експортувати розширення: {error_message}</string>
     <string name="ext__import__success">Розширення успішно імпортовано!</string>
     <string name="ext__import__failure">Не вдалося імпортувати розширення: {error_message}</string>
@@ -740,13 +740,13 @@
     <string name="enum__display_language_names_in__native_locale" comment="Enum value label">Рідна мова</string>
     <string name="enum__display_language_names_in__native_locale__description" comment="Enum value description">Назви мов у застосунку та інтерфейсі клавіатури показуються відповідно до мови, на яку вони посилаються</string>
     <string name="enum__emoji_history_update_strategy__auto_sort_prepend" comment="Enum value label">Автосортування (додавання)</string>
-    <string name="enum__emoji_history_update_strategy__auto_sort_prepend__description" comment="Enum value description">Автоматично змінювати порядок при використанні емоджі. Нові емоджі додаються до початку.</string>
+    <string name="enum__emoji_history_update_strategy__auto_sort_prepend__description" comment="Enum value description">Автоматично змінювати порядок при використанні емодзі. Нові емодзі додаються до початку.</string>
     <string name="enum__emoji_history_update_strategy__auto_sort_append" comment="Enum value label">Автосортування (додавання)</string>
-    <string name="enum__emoji_history_update_strategy__auto_sort_append__description" comment="Enum value description">Автоматично змінювати порядок при використанні емоджі. Нові емоджі додаються в кінець.</string>
+    <string name="enum__emoji_history_update_strategy__auto_sort_append__description" comment="Enum value description">Автоматично змінювати порядок при використанні емодзі. Нові емодзі додаються в кінець.</string>
     <string name="enum__emoji_history_update_strategy__manual_sort_prepend" comment="Enum value label">Ручне сортування (додавання)</string>
-    <string name="enum__emoji_history_update_strategy__manual_sort_prepend__description" comment="Enum value description">Не змінює автоматично порядок при використанні емоджі. Нові емоджі додаються на початок.</string>
+    <string name="enum__emoji_history_update_strategy__manual_sort_prepend__description" comment="Enum value description">Не змінює автоматично порядок при використанні емодзі. Нові емодзі додаються на початок.</string>
     <string name="enum__emoji_history_update_strategy__manual_sort_append" comment="Enum value label">Ручне сортування (додавання)</string>
-    <string name="enum__emoji_history_update_strategy__manual_sort_append__description" comment="Enum value description">Не змінює автоматично порядок при використанні емоджі. Нові емоджі додаються в кінець.</string>
+    <string name="enum__emoji_history_update_strategy__manual_sort_append__description" comment="Enum value description">Не змінює автоматично порядок при використанні емодзі. Нові емодзі додаються в кінець.</string>
     <string name="enum__emoji_skin_tone__default" comment="Enum value label">Типовий колір шкіри {emoji}</string>
     <string name="enum__emoji_skin_tone__light_skin_tone" comment="Enum value label">{emoji} Світлий тон шкіри</string>
     <string name="enum__emoji_skin_tone__medium_light_skin_tone" comment="Enum value label">Світлуватий колір шкіри {emoji}</string>
@@ -759,9 +759,9 @@
     <string name="enum__emoji_hair_style__white_hair" comment="Enum value label">Біле волосся {emoji}</string>
     <string name="enum__emoji_hair_style__bald" comment="Enum value label">Лисий {emoji}</string>
     <string name="enum__emoji_suggestion_type__leading_colon">Початкова двокрапка</string>
-    <string name="enum__emoji_suggestion_type__leading_colon__description" comment="Keep the :emoji_name while translating, this is a syntax guide">Пропозиція емоджі за допомогою синтаксису «:назва_емоджі»</string>
+    <string name="enum__emoji_suggestion_type__leading_colon__description" comment="Keep the :emoji_name while translating, this is a syntax guide">Пропозиція емодзі за допомогою синтаксису «:назва_емодзі»</string>
     <string name="enum__emoji_suggestion_type__inline_text">Вбудований текст</string>
-    <string name="enum__emoji_suggestion_type__inline_text__description">Пропонує емоджі, просто ввівши назву як слово</string>
+    <string name="enum__emoji_suggestion_type__inline_text__description">Пропонує емодзі, просто ввівши назву як слово</string>
     <string name="enum__extended_actions_placement__above_candidates" comment="Enum value label">Вищезазначені пропозиції</string>
     <string name="enum__extended_actions_placement__above_candidates__description" comment="Enum value description">Розміщує розширений рядок дій між інтерфейсом застосунку та рядком пропозицій</string>
     <string name="enum__extended_actions_placement__below_candidates" comment="Enum value label">Нижчезазначені пропозиції</string>
@@ -843,8 +843,8 @@
     <string name="enum__swipe_action__undo" comment="Enum value label">Відмінити</string>
     <string name="enum__swipe_action__select_characters_precisely" comment="Enum value label">Точне виділення символів</string>
     <string name="enum__swipe_action__select_words_precisely" comment="Enum value label">Точне виділення слів</string>
-    <string name="enum__swipe_action__show_input_method_picker" comment="Enum value label">Показати вибір методу вводу</string>
-    <string name="enum__swipe_action__switch_to_prev_keyboard" comment="Enum value label">Перемикнутись на попередню клавіатуру</string>
+    <string name="enum__swipe_action__show_input_method_picker" comment="Enum value label">Показати вибір клавіатури</string>
+    <string name="enum__swipe_action__switch_to_prev_keyboard" comment="Enum value label">Перемкнутися на попередню клавіатуру</string>
     <string name="enum__swipe_action__switch_to_prev_subtype" comment="Enum value label">Перемкнутись на попередню розкладку</string>
     <string name="enum__swipe_action__switch_to_next_subtype" comment="Enum value label">Перемкнутись на наступну розкладку</string>
     <string name="enum__swipe_action__toggle_smartbar_visibility" comment="Enum value label">Перемикання видимості розумної панелі</string>
@@ -852,10 +852,10 @@
     <string name="enum__theme_mode__always_night" comment="Enum value label">Завжди ніч</string>
     <string name="enum__theme_mode__follow_system" comment="Enum value label">Дотримуватись системи</string>
     <string name="enum__theme_mode__follow_time" comment="Enum value label">Дотримуватись часу</string>
-    <string name="enum__utility_key_action__switch_to_emojis" comment="Enum value label">Перемикнутись на емоджі</string>
+    <string name="enum__utility_key_action__switch_to_emojis" comment="Enum value label">Перемкнутися на емодзі</string>
     <string name="enum__utility_key_action__switch_language" comment="Enum value label">Змінити мову</string>
-    <string name="enum__utility_key_action__switch_keyboard_app" comment="Enum value label">Перемикнути програму клавіатури</string>
-    <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">Динамічне: Перемикнутись на емоджі / Змінити мову</string>
+    <string name="enum__utility_key_action__switch_keyboard_app" comment="Enum value label">Перемкнути клавіатуру</string>
+    <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">Динамічне: Перемкнутися на емодзі / Змінити мову</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
     <plurals name="unit__hours__written">

@@ -56,7 +56,6 @@ import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.roundToIntRect
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.app.devtools.DevtoolsOverlay
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardInputLayout
 import dev.patrickgold.florisboard.ime.keyboard.ProvideKeyboardRowBaseHeight
@@ -91,7 +90,6 @@ import kotlin.time.Duration.Companion.milliseconds
  *
  * @see ImeWindow
  * @see BottomSheetWindow
- * @see DevtoolsOverlay
  */
 @Composable
 fun ImeRootWindow() {
@@ -121,7 +119,6 @@ fun ImeRootWindow() {
                 windowController.updateRootInsets(newInsets)
             },
     ) {
-        DevtoolsOverlay()
         ImeWindow()
         BottomSheetWindow()
         ImeSystemUi()
