@@ -1,8 +1,10 @@
 package ua.pysanka.ai
 
 import android.content.Context
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
@@ -22,7 +24,7 @@ object AiJob {
     const val PART = 3500
 
     /** Changes of style, asked again when they changed almost nothing. */
-    private val STYLES = setOf(AiAction.FRIENDLY, AiAction.FORMAL, AiAction.SHORTER, AiAction.MY_STYLE)
+    private val STYLES = setOf(AiAction.FRIENDLY, AiAction.FORMAL, AiAction.SHORTER)
 
     /** The most a [AiAction.Kind.WHOLE] or [AiAction.Kind.ADVICE] action takes at once. */
     const val WHOLE_MAX = 6000
@@ -78,7 +80,11 @@ object AiJob {
         // A part asked again takes longer than the speed of this phone says
         var retried = false
         // The person's own samples, read here (in the AI's process) only for this action
-        val style = if (action == AiAction.MY_STYLE) StyleSamples.forPrompt(StyleSamples.read(context)) else emptyList()
+        val style = if (action == AiAction.MY_STYLE) {
+            withContext(Dispatchers.IO) { StyleSamples.forPrompt(StyleSamples.read(context)) }
+        } else {
+            emptyList()
+        }
         check(action != AiAction.MY_STYLE || style.isNotEmpty()) { "No style samples" }
         val result = when (action.kind) {
             AiAction.Kind.WHOLE, AiAction.Kind.ADVICE -> {

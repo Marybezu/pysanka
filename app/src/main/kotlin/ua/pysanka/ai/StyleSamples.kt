@@ -64,7 +64,7 @@ object StyleSamples {
             DataInputStream(ByteArrayInputStream(plain)).use { s ->
                 val n = s.readUnsignedByte()
                 require(n <= MAX)
-                List(n) { s.readUTF().take(MAX_CHARS) }.filter { it.isNotBlank() }
+                List(n) { cut(s.readUTF()) }.filter { it.isNotBlank() }
             }
         } finally {
             plain.fill(0)
@@ -74,7 +74,7 @@ object StyleSamples {
     /** Keeps [samples] (at most [MAX], each at most [MAX_CHARS]); none removes the file. Off the main thread. */
     @Synchronized
     fun write(context: Context, samples: List<String>) {
-        val kept = samples.map { it.trim().take(MAX_CHARS) }.filter { it.isNotEmpty() }.take(MAX)
+        val kept = samples.map { cut(it.trim()) }.filter { it.isNotEmpty() }.take(MAX)
         val target = file(context)
         if (kept.isEmpty()) {
             target.delete()
@@ -108,10 +108,17 @@ object StyleSamples {
         }
     }
 
-    /** The samples as they go to the model: in order, up to [PROMPT_CHARS]. */
+    /** The samples as they go to the model: in order, those that fit in [PROMPT_CHARS] together (the first always). */
     fun forPrompt(samples: List<String>): List<String> {
         var left = PROMPT_CHARS
-        return samples.takeWhile { s -> (left > 0).also { left -= s.length } }.map { it.take(MAX_CHARS) }
+        return samples.filterIndexed { i, s -> (i == 0 || s.length <= left).also { if (it) left -= s.length } }
+    }
+
+    /** At most [MAX_CHARS], never cutting an emoji or another character in two. */
+    fun cut(text: String): String {
+        if (text.length <= MAX_CHARS) return text
+        val end = if (Character.isHighSurrogate(text[MAX_CHARS - 1])) MAX_CHARS - 1 else MAX_CHARS
+        return text.substring(0, end)
     }
 
     private fun key(): SecretKey {

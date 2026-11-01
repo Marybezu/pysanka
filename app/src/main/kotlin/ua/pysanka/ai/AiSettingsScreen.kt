@@ -128,13 +128,18 @@ private fun StyleSection() {
     var samples by remember { mutableStateOf<List<String>?>(null) }
     var adding by remember { mutableStateOf(false) }
     var draft by remember { mutableStateOf("") }
+    // One change at a time: each is made from the list as it was saved
+    var saving by remember { mutableStateOf(false) }
     androidx.compose.runtime.LaunchedEffect(Unit) {
         samples = withContext(Dispatchers.IO) { StyleSamples.read(context) }
     }
     fun save(new: List<String>) {
+        if (saving) return
+        saving = true
         scope.launch {
             val ok = withContext(Dispatchers.IO) { runCatching { StyleSamples.write(context, new) }.isSuccess }
             if (ok) samples = new else Toast.makeText(context, R.string.pysanka__style__save_failed, Toast.LENGTH_LONG).show()
+            saving = false
         }
     }
 
@@ -146,13 +151,13 @@ private fun StyleSection() {
         OutlinedCard(Modifier.fillMaxWidth()) {
             Row(Modifier.padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(sample, style = MaterialTheme.typography.bodySmall, maxLines = 3, modifier = Modifier.weight(1f).padding(vertical = 8.dp))
-                IconButton(onClick = { save(list.filterIndexed { j, _ -> j != i }) }) {
+                IconButton(onClick = { save(list.filterIndexed { j, _ -> j != i }) }, enabled = !saving) {
                     Icon(Icons.Default.Delete, contentDescription = stringRes(R.string.pysanka__style__remove))
                 }
             }
         }
     }
-    OutlinedButton(onClick = { draft = ""; adding = true }, enabled = list.size < StyleSamples.MAX) {
+    OutlinedButton(onClick = { draft = ""; adding = true }, enabled = list.size < StyleSamples.MAX && !saving) {
         Text(stringRes(R.string.pysanka__style__add))
     }
     if (adding) {
@@ -162,7 +167,7 @@ private fun StyleSection() {
             text = {
                 OutlinedTextField(
                     value = draft,
-                    onValueChange = { draft = it.take(StyleSamples.MAX_CHARS) },
+                    onValueChange = { draft = StyleSamples.cut(it) },
                     label = { Text(stringRes(R.string.pysanka__style__hint, "n" to draft.length.toString(), "max" to StyleSamples.MAX_CHARS.toString())) },
                     minLines = 4,
                     modifier = Modifier.fillMaxWidth(),
