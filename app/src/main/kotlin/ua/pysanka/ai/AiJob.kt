@@ -113,11 +113,17 @@ object AiJob {
             ask(context, AiPrompts.summaryPart(i + 1, parts.size), p.text, 0.2, p.text)
         }.joinToString("\n")
         // Notes on very many parts may themselves be too long for one go: shorten them in parts
-        while (notes.length > PART * 2) {
-            notes = TextChunks.split(notes, PART).joinToString("\n") {
-                ask(context, AiPrompts.summaryJoin(), it.text, 0.2, it.text)
+        // (at most twice; whatever is left over is cut at a sentence, never looped on)
+        var rounds = 0
+        while (notes.length > PART * 2 && rounds < 2) {
+            val shorter = StringBuilder()
+            for (p in TextChunks.split(notes, PART)) {
+                shorter.append(ask(context, AiPrompts.summaryJoin(), p.text, 0.2, p.text)).append('\n')
             }
+            notes = shorter.toString()
+            rounds++
         }
+        notes = TextChunks.prefix(notes, PART * 2)
         onPart(total, total)
         return ask(context, AiPrompts.summaryJoin(), notes, 0.2, notes)
     }
