@@ -9,7 +9,7 @@ import android.widget.Toast
 import dev.patrickgold.florisboard.FlorisApplication
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.ime.keyboard3.ImeEditor
+import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
 import ua.pysanka.privacy.FieldPrivacy
 
 /**
@@ -45,7 +45,7 @@ object AiBridge {
 
     private class Target(val field: Field, val taken: Taken, val session: Long)
 
-    private fun fieldOf(info: dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo) = Field(
+    private fun fieldOf(info: FlorisEditorInfo) = Field(
         info.packageName, info.base.fieldId, info.base.fieldName, info.base.inputType, info.base.hintText?.toString(),
     )
 
@@ -60,27 +60,28 @@ object AiBridge {
     }
 
     /** What the panel works on, from pressing ✨ until the panel takes it. */
-    class Panel(val editor: ImeEditor, val taken: Taken)
+    class Panel(val info: FlorisEditorInfo, val taken: Taken) {
+        /** In Pysanka's own fields the full editor is not offered (it could be the editor's own field). */
+        val canExpand get() = info.packageName != FlorisApplication.getHack().packageName
+    }
 
     private var panel: Panel? = null
 
     /**
      * The "AI" button on the keyboard: reads the text for the panel (see [AiPanel]). False if the
-     * panel must not open here (then the person is told why, or nothing happens in Pysanka itself).
+     * panel must not open here (then the person is told why).
      */
-    fun openPanel(editor: ImeEditor): Boolean {
-        // Not in Pysanka's own fields (the full editor would replace the field the text came from)
-        if (editor.info.packageName == FlorisApplication.getHack().packageName) return false
+    fun openPanel(info: FlorisEditorInfo): Boolean {
         if (FieldPrivacy.isPassword || FieldPrivacy.isPrivate) {
             toast(R.string.pysanka__ai__not_here)
             return false
         }
-        val taken = editor.pysankaTextForAi(MAX_CHARS) ?: return false
+        val taken = ua.pysanka.ime.FieldText.textForAi(MAX_CHARS) ?: return false
         if (taken.text.length > MAX_CHARS) {
             toast(R.string.pysanka__ai__too_long)
             return false
         }
-        panel = Panel(editor, taken)
+        panel = Panel(info, taken)
         return true
     }
 
@@ -91,8 +92,8 @@ object AiBridge {
      * "Expand" in the panel: the full editor on [text] (the field's text, or what the panel made of
      * it), its answer going back to the field as from the panel.
      */
-    fun openEditor(editor: ImeEditor, taken: Taken, text: String, preset: AiAction) {
-        open(fieldOf(editor.info), taken, text, preset)
+    fun openEditor(info: FlorisEditorInfo, taken: Taken, text: String, preset: AiAction) {
+        open(fieldOf(info), taken, text, preset)
     }
 
     /**
@@ -145,7 +146,7 @@ object AiBridge {
      * after the answer decides: it is cleared either way (Pysanka's own screens do not count).
      */
     @Synchronized
-    fun takeFor(info: dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo, isPassword: Boolean): Result? {
+    fun takeFor(info: FlorisEditorInfo, isPassword: Boolean): Result? {
         val a = answer ?: return null
         val t = target ?: return null
         if (info.packageName == FlorisApplication.getHack().packageName) return null

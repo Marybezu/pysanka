@@ -17,17 +17,12 @@
 package dev.patrickgold.florisboard.app
 
 import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideOut
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -55,7 +50,6 @@ import dev.patrickgold.florisboard.app.settings.dictionary.DictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
 import dev.patrickgold.florisboard.app.settings.gestures.GesturesScreen
-import dev.patrickgold.florisboard.app.settings.keyboard.FnKeyScreen
 import dev.patrickgold.florisboard.app.settings.keyboard.KeyboardScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
@@ -131,11 +125,7 @@ object Routes {
 
         @Serializable
         @Deeplink("settings/keyboard")
-        object Keyboard {
-            @Serializable
-            @Deeplink("settings/keyboard/fn-key")
-            object FnKey
-        }
+        object Keyboard
 
         @Serializable
         @Deeplink("settings/smartbar")
@@ -174,10 +164,6 @@ object Routes {
         @Serializable
         @Deeplink("settings/pysanka/look")
         object PysankaLook
-
-        @Serializable
-        @Deeplink("settings/pysanka/sound")
-        object PysankaSound
 
         @Serializable
         @Deeplink("settings/pysanka/privacy")
@@ -272,12 +258,12 @@ object Routes {
             exitTransition = {
                 slideOut { IntOffset(-it.width, 0) } + fadeOut()
             },
-            popEnterTransition = { EnterTransition.None },
+            // Pysanka: back slides the screen away to the right (it shrank into a card before)
+            popEnterTransition = {
+                slideIn { IntOffset(-it.width / 4, 0) } + fadeIn()
+            },
             popExitTransition = {
-                scaleOut(
-                    targetScale = 0.85F,
-                    transformOrigin = TransformOrigin(pivotFractionX = 0.8f, pivotFractionY = 0.5f)
-                ) + fadeOut(spring(stiffness = Spring.StiffnessMedium))
+                slideOut { IntOffset(it.width, 0) } + fadeOut()
             },
         ) {
             composable<Setup.Screen> { SetupScreen() }
@@ -303,7 +289,6 @@ object Routes {
             }
 
             composableWithDeepLink(Settings.Keyboard::class) { KeyboardScreen() }
-            composableWithDeepLink(Settings.Keyboard.FnKey::class) { FnKeyScreen() }
 
             composableWithDeepLink(Settings.Smartbar::class) { SmartbarScreen() }
 
@@ -322,7 +307,6 @@ object Routes {
             composableWithDeepLink(Settings.ClipboardTags::class) { ua.pysanka.clipboard.ClipboardTagsScreen() }
             composableWithDeepLink(Settings.PysankaTyping::class) { ua.pysanka.settings.PysankaTypingScreen() }
             composableWithDeepLink(Settings.PysankaLook::class) { ua.pysanka.settings.PysankaLookScreen() }
-            composableWithDeepLink(Settings.PysankaSound::class) { ua.pysanka.settings.PysankaSoundScreen() }
             composableWithDeepLink(Settings.PysankaPrivacy::class) { ua.pysanka.settings.PysankaPrivacyScreen() }
             composableWithDeepLink(Settings.PysankaMore::class) { ua.pysanka.settings.PysankaMoreScreen() }
             composableWithDeepLink(Settings.PysankaAi::class) { ua.pysanka.ai.AiSettingsScreen() }

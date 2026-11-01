@@ -20,6 +20,8 @@ import android.content.Context
 import android.net.Uri
 import android.os.FileObserver
 import dev.patrickgold.florisboard.appContext
+import dev.patrickgold.florisboard.ime.keyboard.KeyboardExtension
+import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
 import dev.patrickgold.florisboard.ime.text.composing.Appender
 import dev.patrickgold.florisboard.ime.text.composing.Composer
 import dev.patrickgold.florisboard.ime.text.composing.HangulUnicode
@@ -29,6 +31,12 @@ import dev.patrickgold.florisboard.ime.theme.ThemeExtension
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
+import dev.patrickgold.florisboard.lib.io.FlorisRef
+import dev.patrickgold.florisboard.lib.io.ZipUtils
+import dev.patrickgold.florisboard.lib.io.delete
+import dev.patrickgold.florisboard.lib.io.listDirs
+import dev.patrickgold.florisboard.lib.io.listFiles
+import dev.patrickgold.florisboard.lib.io.loadJsonAsset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi
@@ -50,7 +58,6 @@ import org.florisboard.lib.kotlin.io.FsFile
 import org.florisboard.lib.kotlin.io.writeJson
 import org.florisboard.lib.kotlin.throwOnFailure
 
-/*
 @OptIn(ExperimentalSerializationApi::class)
 val ExtensionJsonConfig = Json {
     classDiscriminator = "$"
@@ -78,7 +85,6 @@ val ExtensionJsonConfig = Json {
 class ExtensionManager(context: Context) {
     companion object {
         const val IME_KEYBOARD_PATH = "ime/keyboard"
-        const val IME_KEYBOARD3_PATH = "ime/keyboard3"
         const val IME_THEME_PATH = "ime/theme"
         const val IME_LANGUAGEPACK_PATH = "ime/languagepack"
 
@@ -256,4 +262,3 @@ class ExtensionManager(context: Context) {
         }
     }
 }
- */

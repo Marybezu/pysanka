@@ -662,8 +662,6 @@
     <string name="ext__validation__enter_percent_size">Введіть розмір у відсотках</string>
     <string name="ext__validation__enter_number_between_0_100">Введіть додатне число від 0 до 100</string>
     <string name="ext__validation__hint_value_above_50_percent">Будь-яке значення вище 50% буде таке ж як і 50%, розгляньте можливість зменшення розміру відсотка</string>
-    <string name="ext__update_box__internet_permission_hint">Оскільки цей застосунок не має дозволу на доступ до Інтернету, оновлення для встановлених розширень потрібно перевіряти вручну.</string>
-    <string name="ext__update_box__search_for_updates">Перевірити оновлення</string>
     <string name="ext__addon_management_box__managing_placeholder">Керування {extensions}</string>
     <string name="ext__addon_management_box__addon_manager_info">Всі завдання, пов\'язані з імпортом, експортом, створенням, налаштуванням і видаленням розширень, можна вирішувати за допомогою централізованого менеджера розширень.</string>
     <string name="ext__addon_management_box__go_to_page">Перейти до {ext_home_title}</string>
@@ -671,7 +669,6 @@
     <string name="ext__home__visit_store">Відвідати магазин розширень</string>
     <string name="ext__home__manage_extensions">Керування встановленими розширеннями</string>
     <string name="ext__list__view_details">Докладніше</string>
-    <string name="ext__check_updates__title">Перевірити оновлення</string>
     <!-- Action strings -->
     <string name="action__add">Додати</string>
     <string name="action__apply">Застосувати</string>
@@ -894,4 +891,47 @@
         <item quantity="many">{v} пропозицій</item>
         <item quantity="other">{v} пропозицій</item>
     </plurals>
+    <!-- Pysanka: translations missing from FlorisBoard -->
+    <string name="quick_action__ime_hide_ui">Сховати клавіатуру</string>
+    <string name="quick_action__ime_hide_ui__tooltip">Сховати клавіатуру</string>
+    <string name="quick_action__forward_delete">Видалити вперед</string>
+    <string name="quick_action__language_switch__tooltip">Перемкнути мову</string>
+    <string name="quick_action__floating_window_mode">Плаваюча</string>
+    <string name="quick_action__floating_window_mode__tooltip">Плаваюча клавіатура: увімкнути чи вимкнути</string>
+    <string name="quick_action__resize_mode">Розмір</string>
+    <string name="quick_action__resize_mode__tooltip">Змінити розмір клавіатури</string>
+    <string name="pref__theme__theme_accent_color__label">Акцентний колір (теми Material You)</string>
+    <string name="pref__keyboard__key_spacing__label">Відстань між клавішами</string>
+    <string name="pref__suggestion__block_possibly_offensive__summary">Не пропонує слів, що можуть бути образливими</string>
+    <string name="pref__suggestion__api30_inline_suggestions_enabled__label">Системне автозаповнення</string>
+    <string name="physical_keyboard__title">Фізична клавіатура</string>
+    <string name="physical_keyboard__system_settings__title">Системні налаштування фізичної клавіатури</string>
+    <string name="physical_keyboard__system_settings__summary">Розкладки, скорочення й клавіші-модифікатори</string>
+    <string name="physical_keyboard__system_settings__summary_not_attached">Доступно лише з під’єднаною клавіатурою</string>
+    <string name="physical_keyboard__show_on_screen_keyboard__title">Показувати екранну клавіатуру</string>
+    <string name="physical_keyboard__show_on_screen_keyboard__summary">Показувати екранну клавіатуру, коли під’єднано фізичну</string>
+    <string name="crash_dialog__bug_report_template">Звіт про збій</string>
+    <string name="clipboard__confirm_clear_unfiltered_history__message">Очистити всю історію буфера? Видаляться всі записи, крім закріплених.</string>
+    <string name="clipboard__confirm_clear_filtered_history__message">Очистити історію буфера? Видаляться всі показані записи, крім закріплених.</string>
+    <string name="pref__clipboard__history_hide_on_paste__label">Ховати історію після вставлення</string>
+    <string name="pref__clipboard__history_hide_on_next_text_field__label">Ховати історію в наступному полі</string>
+    <string name="pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label">Очищення буфера видаляє запис з історії</string>
+    <string name="pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary">Очищений вміст буфера зникає й з історії, якщо він не закріплений</string>
+    <string name="action__reset">Скинути</string>
+    <string name="action__import_file">Імпортувати файл</string>
+    <string name="general__file_name">Назва файлу</string>
+    <string name="general__properties">Властивості</string>
+    <string name="enum__ime_window_mode__fixed">Закріплена</string>
+    <string name="enum__ime_window_mode__floating">Плаваюча</string>
+    <string name="enum__keyboard_mode__characters">Літери</string>
+    <string name="enum__keyboard_mode__symbols">Символи</string>
+    <string name="enum__keyboard_mode__symbols2">Символи 2</string>
+    <string name="enum__keyboard_mode__numeric">Цифри</string>
+    <string name="enum__keyboard_mode__numeric_advanced">Цифри (розширені)</string>
+    <string name="enum__keyboard_mode__phone">Телефон</string>
+    <string name="enum__keyboard_mode__phone2">Телефон 2</string>
+    <string name="enum__swipe_action__switch_to_media_context">Відкрити панель емодзі</string>
+    <string name="unit__milliseconds__symbol">{v} мс</string>
+    <string name="unit__percent__symbol">{v}%</string>
+    <string name="unit__display_pixel__symbol">{v} dp</string>
 </resources>

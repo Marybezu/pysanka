@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.app.settings.theme
 
 import android.icu.lang.UCharacter
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColor
 import androidx.compose.animation.core.RepeatMode
@@ -43,6 +44,7 @@ import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Pageview
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -55,7 +57,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -69,14 +70,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.InteractionController
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.LocalInteractionController
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.showShortToast
-import dev.patrickgold.florisboard.ime.keyboard3.touch.InputShiftState
+import dev.patrickgold.florisboard.ime.input.InputKeyEventReceiver
+import dev.patrickgold.florisboard.ime.input.InputShiftState
+import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
+import dev.patrickgold.florisboard.ime.keyboard.DefaultComputingEvaluator
+import dev.patrickgold.florisboard.ime.keyboard.Key
+import dev.patrickgold.florisboard.ime.keyboard.KeyData
+import dev.patrickgold.florisboard.ime.keyboard.Keyboard
+import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
+import dev.patrickgold.florisboard.ime.keyboard.computeImageVector
+import dev.patrickgold.florisboard.ime.keyboard.computeLabel
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.ime.window.ImeWindowMode
+import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.NATIVE_NULLPTR
 import dev.patrickgold.florisboard.lib.compose.FlorisHyperlinkText
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
@@ -84,7 +92,7 @@ import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdown
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import dev.patrickgold.jetpref.material.ui.JetPrefTextFieldDefaults
-import kotlinx.coroutines.launch
+import org.florisboard.lib.android.showShortToastSync
 import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.FlorisChip
 import org.florisboard.lib.compose.FlorisIconButton
@@ -105,6 +113,7 @@ private val TransparentTextSelectionColors = TextSelectionColors(
 )
 internal val SnyggEmptyRuleForAdding = SnyggElementRule(elementName = "--select--")
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun EditRuleDialog(
     initRule: SnyggRule,
@@ -325,7 +334,6 @@ internal fun EditRuleDialog(
                     }
                 }
 
-                /* TODO migrate to layerId
                 EnumLikeAttributeBox(
                     text = stringRes(R.string.settings__theme_editor__rule_modes),
                     enumClass = KeyboardMode::class,
@@ -334,7 +342,6 @@ internal fun EditRuleDialog(
                     setAttributes = { currentRule = copy(attributes = it) },
                     level = level,
                 )
-                */
 
                 EnumLikeAttributeBox(
                     text = stringRes(R.string.settings__theme_editor__rule_shift_states),
@@ -358,6 +365,7 @@ internal fun EditRuleDialog(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EditCodeValueDialog(
     codeValue: String,
@@ -367,8 +375,7 @@ private fun EditCodeValueDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    val interactionController = LocalInteractionController.current
-    val scope = rememberCoroutineScope()
+    val keyboardManager by context.keyboardManager()
 
     var inputCodeString by rememberSaveable(codeValue) {
         val str = if (codeValue == KeyCode.UNSPECIFIED.toString()) "" else codeValue
@@ -388,7 +395,7 @@ private fun EditCodeValueDialog(
     val isFlorisBoardSelected by InputMethodUtils.observeIsFlorisboardSelected(foregroundOnly = true)
 
     var isRecordingKey by remember { mutableStateOf(false) }
-    var lastRecordingToast by remember { mutableStateOf<InteractionController.ToastHandle?>(null) }
+    var lastRecordingToast by remember { mutableStateOf<Toast?>(null) }
     val recordingKeyColor = if (isRecordingKey) {
         rememberInfiniteTransition().animateColor(
             initialValue = LocalContentColor.current,
@@ -402,20 +409,17 @@ private fun EditCodeValueDialog(
         LocalContentColor.current
     }
 
-    val startRecordingMsg = stringRes(R.string.settings__theme_editor__code_recording_requires_default_ime_floris)
     fun requestStartRecording() {
         if (isRecordingKey) {
             isRecordingKey = false
             return
         }
         if (!isFlorisBoardEnabled || !isFlorisBoardSelected) {
-            scope.launch {
-                lastRecordingToast?.hide()
-                lastRecordingToast = interactionController.showShortToast(
-                    startRecordingMsg,
-                    "app_name" to context.stringRes(R.string.floris_app_name),
-                )
-            }
+            lastRecordingToast?.cancel()
+            lastRecordingToast = context.showShortToastSync(
+                R.string.settings__theme_editor__code_recording_requires_default_ime_floris,
+                "app_name" to context.stringRes(R.string.floris_app_name),
+            )
             InputMethodUtils.showImePicker(context)
             return
         }
@@ -425,8 +429,6 @@ private fun EditCodeValueDialog(
 
     if (isRecordingKey) {
         DisposableEffect(Unit) {
-            // TODO
-            /*
             val receiver = object : InputKeyEventReceiver {
                 override fun onInputKeyDown(data: KeyData) = Unit
                 override fun onInputKeyUp(data: KeyData) {
@@ -447,8 +449,6 @@ private fun EditCodeValueDialog(
                 lastRecordingToast?.cancel()
                 lastRecordingToast = context.showShortToastSync(R.string.settings__theme_editor__code_recording_stopped)
             }
-             */
-            onDispose {  }
         }
     }
 
@@ -607,8 +607,25 @@ private fun TextKeyDataPreviewBox(
 ) {
     val data = textKeyData ?: TextKeyData.UNSPECIFIED
 
-    val label = "" // TODO remember(data) { evaluator.computeLabel(data) }
-    val icon = null // TODO remember(data) { evaluator.computeImageVector(data) }
+    val context = LocalContext.current
+    val evaluator = remember(context) {
+        object : ComputingEvaluator by DefaultComputingEvaluator {
+            override val keyboard = object : Keyboard() {
+                override val mode = KeyboardMode.NUMERIC_ADVANCED
+                override fun getKeyForPos(pointerX: Float, pointerY: Float) = error("not implemented")
+                override fun keys() = error("not implemented")
+                override fun layout(
+                    keyboardWidth: Float, keyboardHeight: Float, desiredKey: Key,
+                    extendTouchBoundariesDownwards: Boolean,
+                ) = error("not implemented")
+            }
+
+            override fun context() = context
+        }
+    }
+
+    val label = remember(data) { evaluator.computeLabel(data) }
+    val icon = remember(data) { evaluator.computeImageVector(data) }
     val displayName = remember(data) {
         if (data.code > 0) {
             UCharacter.getName(data.code) ?: UCharacter.getExtendedName(data.code)

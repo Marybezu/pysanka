@@ -26,7 +26,6 @@ import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.R
@@ -35,17 +34,18 @@ import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.app.ext.AddonManagementReferenceBox
 import dev.patrickgold.florisboard.app.ext.ExtensionListScreenType
-import dev.patrickgold.florisboard.ime.extension.ExtensionComponentName
-import dev.patrickgold.florisboard.ime.theme.LocalThemeController
-import dev.patrickgold.florisboard.ime.theme.PreferredThemeMode
+import dev.patrickgold.florisboard.ime.theme.ThemeManager
+import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
+import dev.patrickgold.florisboard.themeManager
+import dev.patrickgold.jetpref.datastore.model.observeAsState
 import dev.patrickgold.jetpref.datastore.ui.ColorPickerPreference
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.LocalTimePickerPreference
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.isMaterialYou
-import org.florisboard.lib.snygg.color.ColorMappings
+import org.florisboard.lib.color.ColorMappings
 import org.florisboard.lib.compose.stringRes
 
 @Composable
@@ -55,34 +55,30 @@ fun ThemeScreen() = FlorisScreen {
 
     val context = LocalContext.current
     val navController = LocalNavController.current
-    val themeController = LocalThemeController.current
-    val themeIndex by themeController.effectiveThemeIndex.collectAsState()
+    val themeManager by context.themeManager()
 
     @Composable
-    fun rememberThemeName(themeId: ExtensionComponentName): String {
-        return remember(themeId, themeIndex) {
-            themeIndex.extensions[themeId.extensionId]?.manifest?.themes
-                ?.first { it.id == themeId.componentId }
-                ?.name
-                ?: themeId.toString()
-        }
+    fun ThemeManager.getThemeLabel(id: ExtensionComponentName): String {
+        val configs by indexedThemeConfigs.collectAsState()
+        configs.first[id]?.let { return it.label }
+        return id.toString()
     }
 
     content {
-        val dayThemeId by prefs.theme.dayThemeId.collectAsState()
-        val nightThemeId by prefs.theme.nightThemeId.collectAsState()
+        val dayThemeId by prefs.theme.dayThemeId.observeAsState()
+        val nightThemeId by prefs.theme.nightThemeId.observeAsState()
 
         ListPreference(
             prefs.theme.mode,
             icon = Icons.Default.BrightnessAuto,
             title = stringRes(R.string.pref__theme__mode__label),
-            entries = enumDisplayEntriesOf(PreferredThemeMode::class),
+            entries = enumDisplayEntriesOf(ThemeMode::class),
         )
         Preference(
             icon = Icons.Default.LightMode,
             title = stringRes(R.string.pref__theme__day),
-            summary = rememberThemeName(dayThemeId),
-            enabledIf = { prefs.theme.mode isNotEqualTo PreferredThemeMode.ALWAYS_NIGHT },
+            summary = themeManager.getThemeLabel(dayThemeId),
+            enabledIf = { prefs.theme.mode isNotEqualTo ThemeMode.ALWAYS_NIGHT },
             onClick = {
                 navController.navigate(Routes.Settings.ThemeManager(ThemeManagerScreenAction.SELECT_DAY))
             },
@@ -90,8 +86,8 @@ fun ThemeScreen() = FlorisScreen {
         Preference(
             icon = Icons.Default.DarkMode,
             title = stringRes(R.string.pref__theme__night),
-            summary = rememberThemeName(nightThemeId),
-            enabledIf = { prefs.theme.mode isNotEqualTo PreferredThemeMode.ALWAYS_DAY },
+            summary = themeManager.getThemeLabel(nightThemeId),
+            enabledIf = { prefs.theme.mode isNotEqualTo ThemeMode.ALWAYS_DAY },
             onClick = {
                 navController.navigate(Routes.Settings.ThemeManager(ThemeManagerScreenAction.SELECT_NIGHT))
             },
@@ -100,13 +96,13 @@ fun ThemeScreen() = FlorisScreen {
             pref = prefs.theme.sunriseTime,
             title = stringRes(R.string.pref__theme__sunrise_time__label),
             icon = Icons.Default.WbTwilight,
-            enabledIf = { prefs.theme.mode isEqualTo PreferredThemeMode.FOLLOW_TIME },
+            enabledIf = { prefs.theme.mode isEqualTo ThemeMode.FOLLOW_TIME },
         )
         LocalTimePickerPreference(
             pref = prefs.theme.sunsetTime,
             title = stringRes(R.string.pref__theme__sunset_time__label),
             icon = Icons.Default.Brightness2,
-            enabledIf = { prefs.theme.mode isEqualTo PreferredThemeMode.FOLLOW_TIME },
+            enabledIf = { prefs.theme.mode isEqualTo ThemeMode.FOLLOW_TIME },
         )
         ColorPickerPreference(
             pref = prefs.theme.accentColor,

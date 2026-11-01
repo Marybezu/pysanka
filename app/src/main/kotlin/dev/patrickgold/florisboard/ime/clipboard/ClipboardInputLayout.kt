@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2026 The FlorisBoard Contributors
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridS
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Backspace
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.FilterList
@@ -96,21 +97,22 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
-import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
-import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.LocalInteractionController
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.showShortToast
-import dev.patrickgold.florisboard.ime.keyboard3.ui.ImeKeyButton
+import dev.patrickgold.florisboard.ime.media.KeyboardLikeButton
 import dev.patrickgold.florisboard.ime.smartbar.AnimationDuration
 import dev.patrickgold.florisboard.ime.smartbar.VerticalEnterTransition
 import dev.patrickgold.florisboard.ime.smartbar.VerticalExitTransition
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.observeAsTransformingState
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
-import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.jetpref.datastore.model.observeAsState
+import java.time.Instant
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidKeyguardManager
+import org.florisboard.lib.android.AndroidVersion
+import org.florisboard.lib.android.showShortToastSync
 import org.florisboard.lib.android.systemService
 import org.florisboard.lib.compose.LocalLocalizedDateTimeFormatter
 import org.florisboard.lib.compose.autoMirrorForRtl
@@ -127,7 +129,6 @@ import org.florisboard.lib.snygg.ui.SnyggIcon
 import org.florisboard.lib.snygg.ui.SnyggIconButton
 import org.florisboard.lib.snygg.ui.SnyggRow
 import org.florisboard.lib.snygg.ui.SnyggText
-import java.time.Instant
 
 private val ItemWidth = 200.dp
 private val DialogWidth = 240.dp
@@ -142,12 +143,11 @@ fun ClipboardInputLayout(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val clipboardManager by context.clipboardManager()
-    val imeController = LocalImeController.current
-    val interactionController = LocalInteractionController.current
+    val keyboardManager by context.keyboardManager()
     val androidKeyguardManager = remember { context.systemService(AndroidKeyguardManager::class) }
 
     val deviceLocked = androidKeyguardManager.let { it.isDeviceLocked || it.isKeyguardLocked }
-    val historyEnabled by prefs.clipboard.historyEnabled.collectAsState()
+    val historyEnabled by prefs.clipboard.historyEnabled.observeAsState()
 
     // Pysanka: the tag slider is shown by default (the filter button hides it)
     var isFilterRowShown by remember { mutableStateOf(true) }
@@ -213,13 +213,7 @@ fun ClipboardInputLayout(
                 .aspectRatio(1f)
             SnyggIconButton(
                 elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
-                onClick = {
-                    imeController.updateStateBlocking {
-                        state = state.copy(
-                            flags = state.flags.withImeUiMode(ImeUiMode.TEXT),
-                        )
-                    }
-                },
+                onClick = { keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT },
                 modifier = sizeModifier,
             ) {
                 SnyggIcon(
@@ -281,11 +275,14 @@ fun ClipboardInputLayout(
                     },
                 )
             }
-            ImeKeyButton(
-                elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
-                output = ImeActions.Backspace,
+            KeyboardLikeButton(
                 modifier = sizeModifier,
-            )
+                inputEventDispatcher = keyboardManager.inputEventDispatcher,
+                keyData = TextKeyData.DELETE,
+                elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
+            ) {
+                SnyggIcon(imageVector = Icons.AutoMirrored.Outlined.Backspace)
+            }
         }
     }
 
@@ -637,15 +634,12 @@ fun ClipboardInputLayout(
                                     text = stringRes(R.string.action__no),
                                 )
                             }
-                            val clearedHistoryMsg = stringRes(R.string.clipboard__cleared_history)
                             SnyggButton(
                                 elementName = FlorisImeUi.ClipboardClearAllDialogButton.elementName,
                                 attributes = mapOf("action" to "yes"),
                                 onClick = {
-                                    scope.launch {
-                                        clipboardManager.clearExactHistory(filteredHistory.unpinned)
-                                        interactionController.showShortToast(clearedHistoryMsg)
-                                    }
+                                    clipboardManager.clearExactHistory(filteredHistory.unpinned)
+                                    context.showShortToastSync(R.string.clipboard__cleared_history)
                                     showClearAllHistory = false
                                 },
                             ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2026 The FlorisBoard Contributors
+ * Copyright (C) 2022-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package dev.patrickgold.florisboard.ime.editor
 import android.view.inputmethod.EditorInfo
 import androidx.core.view.inputmethod.EditorInfoCompat
 import androidx.emoji2.text.EmojiCompat
-import org.k3lp.runtime.K3TextRange
 
 class FlorisEditorInfo private constructor(val base: EditorInfo) {
     val inputAttributes = InputAttributes.wrap(base.inputType)
@@ -27,7 +26,7 @@ class FlorisEditorInfo private constructor(val base: EditorInfo) {
     val imeOptions = ImeOptions.wrap(base.imeOptions)
 
     val isRichInputEditor: Boolean
-        get() = inputAttributes.type != InputAttributes.Type.NULL
+        get() = inputAttributes.type != InputAttributes.Type.NULL || initialSelection.isValid
 
     val isRawInputEditor: Boolean
         get() = !isRichInputEditor
@@ -35,11 +34,11 @@ class FlorisEditorInfo private constructor(val base: EditorInfo) {
     val packageName: String?
         get() = base.packageName
 
-    val initialSelection: K3TextRange
+    val initialSelection: EditorRange
         get() = if (base.initialSelStart >= 0 && base.initialSelEnd >= 0) {
-            K3TextRange(base.initialSelStart, base.initialSelEnd)
+            EditorRange.normalized(base.initialSelStart, base.initialSelEnd)
         } else {
-            K3TextRange.Zero
+            EditorRange.Unspecified
         }
 
     val initialCapsMode: InputAttributes.CapsMode
@@ -79,10 +78,10 @@ class FlorisEditorInfo private constructor(val base: EditorInfo) {
     override fun hashCode(): Int {
         var result = inputAttributes.raw.hashCode()
         result = 31 * result + imeOptions.raw.hashCode()
-        result = 31 * result + packageName.hashCode()
+        result = 31 * result + (packageName?.hashCode() ?: 0)
         result = 31 * result + initialSelection.hashCode()
         result = 31 * result + initialCapsMode.hashCode()
-        result = 31 * result + extractedActionLabel.hashCode()
+        result = 31 * result + (extractedActionLabel?.hashCode() ?: 0)
         result = 31 * result + extractedActionId
         return result
     }

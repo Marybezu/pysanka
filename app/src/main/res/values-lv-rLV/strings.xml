@@ -748,8 +748,6 @@
     <string name="ext__validation__enter_percent_size">Lūgums ievadīt izmēru procentos</string>
     <string name="ext__validation__enter_number_between_0_100">Lūgumsi evadīt pozitīvu skaitli no 0 līdz 100</string>
     <string name="ext__validation__hint_value_above_50_percent">Jebkura vērtība virs 50% darbosies tā, it kā būtu iestatīti 50%, jāapsver pazemināt procentu izmērs</string>
-    <string name="ext__update_box__internet_permission_hint">Tā kā šai lietotnei nav atļaujas piekļūt internetam, uzstādīto paplašinājumu atjauninājumi jāpārbadua pašrocīgi.</string>
-    <string name="ext__update_box__search_for_updates">Meklēt atjauninājumus</string>
     <string name="ext__addon_management_box__managing_placeholder">Pārvalda {extensions}</string>
     <string name="ext__addon_management_box__addon_manager_info">Visi uzdevumi, kas saistīti ar paplašinājumu ievietošanu, izgūšanu, izveidošanu, pielāgošanu un noņemšanu, ir paveicami centralizētajā papildinājumu pārvaldniekā.</string>
     <string name="ext__addon_management_box__go_to_page">Doties uz {ext_home_title}</string>
@@ -757,7 +755,6 @@
     <string name="ext__home__visit_store">Apmeklēt papildinājumu glabātavu</string>
     <string name="ext__home__manage_extensions">Pārvaldīt uzstādītos paplašinājumus</string>
     <string name="ext__list__view_details">Skatīt izvērsumu</string>
-    <string name="ext__check_updates__title">Pārbaudīt atjauninājumus</string>
     <!-- Action strings -->
     <string name="action__add">Pievienot</string>
     <string name="action__apply">Pielietot</string>

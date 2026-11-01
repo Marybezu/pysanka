@@ -687,8 +687,6 @@
     <string name="ext__validation__enter_percent_size">Introdueix un percentatge</string>
     <string name="ext__validation__enter_number_between_0_100">Introdueix un nombre positiu entre 0 i 100</string>
     <string name="ext__validation__hint_value_above_50_percent">Qualsevol valor superior al 50% es comportarà com si fos el 50%, considera de disminuir-ne el percentatge</string>
-    <string name="ext__update_box__internet_permission_hint">Com que aquesta aplicació no té permisos per accedir a internet, les actualitzacions de les extensions instal·lades s\'han de comprovar manualment.</string>
-    <string name="ext__update_box__search_for_updates">Cerca actualitzacions</string>
     <string name="ext__addon_management_box__managing_placeholder">Gestionant {extensions}</string>
     <string name="ext__addon_management_box__addon_manager_info">Totes les tasques referides a la importació, exportació, creació, personalització i supressió d\'extensions es poden gestionar a través de l\'administrador de complements centralitzat.</string>
     <string name="ext__addon_management_box__go_to_page">Ves a {ext_home_title}</string>
@@ -696,7 +694,6 @@
     <string name="ext__home__visit_store">Visita la botiga de complements</string>
     <string name="ext__home__manage_extensions">Administra les extensions instal·lades</string>
     <string name="ext__list__view_details">Visualitza els detalls</string>
-    <string name="ext__check_updates__title">Comprova les actualitzacions</string>
     <!-- Action strings -->
     <string name="action__add">Afegeix</string>
     <string name="action__apply">Aplica</string>

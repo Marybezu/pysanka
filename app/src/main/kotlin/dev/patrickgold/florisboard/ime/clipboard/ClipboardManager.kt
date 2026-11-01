@@ -20,6 +20,7 @@ import android.content.ClipData
 import android.content.Context
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
+import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDao
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDatabase
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
@@ -42,6 +43,7 @@ import org.florisboard.lib.android.AndroidClipboardManager
 import org.florisboard.lib.android.AndroidClipboardManager_OnPrimaryClipChangedListener
 import org.florisboard.lib.android.clearPrimaryClipAnyApi
 import org.florisboard.lib.android.setOrClearPrimaryClip
+import org.florisboard.lib.android.showShortToastSync
 import org.florisboard.lib.android.systemService
 import org.florisboard.lib.kotlin.tryOrNull
 
@@ -95,6 +97,7 @@ class ClipboardManager(
 
     private val prefs by FlorisPreferenceStore
     private val appContext by context.appContext()
+    private val editorInstance by context.editorInstance()
     private val systemClipboardManager = context.systemService(AndroidClipboardManager::class)
 
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -732,14 +735,10 @@ class ClipboardManager(
     }
 
     fun pasteItem(item: ClipboardItem) {
-        val imeController = appContext.imeController
-        // TODO this asks for a deadlock from ImeController update scope
-        imeController.updateStateBlocking {
-            emitClipboardItem(item).also { result ->
-                if (!result) {
-                    // TODO we have no access to interactionController here
-                    //appContext.showShortToastSync("Failed to paste item.")
-                }
+        val editorInstance by appContext.editorInstance()
+        editorInstance.commitClipboardItem(item).also { result ->
+            if (!result) {
+                appContext.showShortToastSync("Failed to paste item.")
             }
         }
     }
@@ -748,13 +747,13 @@ class ClipboardManager(
      * Returns true if the editor can accept the clip item, else false.
      */
     fun canBePasted(clipItem: ClipboardItem?): Boolean {
-        val imeController = appContext.imeController
-        val info = imeController.snapshotState().editor.info
-        return clipItem != null && (clipItem.mimeTypes.contains("text/plain") || info.contentMimeTypes.any { editorType ->
+        if (clipItem == null) return false
+
+        return clipItem.mimeTypes.contains("text/plain") || editorInstance.activeInfo.contentMimeTypes.any { editorType ->
             clipItem.mimeTypes.any { clipType ->
                 compareMimeTypes(clipType, editorType)
             }
-        })
+        }
     }
 
     /**

@@ -55,7 +55,8 @@ fun AiSettingsScreen() = FlorisScreen {
         }
         val progress = importStatus.progress ?: -1f
         val error = importStatus.error
-        var deleteOriginal by remember { mutableStateOf(true) }
+        // Off unless chosen: the same file may serve another app too (Tarilka uses it)
+        var deleteOriginal by remember { mutableStateOf(false) }
 
         val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
             if (uri != null) ModelImport.start(context, uri, deleteOriginal)

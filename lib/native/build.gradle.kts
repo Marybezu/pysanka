@@ -1,8 +1,7 @@
-import com.android.build.api.dsl.LibraryExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 /*
- * Copyright (C) 2025-2026 The FlorisBoard Contributors
+ * Copyright (C) 2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +18,11 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.agp.library)
+    alias(libs.plugins.kotlin.android)
 }
+
+val projectMinSdk: String by project
+val projectCompileSdk: String by project
 
 kotlin {
     compilerOptions {
@@ -27,13 +30,13 @@ kotlin {
     }
 }
 
-configure<LibraryExtension> {
+android {
     namespace = "org.florisboard.libnative"
-    compileSdk = providers.gradleProperty("projectCompileSdk").get().toInt()
+    compileSdk = projectCompileSdk.toInt()
     ndkVersion = tools.versions.ndk.get()
 
     defaultConfig {
-        minSdk = providers.gradleProperty("projectMinSdk").get().toInt()
+        minSdk = projectMinSdk.toInt()
 
         externalNativeBuild {
             cmake {
@@ -67,6 +70,14 @@ configure<LibraryExtension> {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    sourceSets {
+        maybeCreate("main").apply {
+            java {
+                srcDirs("src/main/kotlin")
+            }
+        }
     }
 
     externalNativeBuild {

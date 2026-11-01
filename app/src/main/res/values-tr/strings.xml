@@ -783,8 +783,6 @@
     <string name="ext__validation__enter_percent_size">Lütfen bir yüzde boyutu girin</string>
     <string name="ext__validation__enter_number_between_0_100">Lütfen 0 ile 100 arasında pozitif bir sayı girin</string>
     <string name="ext__validation__hint_value_above_50_percent">%50\'nin üzerindeki herhangi bir değer %50 olarak ayarlanmış gibi davranacaktır, yüzde boyutunuzu düşürmeyi düşünün</string>
-    <string name="ext__update_box__internet_permission_hint">Bu uygulama İnternet iznine sahip olmadığı için, yüklü eklentilerin güncellemeleri manuel olarak kontrol edilmelidir.</string>
-    <string name="ext__update_box__search_for_updates">Güncellemeleri Ara</string>
     <string name="ext__addon_management_box__managing_placeholder">{extensions} Yönetiliyor</string>
     <string name="ext__addon_management_box__addon_manager_info">Eklentileri içe aktarma, dışa aktarma, oluşturma, özelleştirme ve kaldırma ile ilgili tüm görevler merkezi eklenti yöneticisi aracılığıyla halledilebilir.</string>
     <string name="ext__addon_management_box__go_to_page">{ext_home_title} sayfasına git</string>
@@ -792,7 +790,6 @@
     <string name="ext__home__visit_store">Eklenti Mağazasını Ziyaret Et</string>
     <string name="ext__home__manage_extensions">Yüklü eklentileri yönet</string>
     <string name="ext__list__view_details">Ayrıntıları görüntüle</string>
-    <string name="ext__check_updates__title">Güncellemeleri Kontrol Et</string>
     <!-- Action strings -->
     <string name="action__add">Ekle</string>
     <string name="action__apply">Uygula</string>

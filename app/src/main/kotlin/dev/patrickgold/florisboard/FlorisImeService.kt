@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2026 The FlorisBoard Contributors
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import android.util.Size
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InlineSuggestionsRequest
 import android.view.inputmethod.InlineSuggestionsResponse
@@ -45,19 +44,18 @@ import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.ImeUiMode
+import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
-import dev.patrickgold.florisboard.ime.keyboard3.isFullscreenInputRequired
-import dev.patrickgold.florisboard.ime.keyboard3.ImeEditor
+import dev.patrickgold.florisboard.ime.input.InputFeedbackController
+import dev.patrickgold.florisboard.ime.keyboard.isFullscreenInputRequired
 import dev.patrickgold.florisboard.ime.landscapeinput.ExtractedInputRootView
 import dev.patrickgold.florisboard.ime.landscapeinput.LandscapeInputUiMode
 import dev.patrickgold.florisboard.ime.lifecycle.LifecycleInputMethodService
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
-import dev.patrickgold.florisboard.ime.smartbar.createInlineSuggestionUiStyleBundle
 import dev.patrickgold.florisboard.ime.theme.WallpaperChangeReceiver
 import dev.patrickgold.florisboard.ime.window.ImeRootView
 import dev.patrickgold.florisboard.ime.window.ImeWindowController
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
-import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
 import dev.patrickgold.florisboard.lib.devtools.flogWarning
@@ -66,12 +64,13 @@ import dev.patrickgold.florisboard.lib.util.debugSummarize
 import dev.patrickgold.florisboard.lib.util.launchActivity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import org.florisboard.lib.android.AndroidInternalR
 import org.florisboard.lib.android.AndroidVersion
+import org.florisboard.lib.android.showShortToastSync
 import org.florisboard.lib.android.systemServiceOrNull
 import org.florisboard.lib.kotlin.collectIn
 import org.florisboard.lib.kotlin.collectLatestIn
-import org.k3lp.runtime.K3TextRange
 import java.lang.ref.WeakReference
 
 /**
@@ -84,7 +83,7 @@ import java.lang.ref.WeakReference
 private var FlorisImeServiceReference = WeakReference<FlorisImeService?>(null)
 
 /**
- * Core class responsible for linking together all managers and UI composables to provide an IME service. Sets
+ * Core class responsible for linking together all managers and UI compose-ables to provide an IME service. Sets
  * up the window and context to be lifecycle-aware, so LiveData and Jetpack Compose can be used without issues.
  */
 class FlorisImeService : LifecycleInputMethodService() {
@@ -94,6 +93,10 @@ class FlorisImeService : LifecycleInputMethodService() {
 
         fun currentInputConnection(): InputConnection? {
             return FlorisImeServiceReference.get()?.currentInputConnection
+        }
+
+        fun inputFeedbackController(): InputFeedbackController? {
+            return FlorisImeServiceReference.get()?.inputFeedbackController
         }
 
         /**
@@ -255,22 +258,21 @@ class FlorisImeService : LifecycleInputMethodService() {
                 }
             }
         }
-        // TODO we have no access to interactionController here
-        // showShortToastSync("Failed to find voice IME, do you have one installed?")
+        showShortToastSync("Failed to find voice IME, do you have one installed?")
         return false
     }
 
     private val prefs by FlorisPreferenceStore
-    private val appContext = inferFlorisApplication()
-    val storageController = appContext.storageController
-    val imeController = appContext.imeController
-    val themeController = appContext.themeController
-
+    val editorInstance by editorInstance()
+    private val keyboardManager by keyboardManager()
     private val nlpManager by nlpManager()
     private val subtypeManager by subtypeManager()
+    private val themeManager by themeManager()
 
     val windowController = ImeWindowController(prefs, lifecycleScope)
 
+    private val activeState get() = keyboardManager.activeState
+    val inputFeedbackController by lazy { InputFeedbackController.new(this) }
     private val systemLocalesFlow = MutableStateFlow(LocaleList())
     var resourcesContext by mutableStateOf(this as Context)
         private set
@@ -289,7 +291,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         WindowCompat.setDecorFitsSystemWindows(window.window!!, false)
         windowController.onConfigurationChanged(resources.configuration)
         windowController.activeWindowConfig.collectLatestIn(lifecycleScope) {
-            // TODO update inputMethod state
+            keyboardManager.updateActiveEvaluators() // TODO: wacky solution, but works for now
         }
 
         combine(
@@ -353,6 +355,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         super.onConfigurationChanged(newConfig)
         systemLocalesFlow.value = newConfig.locales
         windowController.onConfigurationChanged(newConfig)
+        themeManager.configurationChangeCounter.update { it + 1 }
     }
 
     override fun onDestroy() {
@@ -362,20 +365,24 @@ class FlorisImeService : LifecycleInputMethodService() {
     }
 
     override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
-        flogInfo { "info=${info?.debugSummarize()} restarting=$restarting" }
+        flogInfo { "restarting=$restarting info=${info?.debugSummarize()}" }
         super.onStartInput(info, restarting)
         if (info == null) return
+        val editorInfo = FlorisEditorInfo.wrap(info)
+        editorInstance.handleStartInput(editorInfo)
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
-        flogInfo { "info=${info?.debugSummarize()} restarting=$restarting" }
+        flogInfo { "restarting=$restarting info=${info?.debugSummarize()}" }
         super.onStartInputView(info, restarting)
         if (info == null) return
-        currentInputConnection?.requestCursorUpdates(ImeEditor.CURSOR_UPDATES)
-        val ic = WeakReference(currentInputConnection)
         val editorInfo = FlorisEditorInfo.wrap(info)
-        imeController.updateStateBlocking {
-            handleStartInputView(ic, editorInfo)
+        activeState.batchEdit {
+            if (activeState.imeUiMode != ImeUiMode.CLIPBOARD || prefs.clipboard.historyHideOnNextTextField.get()) {
+                activeState.imeUiMode = ImeUiMode.TEXT
+            }
+            activeState.isSelectionMode = editorInfo.initialSelection.isSelectionMode
+            editorInstance.handleStartInputView(editorInfo, isRestart = restarting)
         }
     }
 
@@ -386,32 +393,36 @@ class FlorisImeService : LifecycleInputMethodService() {
             || prefs.physicalKeyboard.showOnScreenKeyboard.get()
     }
 
-    override fun onUpdateCursorAnchorInfo(cursorAnchorInfo: CursorAnchorInfo?) {
-        if (cursorAnchorInfo == null) {
-            return
-        }
-        val newSelection = K3TextRange(
-            start = cursorAnchorInfo.selectionStart,
-            end = cursorAnchorInfo.selectionEnd,
-        )
-        flogInfo { "new=$newSelection" }
-        imeController.updateStateBlocking {
-            handleUpdateSelection(newSelection)
+    override fun onUpdateSelection(
+        oldSelStart: Int,
+        oldSelEnd: Int,
+        newSelStart: Int,
+        newSelEnd: Int,
+        candidatesStart: Int,
+        candidatesEnd: Int,
+    ) {
+        flogInfo { "old={start=$oldSelStart,end=$oldSelEnd} new={start=$newSelStart,end=$newSelEnd} composing={start=$candidatesStart,end=$candidatesEnd}" }
+        super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart, candidatesEnd)
+        activeState.batchEdit {
+            activeState.isSelectionMode = (newSelEnd - newSelStart) != 0
+            editorInstance.handleSelectionUpdate(
+                oldSelection = EditorRange.normalized(oldSelStart, oldSelEnd),
+                newSelection = EditorRange.normalized(newSelStart, newSelEnd),
+                composing = EditorRange.normalized(candidatesStart, candidatesEnd),
+            )
         }
     }
 
     override fun onFinishInputView(finishingInput: Boolean) {
         flogInfo { "finishing=$finishingInput" }
         super.onFinishInputView(finishingInput)
-        currentInputConnection?.requestCursorUpdates(0)
-        imeController.updateStateBlocking {
-            handleFinishInputView()
-        }
+        editorInstance.handleFinishInputView()
     }
 
     override fun onFinishInput() {
         flogInfo { "(no args)" }
         super.onFinishInput()
+        editorInstance.handleFinishInput()
         NlpInlineAutofill.clearInlineSuggestions()
     }
 
@@ -419,6 +430,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         super.onWindowShown()
         if (windowController.onWindowShown()) {
             flogInfo(LogTopic.IMS_EVENTS)
+            inputFeedbackController.updateSystemPrefsState()
         } else {
             flogWarning(LogTopic.IMS_EVENTS) { "Ignoring (is already shown)" }
         }
@@ -428,13 +440,10 @@ class FlorisImeService : LifecycleInputMethodService() {
         super.onWindowHidden()
         if (windowController.onWindowHidden()) {
             flogInfo(LogTopic.IMS_EVENTS)
-            imeController.updateStateBlocking {
-                state = state.copy(
-                    flags = state.flags
-                        .withImeUiMode(ImeUiMode.TEXT)
-                        .withActionsEditorVisible(false)
-                        .withActionsOverflowVisible(false),
-                )
+            activeState.batchEdit {
+                activeState.imeUiMode = ImeUiMode.TEXT
+                activeState.isActionsOverflowVisible = false
+                activeState.isActionsEditorVisible = false
             }
         } else {
             flogWarning(LogTopic.IMS_EVENTS) { "Ignoring (is already hidden)" }
@@ -455,11 +464,7 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onUpdateExtractingVisibility(info: EditorInfo?) {
         if (info != null) {
-            val ic = WeakReference(currentInputConnection)
-            val editorInfo = FlorisEditorInfo.wrap(info)
-            imeController.updateStateBlocking {
-                handleStartInputView(ic, editorInfo)
-            }
+            editorInstance.handleStartInputView(FlorisEditorInfo.wrap(info), isRestart = true)
         }
         when (prefs.keyboard.landscapeInputUiMode.get()) {
             LandscapeInputUiMode.DYNAMICALLY_SHOW -> super.onUpdateExtractingVisibility(info)
@@ -478,7 +483,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         }
 
         flogInfo(LogTopic.IMS_EVENTS) { "Creating inline suggestions request" }
-        val stylesBundle = createInlineSuggestionUiStyleBundle(this)
+        val stylesBundle = themeManager.createInlineSuggestionUiStyleBundle(this)
         if (stylesBundle == null) {
             flogWarning(LogTopic.IMS_EVENTS) { "Failed to retrieve inline suggestions style bundle" }
             return null
@@ -508,8 +513,8 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onComputeInsets(outInsets: Insets?) {
         if (outInsets == null) return
-        val imeState = imeController.snapshotState()
-        windowController.onComputeInsets(outInsets, imeState.isFullscreenInputRequired())
+        val state = keyboardManager.activeState.snapshot()
+        windowController.onComputeInsets(outInsets, state.isFullscreenInputRequired())
     }
 
     override fun getTextForImeAction(imeOptions: Int): String? {
@@ -530,12 +535,10 @@ class FlorisImeService : LifecycleInputMethodService() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        flogDebug { "onKeyDown(keyCode=$keyCode, event=$event)" }
-        return imeController.onHardwareKeyDown(keyCode, event) || super.onKeyDown(keyCode, event)
+        return keyboardManager.onHardwareKeyDown(keyCode, event) || super.onKeyDown(keyCode, event)
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        flogDebug { "onKeyUp(keyCode=$keyCode, event=$event)" }
-        return imeController.onHardwareKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
+        return keyboardManager.onHardwareKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
     }
 }

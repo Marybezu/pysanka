@@ -39,16 +39,15 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
-import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.ime.core.Subtype
+import dev.patrickgold.florisboard.ime.keyboard.LayoutType
+import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.subtypeManager
-import dev.patrickgold.jetpref.datastore.model.collectAsState
-import dev.patrickgold.jetpref.datastore.ui.ListPreference
+import dev.patrickgold.jetpref.datastore.model.observeAsState
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
-import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import kotlinx.serialization.json.Json
 import org.florisboard.lib.compose.FlorisWarningCard
@@ -63,6 +62,7 @@ internal val SubtypeSaver = Saver<MutableState<Subtype?>, String>(
     },
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LocalizationScreen() = FlorisScreen {
     title = stringRes(R.string.settings__localization__title)
@@ -71,6 +71,7 @@ fun LocalizationScreen() = FlorisScreen {
 
     val navController = LocalNavController.current
     val context = LocalContext.current
+    val keyboardManager by context.keyboardManager()
     val subtypeManager by context.subtypeManager()
     var chosenSubtypeToDelete: Subtype? by rememberSaveable(saver = SubtypeSaver) { mutableStateOf(null) }
 
@@ -93,22 +94,8 @@ fun LocalizationScreen() = FlorisScreen {
     }
 
     content {
-        ListPreference(
-            prefs.localization.displayLanguageNamesIn,
-            title = stringRes(R.string.settings__localization__display_language_names_in__label),
-            entries = enumDisplayEntriesOf(DisplayLanguageNamesIn::class),
-        )
-        SwitchPreference(
-            prefs.localization.displayKeyboardLabelsInSubtypeLanguage,
-            title = stringRes(R.string.settings__localization__display_keyboard_labels_in_subtype_language),
-        )
-        Preference(
-            title = stringRes(R.string.settings__localization__language_pack_title),
-            summary = stringRes(R.string.settings__localization__language_pack_summary),
-            onClick = {
-                navController.navigate(Routes.Settings.LanguagePackManager(LanguagePackManagerScreenAction.MANAGE))
-            },
-        )
+        // Pysanka: only the languages; how their names are shown stays as the system shows them,
+        // and language packs are under More → Extensions
         PreferenceGroup(title = stringRes(R.string.settings__localization__group_subtypes__label)) {
             val subtypes by subtypeManager.subtypesFlow.collectAsState()
             if (subtypes.isEmpty()) {
@@ -117,10 +104,9 @@ fun LocalizationScreen() = FlorisScreen {
                     text = stringRes(R.string.settings__localization__subtype_no_subtypes_configured_warning),
                 )
             } else {
-                /*
                 val currencySets by keyboardManager.resources.currencySets.collectAsState()
                 val layouts by keyboardManager.resources.layouts.collectAsState()
-                val displayLanguageNamesIn by prefs.localization.displayLanguageNamesIn.collectAsState()
+                val displayLanguageNamesIn by prefs.localization.displayLanguageNamesIn.observeAsState()
                 for (subtype in subtypes) {
                     val cMeta = layouts[LayoutType.CHARACTERS]?.get(subtype.layoutMap.characters)
                     val sMeta = layouts[LayoutType.SYMBOLS]?.get(subtype.layoutMap.symbols)
@@ -149,7 +135,6 @@ fun LocalizationScreen() = FlorisScreen {
                         )
                     )
                 }
-                 */
             }
         }
     }

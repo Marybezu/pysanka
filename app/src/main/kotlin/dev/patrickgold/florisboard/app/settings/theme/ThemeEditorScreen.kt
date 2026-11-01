@@ -78,19 +78,28 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.apptheme.Shapes
 import dev.patrickgold.florisboard.app.ext.ExtensionComponentView
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.ime.theme.ThemeExtensionComponent
+import dev.patrickgold.florisboard.ime.theme.ThemeExtensionComponentEditor
+import dev.patrickgold.florisboard.ime.theme.ThemeExtensionEditor
+import dev.patrickgold.florisboard.ime.theme.ThemeManager
 import dev.patrickgold.florisboard.ime.theme.extPreviewTheme
+import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.compose.PreviewKeyboardField
 import dev.patrickgold.florisboard.lib.compose.Validation
 import dev.patrickgold.florisboard.lib.compose.rememberPreviewFieldController
+import dev.patrickgold.florisboard.lib.ext.ExtensionValidation
 import dev.patrickgold.florisboard.lib.rememberValidationResult
-import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.florisboard.themeManager
+import dev.patrickgold.jetpref.datastore.model.observeAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdown
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.florisboard.lib.android.showLongToastSync
+import org.florisboard.lib.color.MaterialYouFlagsSaver
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
@@ -110,7 +119,6 @@ import org.florisboard.lib.snygg.SnyggSpecDecl
 import org.florisboard.lib.snygg.SnyggStylesheet
 import org.florisboard.lib.snygg.SnyggStylesheetEditor
 import org.florisboard.lib.snygg.ui.Saver
-import org.florisboard.lib.snygg.color.MaterialYouFlagsSaver
 
 internal val PrettyPrintConfig = SnyggJsonConfiguration.of(
     prettyPrint = true,
@@ -132,7 +140,6 @@ private enum class StylesheetLoadingStrategy {
     TRY_LOAD_OR_PARSE_LENIENT; // user chose to auto-fix errors
 }
 
-/*
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ThemeEditorScreen(
@@ -203,9 +210,9 @@ fun ThemeEditorScreen(
         }
     }
 
-    val snyggLevel by prefs.theme.editorLevel.collectAsState()
-    val colorRepresentation by prefs.theme.editorColorRepresentation.collectAsState()
-    val displayKbdAfterDialogs by prefs.theme.editorDisplayKbdAfterDialogs.collectAsState()
+    val snyggLevel by prefs.theme.editorLevel.observeAsState()
+    val colorRepresentation by prefs.theme.editorColorRepresentation.observeAsState()
+    val displayKbdAfterDialogs by prefs.theme.editorDisplayKbdAfterDialogs.observeAsState()
     var oldFocusState by remember { mutableStateOf(false) }
     var snyggRuleToEdit by rememberSaveable(stateSaver = SnyggRule.Saver) { mutableStateOf(null) }
     var snyggPropertyToEdit by remember { mutableStateOf<PropertyInfo?>(null) }
@@ -850,7 +857,6 @@ private fun SnyggRuleRow(
         )
     }
 }
-*/
 
 @Composable
 internal fun DialogProperty(

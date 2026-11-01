@@ -58,14 +58,14 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
-import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionButton
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionsRow
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.ToggleOverflowPanelAction
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.nlpManager
-import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.jetpref.datastore.model.observeAsState
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.compose.horizontalTween
@@ -94,8 +94,8 @@ private val NoAnimationTween = tween<Float>(0)
 @Composable
 fun Smartbar() {
     val prefs by FlorisPreferenceStore
-    val smartbarEnabled by prefs.smartbar.enabled.collectAsState()
-    val extendedActionsPlacement by prefs.smartbar.extendedActionsPlacement.collectAsState()
+    val smartbarEnabled by prefs.smartbar.enabled.observeAsState()
+    val extendedActionsPlacement by prefs.smartbar.extendedActionsPlacement.observeAsState()
 
     AnimatedVisibility(
         visible = smartbarEnabled,
@@ -144,23 +144,22 @@ fun Smartbar() {
 private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
-    val imeController = LocalImeController.current
+    val keyboardManager by context.keyboardManager()
     val nlpManager by context.nlpManager()
     val scope = rememberCoroutineScope()
 
-    val imeState by imeController.activeState.collectAsState()
     val inlineSuggestions by NlpInlineAutofill.suggestions.collectAsState()
     LaunchedEffect(inlineSuggestions) {
         nlpManager.autoExpandCollapseSmartbarActions(null, inlineSuggestions)
     }
     val shouldShowInlineSuggestionsUi = AndroidVersion.ATLEAST_API30_R && inlineSuggestions.isNotEmpty()
 
-    val smartbarLayout by prefs.smartbar.layout.collectAsState()
-    val flipToggles by prefs.smartbar.flipToggles.collectAsState()
-    val sharedActionsExpanded by prefs.smartbar.sharedActionsExpanded.collectAsState()
-    val extendedActionsExpanded by prefs.smartbar.extendedActionsExpanded.collectAsState()
+    val smartbarLayout by prefs.smartbar.layout.observeAsState()
+    val flipToggles by prefs.smartbar.flipToggles.observeAsState()
+    val sharedActionsExpanded by prefs.smartbar.sharedActionsExpanded.observeAsState()
+    val extendedActionsExpanded by prefs.smartbar.extendedActionsExpanded.observeAsState()
 
-    val shouldAnimate by prefs.smartbar.sharedActionsExpandWithAnimation.collectAsState()
+    val shouldAnimate by prefs.smartbar.sharedActionsExpandWithAnimation.observeAsState()
 
     @Composable
     fun SharedActionsToggle() {
@@ -168,12 +167,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
             elementName = FlorisImeUi.SmartbarSharedActionsToggle.elementName,
             onClick = {
                 if (/* was */ sharedActionsExpanded) {
-                    imeController.updateStateBlocking {
-                        state = state.copy(
-                            flags = state.flags
-                                .withActionsOverflowVisible(false),
-                        )
-                    }
+                    keyboardManager.activeState.isActionsOverflowVisible = false
                 }
                 scope.launch {
                     prefs.smartbar.sharedActionsExpanded.set(!sharedActionsExpanded)
@@ -196,8 +190,8 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                 Icons.AutoMirrored.Default.KeyboardArrowRight
             }
             val incognitoIcon = ImageVector.vectorResource(id = R.drawable.ic_incognito)
-            val incognitoDisplayMode = prefs.keyboard.incognitoDisplayMode.collectAsState()
-            val isIncognitoMode = imeState.flags.isIncognitoMode
+            val incognitoDisplayMode = prefs.keyboard.incognitoDisplayMode.observeAsState()
+            val isIncognitoMode = keyboardManager.activeState.isIncognitoMode
             val icon = if (isIncognitoMode) {
                 when (incognitoDisplayMode.value) {
                     IncognitoDisplayMode.REPLACE_SHARED_ACTIONS_TOGGLE -> incognitoIcon
@@ -253,12 +247,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
             FlorisImeUi.SmartbarExtendedActionsToggle.elementName,
             onClick = {
                 if (/* was */ extendedActionsExpanded) {
-                    imeController.updateStateBlocking {
-                        state = state.copy(
-                            flags = state.flags
-                                .withActionsOverflowVisible(false),
-                        )
-                    }
+                    keyboardManager.activeState.isActionsOverflowVisible = false
                 }
                 scope.launch {
                     prefs.smartbar.extendedActionsExpanded.set(!extendedActionsExpanded)
@@ -290,7 +279,8 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
 
     @Composable
     fun StickyAction() {
-        val actionArrangement by prefs.smartbar.actionArrangement.collectAsState()
+        val actionArrangement by prefs.smartbar.actionArrangement.observeAsState()
+        val evaluator by keyboardManager.activeSmartbarEvaluator.collectAsState()
 
         val action = when {
             actionArrangement.stickyAction != null -> {
@@ -308,6 +298,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
             QuickActionButton(
                 modifier = Modifier.padding(horizontal = 4.dp),
                 action = action,
+                evaluator = evaluator,
             )
         } else {
             Spacer(
@@ -378,11 +369,11 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
 @Composable
 private fun SmartbarSecondaryRow(modifier: Modifier = Modifier) {
     val prefs by FlorisPreferenceStore
-    val smartbarLayout by prefs.smartbar.layout.collectAsState()
+    val smartbarLayout by prefs.smartbar.layout.observeAsState()
     val secondaryRowStyle = rememberSnyggThemeQuery(FlorisImeUi.SmartbarExtendedActionsRow.elementName)
     val windowStyle = rememberSnyggThemeQuery(FlorisImeUi.Window.elementName)
-    val extendedActionsExpanded by prefs.smartbar.extendedActionsExpanded.collectAsState()
-    val extendedActionsPlacement by prefs.smartbar.extendedActionsPlacement.collectAsState()
+    val extendedActionsExpanded by prefs.smartbar.extendedActionsExpanded.observeAsState()
+    val extendedActionsPlacement by prefs.smartbar.extendedActionsPlacement.observeAsState()
     val background = secondaryRowStyle.background().let { color ->
         if (extendedActionsPlacement == ExtendedActionsPlacement.OVERLAY_APP_UI) {
             if (color.isUnspecified || color.alpha == 0f) {

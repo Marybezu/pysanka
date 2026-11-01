@@ -106,6 +106,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
+                <!-- Pysanka: the ⚙ next to the keyboard in the system's language settings opens Pysanka -->
                 <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>

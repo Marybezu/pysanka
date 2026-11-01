@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2026 The FlorisBoard Contributors
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.res.Configuration
 import android.os.Handler
 import android.util.Log
 import androidx.core.os.UserManagerCompat
@@ -31,22 +30,21 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
-import dev.patrickgold.florisboard.ime.extension.ExtensionController
-import dev.patrickgold.florisboard.ime.io.AndroidStorageController
-import dev.patrickgold.florisboard.ime.keyboard3.ImeController
+import dev.patrickgold.florisboard.ime.editor.EditorInstance
+import dev.patrickgold.florisboard.ime.keyboard.KeyboardManager
 import dev.patrickgold.florisboard.ime.media.emoji.FlorisEmojiCompat
 import dev.patrickgold.florisboard.ime.nlp.NlpManager
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingManager
-import dev.patrickgold.florisboard.ime.theme.SystemThemeMode
-import dev.patrickgold.florisboard.ime.theme.ThemeController
+import dev.patrickgold.florisboard.ime.theme.ThemeManager
+import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.crashutility.CrashUtility
 import dev.patrickgold.florisboard.lib.devtools.Flog
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
+import dev.patrickgold.florisboard.lib.ext.ExtensionManager
 import dev.patrickgold.jetpref.datastore.runtime.initAndroid
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.florisboard.lib.kotlin.io.deleteContentsRecursively
@@ -60,33 +58,33 @@ import java.lang.ref.WeakReference
  */
 private var FlorisApplicationReference = WeakReference<FlorisApplication?>(null)
 
-// TODO this class is a mess
 @Suppress("unused")
 class FlorisApplication : Application() {
     companion object {
+        /** Pysanka: the app, for code that has no context at hand (the keyboard's own helpers). */
+        fun getHack(): FlorisApplication = FlorisApplicationReference.get()!!
+
         init {
             try {
                 System.loadLibrary("fl_native")
             } catch (_: Exception) {
             }
         }
-
-        fun getHack(): FlorisApplication = FlorisApplicationReference.get()!!
     }
 
     private val mainHandler by lazy { Handler(mainLooper) }
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val scope = CoroutineScope(Dispatchers.Default)
     val preferenceStoreLoaded = MutableStateFlow(false)
 
-    lateinit var storageController: AndroidStorageController
-    lateinit var extensionController: ExtensionController
-    lateinit var imeController: ImeController
-    lateinit var themeController: ThemeController
-
+    val cacheManager = lazy { CacheManager(this) }
     val clipboardManager = lazy { ClipboardManager(this) }
+    val editorInstance = lazy { EditorInstance(this) }
+    val extensionManager = lazy { ExtensionManager(this) }
     val glideTypingManager = lazy { GlideTypingManager(this) }
+    val keyboardManager = lazy { KeyboardManager(this) }
     val nlpManager = lazy { NlpManager(this) }
     val subtypeManager = lazy { SubtypeManager(this) }
+    val themeManager = lazy { ThemeManager(this) }
 
     override fun onCreate() {
         super.onCreate()
@@ -108,21 +106,12 @@ class FlorisApplication : Application() {
                 flogOutputs = Flog.OUTPUT_CONSOLE,
             )
             CrashUtility.install(this)
-
-            storageController = AndroidStorageController(this)
-            extensionController = ExtensionController(storageController)
-            imeController = ImeController(storageController, clipboardManager.value)
-            themeController = ThemeController(
-                storageController,
-                extensionController,
-                initialSystemThemeMode = resources.configuration.determineSystemThemeMode(),
-            )
-
             FlorisEmojiCompat.init(this)
             flogError { "dummy result: ${dummyAdd(3,4)}" }
 
             if (!UserManagerCompat.isUserUnlocked(this)) {
                 cacheDir?.deleteContentsRecursively()
+                extensionManager.value.init()
                 registerReceiver(BootComplete(), IntentFilter(Intent.ACTION_USER_UNLOCKED))
                 return
             }
@@ -132,12 +121,6 @@ class FlorisApplication : Application() {
             CrashUtility.stageException(e)
             return
         }
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        if (!::themeController.isInitialized) return // Pysanka: the AI process has none
-        themeController.activeSystemThemeMode.value = newConfig.determineSystemThemeMode()
     }
 
     fun init() {
@@ -156,16 +139,9 @@ class FlorisApplication : Application() {
             )
             preferenceStoreLoaded.value = true
         }
+        extensionManager.value.init()
         clipboardManager.value.initializeForContext(this)
         DictionaryManager.init(this)
-    }
-
-    private fun Configuration.determineSystemThemeMode(): SystemThemeMode {
-        return when (uiMode and Configuration.UI_MODE_NIGHT_MASK) {
-            Configuration.UI_MODE_NIGHT_YES -> SystemThemeMode.NIGHT
-            Configuration.UI_MODE_NIGHT_NO -> SystemThemeMode.DAY
-            else -> SystemThemeMode.UNKNOWN
-        }
     }
 
     private inner class BootComplete : BroadcastReceiver() {
@@ -177,32 +153,39 @@ class FlorisApplication : Application() {
                 } catch (e: Exception) {
                     flogError { e.toString() }
                 }
-                storageController.notifyUserUnlocked()
-                mainHandler.post {
-                    init()
-                }
+                mainHandler.post { init() }
             }
         }
     }
 }
 
-tailrec fun Context.inferFlorisApplication(): FlorisApplication {
+private tailrec fun Context.florisApplication(): FlorisApplication {
     return when (this) {
         is FlorisApplication -> this
         is ContextWrapper -> when {
-            this.baseContext != null -> this.baseContext.inferFlorisApplication()
+            this.baseContext != null -> this.baseContext.florisApplication()
             else -> FlorisApplicationReference.get()!!
         }
         else -> tryOrNull { this.applicationContext as FlorisApplication } ?: FlorisApplicationReference.get()!!
     }
 }
 
-fun Context.appContext() = lazyOf(this.inferFlorisApplication())
+fun Context.appContext() = lazyOf(this.florisApplication())
 
-fun Context.clipboardManager() = this.inferFlorisApplication().clipboardManager
+fun Context.cacheManager() = this.florisApplication().cacheManager
 
-fun Context.glideTypingManager() = this.inferFlorisApplication().glideTypingManager
+fun Context.clipboardManager() = this.florisApplication().clipboardManager
 
-fun Context.nlpManager() = this.inferFlorisApplication().nlpManager
+fun Context.editorInstance() = this.florisApplication().editorInstance
 
-fun Context.subtypeManager() = this.inferFlorisApplication().subtypeManager
+fun Context.extensionManager() = this.florisApplication().extensionManager
+
+fun Context.glideTypingManager() = this.florisApplication().glideTypingManager
+
+fun Context.keyboardManager() = this.florisApplication().keyboardManager
+
+fun Context.nlpManager() = this.florisApplication().nlpManager
+
+fun Context.subtypeManager() = this.florisApplication().subtypeManager
+
+fun Context.themeManager() = this.florisApplication().themeManager

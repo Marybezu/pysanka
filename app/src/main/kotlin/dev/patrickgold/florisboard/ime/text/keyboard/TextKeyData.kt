@@ -18,7 +18,9 @@ package dev.patrickgold.florisboard.ime.text.keyboard
 
 import android.icu.lang.UCharacter
 import dev.patrickgold.florisboard.ime.keyboard.AbstractKeyData
+import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
+import dev.patrickgold.florisboard.ime.popup.PopupSet
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.lib.FlorisLocale
@@ -47,7 +49,18 @@ data class TextKeyData(
     override val code: Int = KeyCode.UNSPECIFIED,
     override val label: String = "",
     override val groupId: Int = KeyData.GROUP_DEFAULT,
+    override val popup: PopupSet<AbstractKeyData>? = null
 ) : KeyData {
+    override fun compute(evaluator: ComputingEvaluator): KeyData? {
+        return if (evaluator.isSlot(this)) {
+            evaluator.slotData(this)?.let { data ->
+                TextKeyData(type, data.code, data.label, groupId, popup)
+            }
+        } else {
+            this
+        }
+    }
+
     override fun asString(isForDisplay: Boolean): String {
         return asString(this, isForDisplay)
     }
@@ -136,8 +149,18 @@ data class TextKeyData(
                 TOGGLE_ACTIONS_EDITOR,
                 TOGGLE_INCOGNITO_MODE,
                 TOGGLE_AUTOCORRECT,
+                PYSANKA_AI,
+                PYSANKA_FIX_LAYOUT,
+                PYSANKA_TEXT_FROM_PHOTO,
+                PYSANKA_TEXT_FROM_CAMERA,
             )
         }
+
+        // Pysanka: its own actions
+        val PYSANKA_AI = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.PYSANKA_AI, label = "pysanka_ai")
+        val PYSANKA_FIX_LAYOUT = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.PYSANKA_FIX_LAYOUT, label = "pysanka_fix_layout")
+        val PYSANKA_TEXT_FROM_PHOTO = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.PYSANKA_TEXT_FROM_PHOTO, label = "pysanka_text_from_photo")
+        val PYSANKA_TEXT_FROM_CAMERA = TextKeyData(type = KeyType.FUNCTION, code = KeyCode.PYSANKA_TEXT_FROM_CAMERA, label = "pysanka_text_from_camera")
 
         /** Predefined key data for [KeyCode.UNSPECIFIED] */
         val UNSPECIFIED = TextKeyData(
@@ -528,8 +551,20 @@ class AutoTextKeyData(
     override val code: Int = KeyCode.UNSPECIFIED,
     override val label: String = "",
     override val groupId: Int = KeyData.GROUP_DEFAULT,
+    override val popup: PopupSet<AbstractKeyData>? = null
 ) : KeyData {
     @Transient private val state = AutoLetterState()
+
+    override fun compute(evaluator: ComputingEvaluator): KeyData? {
+        return if (evaluator.isSlot(this)) {
+            evaluator.slotData(this)?.let { data ->
+                TextKeyData(type, data.code, data.label, groupId, popup)
+            }
+        } else {
+            state.recomputeIfNecessary(evaluator.subtype.primaryLocale)
+            if (evaluator.state.isUppercase) { state.upper } else { state.lower }
+        }
+    }
 
     override fun asString(isForDisplay: Boolean): String {
         return asString(this, isForDisplay)
@@ -554,12 +589,14 @@ class AutoTextKeyData(
                 UCharacter.toString(code).lowercase(locale).codePointAt(0),
                 label.lowercase(locale),
                 groupId,
+                popup,
             )
             upper = TextKeyData(
                 type,
                 UCharacter.toString(code).uppercase(locale).codePointAt(0),
                 label.uppercase(locale),
                 groupId,
+                popup,
             )
         }
     }
@@ -572,8 +609,13 @@ class MultiTextKeyData(
     val codePoints: IntArray = intArrayOf(),
     override val label: String = "",
     override val groupId: Int = KeyData.GROUP_DEFAULT,
+    override val popup: PopupSet<AbstractKeyData>? = null
 ) : KeyData {
     @Transient override val code: Int = KeyCode.MULTIPLE_CODE_POINTS
+
+    override fun compute(evaluator: ComputingEvaluator): KeyData {
+        return this
+    }
 
     override fun asString(isForDisplay: Boolean): String {
         return buildString {

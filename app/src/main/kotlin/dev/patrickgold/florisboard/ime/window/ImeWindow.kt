@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.coerceAtLeast
@@ -58,14 +59,13 @@ import androidx.compose.ui.unit.roundToIntRect
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardInputLayout
+import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.ProvideKeyboardRowBaseHeight
-import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.InteractionKind
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.LocalInteractionController
 import dev.patrickgold.florisboard.ime.media.MediaInputLayout
 import dev.patrickgold.florisboard.ime.sheet.BottomSheetWindow
 import dev.patrickgold.florisboard.ime.text.TextInputLayout
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.keyboardManager
 import kotlinx.coroutines.delay
 import org.florisboard.lib.compose.ProvideActualLayoutDirection
 import org.florisboard.lib.compose.conditional
@@ -77,7 +77,6 @@ import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggIcon
 import org.florisboard.lib.snygg.ui.SnyggIconButton
 import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * The main entry point of the IME user interface. This includes the keyboard itself, devtools overlays,
@@ -185,22 +184,18 @@ fun BoxScope.ImeWindow() {
 
 @Composable
 private fun ImeInnerWindow() {
-    val imeController = LocalImeController.current
+    val context = LocalContext.current
     val windowController = LocalWindowController.current
 
-    val imeState by imeController.activeState.collectAsState()
+    val keyboardManager by context.keyboardManager()
+
+    val state by keyboardManager.activeState.collectAsState()
     val windowSpec by windowController.activeWindowSpec.collectAsState()
-    val activeImeUiMode by remember { derivedStateOf { imeState.flags.imeUiMode } }
 
     ProvideActualLayoutDirection {
         val layoutDirection = LocalLayoutDirection.current
         LaunchedEffect(layoutDirection) {
-            imeController.updateState {
-                state = state.copy(
-                    flags = state.flags
-                        .withLayoutDirection(layoutDirection),
-                )
-            }
+            keyboardManager.activeState.layoutDirection = layoutDirection
         }
     }
 
@@ -225,7 +220,7 @@ private fun ImeInnerWindow() {
         allowClip = false,
     ) {
         Column {
-            when (activeImeUiMode) {
+            when (state.imeUiMode) {
                 ImeUiMode.TEXT -> TextInputLayout()
                 ImeUiMode.MEDIA -> ProvideActualLayoutDirection { MediaInputLayout() }
                 ImeUiMode.CLIPBOARD -> ProvideActualLayoutDirection { ClipboardInputLayout() }
@@ -240,7 +235,7 @@ private fun ImeInnerWindow() {
 
 @Composable
 private fun BoxScope.FloatingDockToFixedIndicator() {
-    val interactionController = LocalInteractionController.current
+    val inputFeedbackController = LocalInputFeedbackController.current
     val windowController = LocalWindowController.current
 
     val windowSpec by windowController.activeWindowSpec.collectAsState()
@@ -270,8 +265,8 @@ private fun BoxScope.FloatingDockToFixedIndicator() {
 
     LaunchedEffect(visible) {
         if (visible) {
-            delay(150.milliseconds)
-            interactionController.performFeedback(InteractionKind.KeyPress)
+            delay(150)
+            inputFeedbackController.keyPress()
         }
     }
 

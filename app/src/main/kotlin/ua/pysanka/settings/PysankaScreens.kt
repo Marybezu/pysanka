@@ -19,7 +19,7 @@ import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
-import dev.patrickgold.florisboard.ime.theme.PreferredThemeMode
+import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
@@ -37,7 +37,6 @@ import org.florisboard.lib.compose.stringRes
 fun PysankaTypingScreen() = FlorisScreen {
     title = stringRes(R.string.pysanka__settings__typing)
     previewFieldVisible = true
-    val navController = LocalNavController.current
 
     content {
         SwitchPreference(
@@ -56,7 +55,7 @@ fun PysankaTypingScreen() = FlorisScreen {
             summary = stringRes(R.string.pysanka__typing__suggestions_summary),
         )
         SwitchPreference(
-            prefs.typing.autoCapitalization,
+            prefs.correction.autoCapitalization,
             title = stringRes(R.string.pysanka__typing__auto_caps),
         )
         SwitchPreference(
@@ -84,16 +83,21 @@ fun PysankaTypingScreen() = FlorisScreen {
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
             )
         }
-        PreferenceGroup(title = stringRes(R.string.pysanka__settings__more)) {
-            Preference(
-                title = stringRes(R.string.pysanka__typing__more_typing),
-                summary = stringRes(R.string.pysanka__typing__more_typing_summary),
-                onClick = { navController.navigate(Routes.Settings.Typing) },
+        // Pysanka: emoji are part of typing, not a screen of their own (clearing the emoji
+        // history stays under More → Emoji)
+        PreferenceGroup(title = stringRes(R.string.pysanka__settings__emoji)) {
+            ListPreference(
+                prefs.emoji.preferredSkinTone,
+                title = stringRes(R.string.prefs__media__emoji_preferred_skin_tone),
+                entries = enumDisplayEntriesOf(dev.patrickgold.florisboard.ime.media.emoji.EmojiSkinTone::class),
             )
-            Preference(
-                title = stringRes(R.string.pysanka__typing__more_gestures),
-                summary = stringRes(R.string.pysanka__typing__more_gestures_summary),
-                onClick = { navController.navigate(Routes.Settings.Gestures) },
+            SwitchPreference(
+                prefs.emoji.historyEnabled,
+                title = stringRes(R.string.prefs__media__emoji_history_enabled),
+            )
+            SwitchPreference(
+                prefs.emoji.suggestionEnabled,
+                title = stringRes(R.string.prefs__media__emoji_suggestion_enabled),
             )
         }
     }
@@ -109,7 +113,7 @@ fun PysankaLookScreen() = FlorisScreen {
         ListPreference(
             prefs.theme.mode,
             title = stringRes(R.string.pysanka__look__theme_mode),
-            entries = enumDisplayEntriesOf(PreferredThemeMode::class),
+            entries = enumDisplayEntriesOf(ThemeMode::class),
         )
         Preference(
             title = stringRes(R.string.pysanka__look__themes),
@@ -121,7 +125,7 @@ fun PysankaLookScreen() = FlorisScreen {
             title = stringRes(R.string.pysanka__look__number_row),
         )
         SwitchPreference(
-            prefs.keyboard.longPressKeyHintEnabled,
+            prefs.keyboard.hintedSymbolsEnabled,
             title = stringRes(R.string.pysanka__look__key_hints),
             summary = stringRes(R.string.pysanka__look__key_hints_summary),
         )
@@ -133,39 +137,26 @@ fun PysankaLookScreen() = FlorisScreen {
             max = 150,
             stepIncrement = 5,
         )
-        PreferenceGroup(title = stringRes(R.string.pysanka__settings__more)) {
-            Preference(
-                title = stringRes(R.string.pysanka__look__more_keyboard),
-                summary = stringRes(R.string.pysanka__look__more_keyboard_summary),
-                onClick = { navController.navigate(Routes.Settings.Keyboard) },
+        // Pysanka: sound and vibration are here, not a screen of their own (three options)
+        PreferenceGroup(title = stringRes(R.string.pysanka__settings__sound)) {
+            SwitchPreference(
+                prefs.inputFeedback.hapticEnabled,
+                title = stringRes(R.string.pysanka__sound__haptic),
+            )
+            SwitchPreference(
+                prefs.inputFeedback.audioEnabled,
+                title = stringRes(R.string.pysanka__sound__audio),
+            )
+            DialogSliderPreference(
+                prefs.inputFeedback.audioVolume,
+                title = stringRes(R.string.pysanka__sound__volume),
+                valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
+                min = 1,
+                max = 100,
+                stepIncrement = 1,
+                enabledIf = { prefs.inputFeedback.audioEnabled isEqualTo true },
             )
         }
-    }
-}
-
-@Composable
-fun PysankaSoundScreen() = FlorisScreen {
-    title = stringRes(R.string.pysanka__settings__sound)
-    previewFieldVisible = true
-
-    content {
-        SwitchPreference(
-            prefs.inputFeedback.hapticEnabled,
-            title = stringRes(R.string.pysanka__sound__haptic),
-        )
-        SwitchPreference(
-            prefs.inputFeedback.audioEnabled,
-            title = stringRes(R.string.pysanka__sound__audio),
-        )
-        DialogSliderPreference(
-            prefs.inputFeedback.audioVolume,
-            title = stringRes(R.string.pysanka__sound__volume),
-            valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
-            min = 1,
-            max = 100,
-            stepIncrement = 1,
-            enabledIf = { prefs.inputFeedback.audioEnabled isEqualTo true },
-        )
     }
 }
 
@@ -255,6 +246,10 @@ fun PysankaMoreScreen() = FlorisScreen {
             title = stringRes(R.string.ext__home__title),
             summary = stringRes(R.string.pysanka__more__extensions_summary),
             onClick = { navController.navigate(Routes.Ext.Home) },
+        )
+        Preference(
+            title = stringRes(R.string.pysanka__settings__emoji),
+            onClick = { navController.navigate(Routes.Settings.Media) },
         )
         Preference(
             title = stringRes(R.string.settings__other__title),

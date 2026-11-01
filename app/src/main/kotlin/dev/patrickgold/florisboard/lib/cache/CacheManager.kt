@@ -25,7 +25,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.patrickgold.florisboard.app.ext.EditorAction
 import dev.patrickgold.florisboard.appContext
+import dev.patrickgold.florisboard.ime.theme.ThemeExtensionEditor
 import dev.patrickgold.florisboard.lib.NATIVE_NULLPTR
+import dev.patrickgold.florisboard.lib.ext.Extension
+import dev.patrickgold.florisboard.lib.ext.ExtensionDefaults
+import dev.patrickgold.florisboard.lib.ext.ExtensionEditor
+import dev.patrickgold.florisboard.lib.ext.ExtensionJsonConfig
+import dev.patrickgold.florisboard.lib.io.FileRegistry
+import dev.patrickgold.florisboard.lib.io.ZipUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +53,6 @@ import java.io.Closeable
 import java.io.File
 import java.util.UUID
 
-/*
 class CacheManager(context: Context) {
     companion object {
         private const val InputDirName = "input"
@@ -209,4 +215,3 @@ class CacheManager(context: Context) {
         var skipReason: Int = NATIVE_NULLPTR.toInt(),
     )
 }
- */

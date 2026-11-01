@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2026 The FlorisBoard Contributors
+ * Copyright (C) 2022-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.agp.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.plugin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.mikepenz.aboutlibraries)
     alias(libs.plugins.kotest)
-    alias(libs.plugins.kotlinx.kover)
 }
 
+val projectMinSdk: String by project
+val projectTargetSdk: String by project
+val projectCompileSdk: String by project
 // Pysanka: the version people see (major.minor.patch) is set by hand in version.txt before each release;
 // versionCode comes from the CI run number, so every build installs over the previous one.
 val projectVersionName = rootProject.file("version.txt").readText().trim()
@@ -54,9 +56,9 @@ kotlin {
     }
 }
 
-configure<ApplicationExtension> {
+android {
     namespace = "dev.patrickgold.florisboard"
-    compileSdk = providers.gradleProperty("projectCompileSdk").get().toInt()
+    compileSdk = projectCompileSdk.toInt()
     buildToolsVersion = tools.versions.buildTools.get()
     ndkVersion = tools.versions.ndk.get()
 
@@ -65,25 +67,36 @@ configure<ApplicationExtension> {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    ksp {
+        arg("room.schemaLocation", "$projectDir/schemas")
+        arg("room.incremental", "true")
+        arg("room.expandProjection", "true")
+    }
+
     defaultConfig {
         applicationId = "ua.pysanka"
-        minSdk = providers.gradleProperty("projectMinSdk").get().toInt()
-        targetSdk = providers.gradleProperty("projectTargetSdk").get().toInt()
+        minSdk = projectMinSdk.toInt()
+        targetSdk = projectTargetSdk.toInt()
         versionCode = ciVersionCode
         versionName = projectVersionName.substringBefore("-")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "BUILD_COMMIT_HASH", "\"${getGitCommitHash().get()}\"")
 
         // Pysanka: 64-bit ARM only (also keeps other ABIs of bundled native libraries out of the APK)
         ndk {
             abiFilters += listOf("arm64-v8a")
         }
 
-        buildConfigField("String", "BUILD_COMMIT_HASH", "\"${getGitCommitHash().get()}\"")
-
         sourceSets {
             maybeCreate("main").apply {
-                assets.directories += "src/main/assets"
+                assets {
+                    srcDirs("src/main/assets")
+                }
+                java {
+                    srcDirs("src/main/kotlin")
+                }
             }
         }
     }
@@ -139,6 +152,12 @@ configure<ApplicationExtension> {
         }
     }
 
+    aboutLibraries {
+        collect {
+            configPath = file("src/main/config")
+        }
+    }
+
     lint {
         baseline = file("lint.xml")
     }
@@ -160,27 +179,11 @@ configure<ApplicationExtension> {
     }
 }
 
-aboutLibraries {
-    collect {
-        configPath = file("src/main/config")
-    }
-}
-
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-    arg("room.incremental", "true")
-    arg("room.expandProjection", "true")
-}
-
 tasks.withType<Test> {
     testLogging {
         events = setOf(TestLogEvent.FAILED, TestLogEvent.PASSED, TestLogEvent.SKIPPED)
     }
     useJUnitPlatform()
-}
-
-kover {
-    useJacoco()
 }
 
 dependencies {
@@ -216,10 +219,8 @@ dependencies {
     implementation(libs.litertlm.android)
     implementation(libs.androidx.window.core)
     implementation(libs.cache4k)
-    implementation(libs.k3lp.core)
     implementation(libs.kotlin.reflect)
     implementation(libs.kotlinx.coroutines)
-    implementation(libs.kotlinx.io)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.mikepenz.aboutlibraries.core)
     implementation(libs.mikepenz.aboutlibraries.compose)
@@ -230,6 +231,7 @@ dependencies {
     implementation(libs.patrickgold.jetpref.material.ui)
 
     implementation(projects.lib.android)
+    implementation(projects.lib.color)
     implementation(projects.lib.compose)
     implementation(projects.lib.kotlin)
     implementation(projects.lib.native)
