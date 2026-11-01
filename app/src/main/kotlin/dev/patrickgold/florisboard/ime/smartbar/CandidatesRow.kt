@@ -118,7 +118,8 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                     displayMode = displayMode,
                     onClick = {
                         // Can't use candidate directly
-                        keyboardManager.commitCandidate(candidates[n])
+                        // Pysanka: a tapped word may be learned (see KeyboardManager.pysankaTapCandidate)
+                        keyboardManager.pysankaTapCandidate(candidates[n])
                     },
                     onLongPress = {
                         // Can't use candidate directly

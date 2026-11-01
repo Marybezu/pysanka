@@ -184,6 +184,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "pysanka__correction__auto_correct",
             default = true,
         )
+        // Pysanka: the person's own words are learned (encrypted, see UserWords), never from private fields
+        val pysankaLearnWords = boolean(
+            key = "pysanka__correction__learn_words",
+            default = true,
+        )
         val autoCapitalization = boolean(
             key = "correction__auto_capitalization",
             default = true,

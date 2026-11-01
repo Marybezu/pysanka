@@ -22,7 +22,7 @@ object SecureClipboard {
     const val FILES_DIR = "clipboard_files"
     const val OPEN_DIR = "clipboard_open"
 
-    /** Opens the vault; on a lost key every old clipboard file is wiped first. Call off the main thread. */
+    /** Opens the vault; on a lost key every old clipboard file (and the learned words) is wiped first. Call off the main thread. */
     fun open(context: Context): ClipboardVault.State {
         val app = context.applicationContext
         val state = ClipboardVault.open(app) { wipe(app) }
@@ -48,6 +48,8 @@ object SecureClipboard {
         context.deleteDatabase(FILES_DB)
         File(context.noBackupFilesDir, FILES_DIR).listFiles()?.forEach { it.delete() }
         File(context.noBackupFilesDir, OPEN_DIR).listFiles()?.forEach { it.delete() }
+        // The learned words share the vault: without its key they cannot be read either
+        ua.pysanka.typing.UserWords.wipe(context)
     }
 
     /**

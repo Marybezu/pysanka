@@ -172,6 +172,8 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
 
     override fun handleFinishInput() {
         ua.pysanka.typing.AutoCorrect.clear()
+        // Pysanka: learned words are written when a field is left
+        ua.pysanka.typing.UserWords.flush(appContext)
         // Pysanka: a copy made while no field is focused is not judged by the last field
         clipboardManager.setFieldPrivacy(incognito = false, passwordField = false)
         ua.pysanka.privacy.FieldPrivacy.isPrivate = false
