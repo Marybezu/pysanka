@@ -38,10 +38,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.ime.extension.ExtensionComponent
-import dev.patrickgold.florisboard.ime.extension.ExtensionComponentName
-import dev.patrickgold.florisboard.ime.extension.ExtensionMeta
-import dev.patrickgold.florisboard.ime.theme.ThemeExtension
+import dev.patrickgold.florisboard.ime.nlp.LanguagePackComponent
+import dev.patrickgold.florisboard.ime.theme.ThemeExtensionComponent
+import dev.patrickgold.florisboard.lib.ext.ExtensionComponent
+import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
+import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisTextButton
@@ -67,7 +68,7 @@ fun ExtensionComponentView(
     val componentName = remember(meta.id, component.id) { ExtensionComponentName(meta.id, component.id).toString() }
     FlorisOutlinedBox(
         modifier = modifier,
-        title = component.name,
+        title = component.label,
         subtitle = componentName,
     ) {
         Column(
@@ -78,7 +79,7 @@ fun ExtensionComponentView(
             ),
         ) {
             when (component) {
-                is ThemeExtension.ThemeComponent -> {
+                is ThemeExtensionComponent -> {
                     val text = remember(
                         component.authors, component.isNightTheme, component.stylesheetPath(),
                     ) {
@@ -94,7 +95,6 @@ fun ExtensionComponentView(
                         color = LocalContentColor.current,
                     )
                 }
-                /* TODO:
                 is LanguagePackComponent -> {
                     val text = remember(
                         component.authors, component.locale, component.hanShapeBasedKeyCode,
@@ -111,7 +111,6 @@ fun ExtensionComponentView(
                         color = LocalContentColor.current,
                     )
                 }
-                 */
                 else -> { }
             }
         }

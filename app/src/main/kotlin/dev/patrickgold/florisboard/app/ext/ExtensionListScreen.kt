@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2026 The FlorisBoard Contributors
+ * Copyright (C) 2024-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,17 +44,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
-import dev.patrickgold.florisboard.ime.extension.Extension
-import dev.patrickgold.florisboard.ime.extension.LocalExtensionController
-import dev.patrickgold.florisboard.ime.keyboard3.extension.Keyboard3Extension
+import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.theme.ThemeExtension
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.florisboard.lib.ext.ExtensionManager
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisTextButton
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
@@ -64,25 +64,25 @@ import org.florisboard.lib.compose.stringRes
 enum class ExtensionListScreenType(
     val id: String,
     @StringRes val titleResId: Int,
-    val predicate: (Extension<*>) -> Boolean,
+    val getExtensionIndex: (ExtensionManager) -> ExtensionManager.ExtensionIndex<*>,
     val launchExtensionCreate: ((NavController) -> Unit)?,
 ) {
     EXT_THEME(
         id = "ext-theme",
         titleResId = R.string.ext__list__ext_theme,
-        predicate = { it is ThemeExtension },
+        getExtensionIndex = { it.themes },
         launchExtensionCreate = { it.navigate(Routes.Ext.Edit("null", ThemeExtension.SERIAL_TYPE)) },
     ),
-    EXT_KEYBOARD3(
-        id = "ext-keyboard3",
+    EXT_KEYBOARD(
+        id = "ext-keyboard",
         titleResId = R.string.ext__list__ext_keyboard,
-        predicate = { it is Keyboard3Extension },
+        getExtensionIndex = { it.keyboardExtensions },
         launchExtensionCreate = null,//{ it.navigate(Routes.Ext.Edit("null", KeyboardExtension.SERIAL_TYPE)) },
     ),
     EXT_LANGUAGEPACK(
         id = "ext-languagepack",
         titleResId = R.string.ext__list__ext_languagepack,
-        predicate = { false }, // TODO
+        getExtensionIndex = { it.languagePacks },
         launchExtensionCreate = null,//{ it.navigate(Routes.Ext.Edit("null", LanguagePackExtension.SERIAL_TYPE)) },
     );
 }
@@ -93,12 +93,10 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
     previewFieldVisible = false
     scrollable = false
 
+    val context = LocalContext.current
     val navController = LocalNavController.current
-    val extensionController = LocalExtensionController.current
-    val extensionIndex by extensionController.activeIndex.collectAsState()
-    val extensions = remember(extensionIndex) {
-        extensionIndex.extensions.values.filter(type.predicate)
-    }
+    val extensionManager by context.extensionManager()
+    val extensionIndex by type.getExtensionIndex(extensionManager).collectAsState()
 
     var fabHeight by remember {
         mutableStateOf(0)
@@ -119,16 +117,15 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
                     ImportExtensionBox(navController)
                 }
             }
-            items(extensions) { extension ->
-                val manifest = extension.manifest
+            items(extensionIndex) { ext ->
                 FlorisOutlinedBox(
                     modifier = Modifier.defaultFlorisOutlinedBox(),
-                    title = manifest.meta.title,
-                    subtitle = manifest.meta.id,
+                    title = ext.meta.title,
+                    subtitle = ext.meta.id,
                 ) {
                     Text(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                        text = manifest.meta.description ?: "",
+                        text = ext.meta.description ?: "",
                         style = MaterialTheme.typography.bodySmall,
                     )
                     Row(
@@ -138,7 +135,7 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
                     ) {
                         FlorisTextButton(
                             onClick = {
-                                navController.navigate(Routes.Ext.View(manifest.meta.id))
+                                navController.navigate(Routes.Ext.View(ext.meta.id))
                             },
                             icon = Icons.Outlined.Info,
                             text = stringRes(id = R.string.ext__list__view_details),//stringRes(R.string.action__add),
@@ -147,11 +144,11 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
                         Spacer(modifier = Modifier.weight(1f))
                         FlorisTextButton(
                             onClick = {
-                                navController.navigate(Routes.Ext.Edit(manifest.meta.id))
+                                navController.navigate(Routes.Ext.Edit(ext.meta.id))
                             },
                             icon = Icons.Default.Edit,
                             text = stringRes(R.string.action__edit),
-                            enabled = extension.canDelete(),
+                            enabled = extensionManager.canDelete(ext),
                         )
                     }
                 }

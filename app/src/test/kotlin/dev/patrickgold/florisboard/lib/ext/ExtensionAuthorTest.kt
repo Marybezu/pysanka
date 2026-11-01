@@ -16,7 +16,6 @@
 
 package dev.patrickgold.florisboard.lib.ext
 
-import dev.patrickgold.florisboard.ime.extension.ExtensionMaintainer
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.datatest.withData
 import io.kotest.matchers.shouldBe

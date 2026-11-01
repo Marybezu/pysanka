@@ -23,6 +23,7 @@ import androidx.collection.set
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKey
 import dev.patrickgold.florisboard.nlpManager
 import java.text.Normalizer
 import java.util.*
@@ -35,7 +36,9 @@ import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sqrt
 
-/*
+private fun TextKey.baseCode(): Int {
+    return (data as? KeyData)?.code ?: KeyCode.UNSPECIFIED
+}
 
 /**
  * Classifies gestures by comparing them with an "ideal gesture".
@@ -664,4 +667,3 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
         }
     }
 }
- */

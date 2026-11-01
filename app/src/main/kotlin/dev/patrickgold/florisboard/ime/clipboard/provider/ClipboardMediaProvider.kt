@@ -129,7 +129,7 @@ class ClipboardMediaProvider : ContentProvider() {
         if (!init()) return null
         if (projection != null) {
             if (projection.contains(MediaStore.Images.Media.ORIENTATION)) {
-                clipboardFilesDao?.getCursorByIdWithColumns(id, MediaStore.Images.Media.ORIENTATION)
+                clipboardFilesDao?.getCurserByIdWithColums(id, MediaStore.Images.Media.ORIENTATION)
             } else {
                 //Return null if the projection query is invalid
                 return null

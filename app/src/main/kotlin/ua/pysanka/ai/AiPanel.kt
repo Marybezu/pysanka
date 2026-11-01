@@ -72,7 +72,7 @@ import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
-import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
+import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.systemService
@@ -100,13 +100,11 @@ import org.florisboard.lib.snygg.ui.SnyggText
 @Composable
 fun AiPanel(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val imeController = LocalImeController.current
+    val keyboardManager by context.keyboardManager()
     val panel = remember { AiBridge.takePanel() }
 
     fun closePanel() {
-        imeController.updateStateBlocking {
-            state = state.copy(flags = state.flags.withImeUiMode(ImeUiMode.TEXT))
-        }
+        keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
     }
 
     if (panel == null) {
@@ -194,7 +192,7 @@ fun AiPanel(modifier: Modifier = Modifier) {
     fun placeText(text: String, insert: Boolean) {
         val t = panel.taken
         val result = AiBridge.Result(if (insert) AiBridge.Mode.INSERT else t.mode, t.text, text, t.start, t.end)
-        if (!panel.editor.pysankaApplyAi(result)) AiBridge.couldNotPlace(text)
+        if (!ua.pysanka.ime.FieldText.applyAi(panel.info, result)) AiBridge.couldNotPlace(text)
         closePanel()
     }
 
@@ -202,7 +200,7 @@ fun AiPanel(modifier: Modifier = Modifier) {
         val t = panel.taken
         // Replies are never put in place of the text
         val taken = if (action == AiAction.REPLIES) t.copy(mode = AiBridge.Mode.INSERT) else t
-        AiBridge.openEditor(panel.editor, taken, input(action), action)
+        AiBridge.openEditor(panel.info, taken, input(action), action)
     }
 
     AiPanelView(

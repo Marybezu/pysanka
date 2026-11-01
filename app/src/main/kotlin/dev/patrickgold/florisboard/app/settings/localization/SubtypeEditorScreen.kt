@@ -66,13 +66,20 @@ import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.core.SubtypeJsonConfig
+import dev.patrickgold.florisboard.ime.core.SubtypeLayoutMap
 import dev.patrickgold.florisboard.ime.core.SubtypeNlpProviderMap
-import dev.patrickgold.florisboard.ime.extension.ExtensionComponentName
+import dev.patrickgold.florisboard.ime.core.SubtypePreset
+import dev.patrickgold.florisboard.ime.keyboard.LayoutArrangementComponent
+import dev.patrickgold.florisboard.ime.keyboard.LayoutType
+import dev.patrickgold.florisboard.ime.keyboard.extCorePopupMapping
+import dev.patrickgold.florisboard.ime.nlp.han.HanShapeBasedLanguageProvider
 import dev.patrickgold.florisboard.ime.nlp.latin.LatinLanguageProvider
+import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.subtypeManager
-import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.jetpref.datastore.model.observeAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdown
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdownMenuDefaults
@@ -82,14 +89,21 @@ import org.florisboard.lib.compose.FlorisDropdownLikeButton
 import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.stringRes
 
-@Composable
-fun SubtypeEditorScreen(id: Long?) {} // TODO needs a full rewrite
 
-/*
 private val SelectComponentName = ExtensionComponentName("00", "00")
 private val SelectNlpProviderId = SelectComponentName.toString()
 private val SelectNlpProviders = SubtypeNlpProviderMap(
     spelling = SelectNlpProviderId,
+)
+private val SelectLayoutMap = SubtypeLayoutMap(
+    characters = SelectComponentName,
+    symbols = SelectComponentName,
+    symbols2 = SelectComponentName,
+    numeric = SelectComponentName,
+    numericAdvanced = SelectComponentName,
+    numericRow = SelectComponentName,
+    phone = SelectComponentName,
+    phone2 = SelectComponentName,
 )
 private val SelectLocale = FlorisLocale.from("00", "00")
 private val SelectListKeys = listOf(SelectComponentName)
@@ -122,26 +136,44 @@ private class SubtypeEditorState(init: Subtype?) {
     val primaryLocale: MutableState<FlorisLocale> = mutableStateOf(init?.primaryLocale ?: SelectLocale)
     val secondaryLocales: MutableState<List<FlorisLocale>> = mutableStateOf(init?.secondaryLocales ?: listOf())
     val nlpProviders: MutableState<SubtypeNlpProviderMap> = mutableStateOf(init?.nlpProviders ?: Subtype.DEFAULT.nlpProviders)
+    val composer: MutableState<ExtensionComponentName> = mutableStateOf(init?.composer ?: SelectComponentName)
+    val currencySet: MutableState<ExtensionComponentName> = mutableStateOf(init?.currencySet ?: SelectComponentName)
     val punctuationRule: MutableState<ExtensionComponentName> = mutableStateOf(init?.punctuationRule ?: Subtype.DEFAULT.punctuationRule)
+    val popupMapping: MutableState<ExtensionComponentName> = mutableStateOf(init?.popupMapping ?: SelectComponentName)
+    val layoutMap: MutableState<SubtypeLayoutMap> = mutableStateOf(init?.layoutMap ?: SelectLayoutMap)
 
     fun applySubtype(subtype: Subtype) {
         id.value = subtype.id
         primaryLocale.value = subtype.primaryLocale
         secondaryLocales.value = subtype.secondaryLocales
+        composer.value = subtype.composer
         nlpProviders.value = subtype.nlpProviders
+        currencySet.value = subtype.currencySet
         punctuationRule.value = subtype.punctuationRule
+        popupMapping.value = subtype.popupMapping
+        layoutMap.value = subtype.layoutMap
     }
 
     fun toSubtype() = runCatching {
         check(primaryLocale.value != SelectLocale)
         check(nlpProviders.value.spelling != SelectNlpProviderId)
         check(nlpProviders.value.suggestion != SelectNlpProviderId)
+        check(composer.value != SelectComponentName)
+        check(currencySet.value != SelectComponentName)
         check(punctuationRule.value != SelectComponentName)
-//        Subtype(
-//            id.value, primaryLocale.value, secondaryLocales.value, nlpProviders.value, composer.value,
-//            currencySet.value, punctuationRule.value, popupMapping.value, layoutMap.value,
-//        )
-        TODO()
+        check(popupMapping.value != SelectComponentName)
+        check(layoutMap.value.characters != SelectComponentName)
+        check(layoutMap.value.symbols != SelectComponentName)
+        check(layoutMap.value.symbols2 != SelectComponentName)
+        check(layoutMap.value.numeric != SelectComponentName)
+        check(layoutMap.value.numericAdvanced != SelectComponentName)
+        check(layoutMap.value.numericRow != SelectComponentName)
+        check(layoutMap.value.phone != SelectComponentName)
+        check(layoutMap.value.phone2 != SelectComponentName)
+        Subtype(
+            id.value, primaryLocale.value, secondaryLocales.value, nlpProviders.value, composer.value,
+            currencySet.value, punctuationRule.value, popupMapping.value, layoutMap.value,
+        )
     }
 }
 
@@ -164,7 +196,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
     val keyboardManager by context.keyboardManager()
     val subtypeManager by context.subtypeManager()
 
-    val displayLanguageNamesIn by prefs.localization.displayLanguageNamesIn.collectAsState()
+    val displayLanguageNamesIn by prefs.localization.displayLanguageNamesIn.observeAsState()
     val composers by keyboardManager.resources.composers.collectAsState()
     val currencySets by keyboardManager.resources.currencySets.collectAsState()
     val layoutExtensions by keyboardManager.resources.layouts.collectAsState()
@@ -546,4 +578,3 @@ private fun SubtypeGroupSpacer() {
         .fillMaxWidth()
         .height(32.dp))
 }
- */

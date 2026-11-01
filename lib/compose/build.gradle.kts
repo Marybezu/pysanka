@@ -1,8 +1,7 @@
-import com.android.build.api.dsl.LibraryExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 /*
- * Copyright (C) 2025-2026 The FlorisBoard Contributors
+ * Copyright (C) 2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +18,12 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.agp.library)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.plugin.compose)
 }
+
+val projectMinSdk: String by project
+val projectCompileSdk: String by project
 
 kotlin {
     compilerOptions {
@@ -32,12 +35,12 @@ kotlin {
     }
 }
 
-configure<LibraryExtension> {
+android {
     namespace = "org.florisboard.lib.compose"
-    compileSdk = providers.gradleProperty("projectCompileSdk").get().toInt()
+    compileSdk = projectCompileSdk.toInt()
 
     defaultConfig {
-        minSdk = providers.gradleProperty("projectMinSdk").get().toInt()
+        minSdk = projectMinSdk.toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
@@ -69,6 +72,7 @@ configure<LibraryExtension> {
 
 dependencies {
     implementation(projects.lib.android)
+    implementation(projects.lib.color)
     implementation(projects.lib.kotlin)
 
     val composeBom = platform(libs.androidx.compose.bom)

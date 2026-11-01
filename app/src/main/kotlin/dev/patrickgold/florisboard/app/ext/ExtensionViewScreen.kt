@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2026 The FlorisBoard Contributors
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,71 +35,68 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
-import dev.patrickgold.florisboard.ime.extension.Extension
-import dev.patrickgold.florisboard.ime.extension.ExtensionMaintainer
-import dev.patrickgold.florisboard.ime.extension.ExtensionMeta
-import dev.patrickgold.florisboard.ime.extension.LocalExtensionController
-import dev.patrickgold.florisboard.ime.io.FlorisRef
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.LocalInteractionController
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.showLongToast
+import dev.patrickgold.florisboard.extensionManager
+import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
 import dev.patrickgold.florisboard.ime.theme.ThemeExtension
+import dev.patrickgold.florisboard.ime.theme.ThemeExtensionComponentImpl
 import dev.patrickgold.florisboard.lib.compose.FlorisConfirmDeleteDialog
 import dev.patrickgold.florisboard.lib.compose.FlorisHyperlinkText
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import kotlinx.coroutines.launch
+import dev.patrickgold.florisboard.lib.ext.Extension
+import dev.patrickgold.florisboard.lib.ext.ExtensionMaintainer
+import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
+import dev.patrickgold.florisboard.lib.io.FlorisRef
+import org.florisboard.lib.android.showLongToastSync
 import org.florisboard.lib.compose.FlorisOutlinedButton
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 
 @Composable
 fun ExtensionViewScreen(id: String) {
-    val extensionController = LocalExtensionController.current
-    val extensionIndex by extensionController.activeIndex.collectAsState()
+    val context = LocalContext.current
+    val extensionManager by context.extensionManager()
 
-    val extension = extensionIndex.extensions[id]
-    if (extension != null) {
-        ViewScreen(extension)
+    val ext = extensionManager.getExtensionById(id)
+    if (ext != null) {
+        ViewScreen(ext)
     } else {
         ExtensionNotFoundScreen(id)
     }
 }
 
 @Composable
-private fun ViewScreen(extension: Extension<*>) = FlorisScreen {
-    title = extension.manifest.meta.title
+private fun ViewScreen(ext: Extension) = FlorisScreen {
+    title = ext.meta.title
 
-    val extensionController = LocalExtensionController.current
-    val interactionController = LocalInteractionController.current
     val navController = LocalNavController.current
-    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val extensionManager by context.extensionManager()
 
-    val meta = extension.manifest.meta
-    var extToDelete by remember { mutableStateOf<Extension<*>?>(null) }
+    var extToDelete by remember { mutableStateOf<Extension?>(null) }
 
     content {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp),
         ) {
-            meta.description?.let { Text(it) }
+            ext.meta.description?.let { Text(it) }
             Spacer(modifier = Modifier.height(16.dp))
             ExtensionMetaRowScrollableChips(
                 label = stringRes(R.string.ext__meta__maintainers),
                 showDividerAbove = false,
             ) {
-                for ((n, maintainer) in meta.maintainers.withIndex()) {
+                for ((n, maintainer) in ext.meta.maintainers.withIndex()) {
                     if (n > 0) {
                         Spacer(modifier = Modifier.width(8.dp))
                     }
@@ -107,14 +104,14 @@ private fun ViewScreen(extension: Extension<*>) = FlorisScreen {
                 }
             }
             ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__id)) {
-                Text(text = meta.id)
+                Text(text = ext.meta.id)
             }
             ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__version)) {
-                Text(text = meta.version)
+                Text(text = ext.meta.version)
             }
-            if (!meta.keywords.isNullOrEmpty()) {
+            if (ext.meta.keywords != null && ext.meta.keywords!!.isNotEmpty()) {
                 ExtensionMetaRowScrollableChips(label = stringRes(R.string.ext__meta__keywords)) {
-                    for ((n, keyword) in meta.keywords.withIndex()) {
+                    for ((n, keyword) in ext.meta.keywords!!.withIndex()) {
                         if (n > 0) {
                             Spacer(modifier = Modifier.width(8.dp))
                         }
@@ -122,32 +119,32 @@ private fun ViewScreen(extension: Extension<*>) = FlorisScreen {
                     }
                 }
             }
-            if (!meta.homepage.isNullOrBlank()) {
+            if (!ext.meta.homepage.isNullOrBlank()) {
                 ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__homepage)) {
                     FlorisHyperlinkText(
-                        text = FlorisRef.fromUrl(meta.homepage).authority,
-                        url = meta.homepage,
+                        text = FlorisRef.fromUrl(ext.meta.homepage!!).authority,
+                        url = ext.meta.homepage!!,
                     )
                 }
             }
-            if (!meta.issueTracker.isNullOrBlank()) {
+            if (!ext.meta.issueTracker.isNullOrBlank()) {
                 ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__issue_tracker)) {
                     FlorisHyperlinkText(
-                        text = FlorisRef.fromUrl(meta.issueTracker).authority,
-                        url = meta.issueTracker,
+                        text = FlorisRef.fromUrl(ext.meta.issueTracker!!).authority,
+                        url = ext.meta.issueTracker!!,
                     )
                 }
             }
             ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__license)) {
                 // TODO: display human-readable License name instead of
                 //  SPDX identifier
-                Text(text = meta.license)
+                Text(text = ext.meta.license)
             }
             Row(modifier = Modifier.fillMaxWidth()) {
-                if (extension.canDelete()) {
+                if (extensionManager.canDelete(ext)) {
                     FlorisOutlinedButton(
                         onClick = {
-                            extToDelete = extension
+                            extToDelete = ext
                         },
                         icon = Icons.Default.Delete,
                         text = stringRes(R.string.action__delete),
@@ -159,7 +156,7 @@ private fun ViewScreen(extension: Extension<*>) = FlorisScreen {
                 Spacer(modifier = Modifier.weight(1f))
                 FlorisOutlinedButton(
                     onClick = {
-                        navController.navigate(Routes.Ext.Export(meta.id))
+                        navController.navigate(Routes.Ext.Export(ext.meta.id))
                     },
                     icon = Icons.Default.Share,
                     text = stringRes(R.string.action__export),
@@ -167,20 +164,19 @@ private fun ViewScreen(extension: Extension<*>) = FlorisScreen {
             }
         }
 
-        when (extension) {
+        when (ext) {
             is ThemeExtension -> {
                 ExtensionComponentListView(
                     title = stringRes(R.string.ext__meta__components_theme),
-                    components = extension.manifest.themes,
+                    components = ext.themes,
                 ) { component ->
                     ExtensionComponentView(
                         modifier = Modifier.defaultFlorisOutlinedBox(),
-                        meta = meta,
+                        meta = ext.meta,
                         component = component,
                     )
                 }
             }
-            /* TODO:
             is LanguagePackExtension -> {
                 ExtensionComponentListView(
                     title = stringRes(R.string.ext__meta__components_language_pack),
@@ -193,32 +189,28 @@ private fun ViewScreen(extension: Extension<*>) = FlorisScreen {
                     )
                 }
             }
-             */
             else -> {
                 // Render nothing
             }
         }
 
         if (extToDelete != null) {
-            val snackbarMsg = stringRes(R.string.error__snackbar_message)
             FlorisConfirmDeleteDialog(
                 onConfirm = {
-                    scope.launch {
-                        runCatching {
-                            extensionController.delete(extToDelete!!)
-                        }.onSuccess {
-                            navController.popBackStack()
-                        }.onFailure { error ->
-                            interactionController.showLongToast(
-                                snackbarMsg,
-                                "error_message" to error.localizedMessage,
-                            )
-                        }
-                        extToDelete = null
+                    runCatching {
+                        extensionManager.delete(extToDelete!!)
+                    }.onSuccess {
+                        navController.popBackStack()
+                    }.onFailure { error ->
+                        context.showLongToastSync(
+                            R.string.error__snackbar_message,
+                            "error_message" to error.localizedMessage,
+                        )
                     }
+                    extToDelete = null
                 },
                 onDismiss = { extToDelete = null },
-                what = extToDelete!!.manifest.meta.title,
+                what = extToDelete!!.meta.title,
             )
         }
     }
@@ -276,31 +268,23 @@ private fun ExtensionMetaRowScrollableChips(
 @Composable
 private fun PreviewExtensionViewerScreen() {
     val testExtension = ThemeExtension(
-        manifest = ThemeExtension.Manifest(
-            meta = ExtensionMeta(
-                id = "com.example.theme.test",
-                version = "2.4.3",
-                title = "Test theme",
-                description = "This is a test theme to preview the extension viewer screen UI.",
-                keywords = listOf("Beach", "Sea", "Sun"),
-                homepage = "https://example.com",
-                issueTracker = "https://git.example.com/issues",
-                maintainers = listOf(
-                    "Max Mustermann <max.mustermann@example.com> (maxmustermann.example.com)",
-                ).map { ExtensionMaintainer.fromOrTakeRaw(it) },
-                license = "apache-2.0",
-            ),
-            dependencies = emptyMap(),
-            themes = listOf(
-                ThemeExtension.ThemeComponent(
-                    id = "test",
-                    name = "Test",
-                    authors = listOf(),
-                    stylesheetPath = "test.json",
-                ),
-            ),
+        meta = ExtensionMeta(
+            id = "com.example.theme.test",
+            version = "2.4.3",
+            title = "Test theme",
+            description = "This is a test theme to preview the extension viewer screen UI.",
+            keywords = listOf("Beach", "Sea", "Sun"),
+            homepage = "https://example.com",
+            issueTracker = "https://git.example.com/issues",
+            maintainers = listOf(
+                "Max Mustermann <max.mustermann@example.com> (maxmustermann.example.com)",
+            ).map { ExtensionMaintainer.fromOrTakeRaw(it) },
+            license = "apache-2.0",
         ),
-        sourceRef = FlorisRef.assets("demo/com.example.theme.test"),
+        dependencies = null,
+        themes = listOf(
+            ThemeExtensionComponentImpl(id = "test", label = "Test", authors = listOf(), stylesheetPath = "test.json"),
+        ),
     )
-    ViewScreen(testExtension)
+    ViewScreen(ext = testExtension)
 }

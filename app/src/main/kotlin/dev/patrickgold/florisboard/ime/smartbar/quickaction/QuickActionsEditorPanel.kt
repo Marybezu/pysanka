@@ -35,6 +35,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +44,7 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -51,12 +53,13 @@ import androidx.compose.ui.unit.toSize
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
-import dev.patrickgold.florisboard.ime.keyboard3.ImeActions
-import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
+import dev.patrickgold.florisboard.ime.text.key.KeyCode
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.toIntOffset
-import kotlinx.coroutines.runBlocking
 import org.florisboard.lib.compose.stringRes
+import kotlinx.coroutines.runBlocking
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggColumn
 import org.florisboard.lib.snygg.ui.SnyggIcon
@@ -65,13 +68,14 @@ import org.florisboard.lib.snygg.ui.SnyggRow
 import org.florisboard.lib.snygg.ui.SnyggText
 
 private const val ItemNotFound = -1
-private val NoopAction = QuickAction.InsertK3Descriptor(ImeActions.NoopSpacer)
-private val DragMarkerAction = QuickAction.InsertK3Descriptor(ImeActions.NoopDragMarker)
+private val NoopAction = QuickAction.InsertKey(TextKeyData(code = KeyCode.NOOP))
+private val DragMarkerAction = QuickAction.InsertKey(TextKeyData(code = KeyCode.DRAG_MARKER))
 
 @Composable
 fun QuickActionsEditorPanel() {
     val prefs by FlorisPreferenceStore
-    val imeController = LocalImeController.current
+    val context = LocalContext.current
+    val keyboardManager by context.keyboardManager()
 
     // We get the current arrangement once and do not observe on purpose
     val actionArrangement = remember { prefs.smartbar.actionArrangement.get() }
@@ -85,6 +89,7 @@ fun QuickActionsEditorPanel() {
         actionArrangement.hiddenActions.ifEmpty { listOf(NoopAction) }.toMutableStateList()
     }
 
+    val evaluator by keyboardManager.activeSmartbarEvaluator.collectAsState()
     val gridState = rememberLazyGridState()
     var activeDragAction by remember { mutableStateOf<QuickAction?>(null) }
     var activeDragPosition by remember { mutableStateOf(IntOffset.Zero) }
@@ -124,11 +129,10 @@ fun QuickActionsEditorPanel() {
     }
 
     fun keyOf(action: QuickAction): Any? {
-        return when (action) {
-            is QuickAction.InsertK3Descriptor -> {
-                if (action.descriptor == ImeActions.NoopSpacer) null else action.descriptor.hashCode()
-            }
-            else -> null
+        return if (action.keyData().code == KeyCode.NOOP) {
+            null
+        } else {
+            action.hashCode()
         }
     }
 
@@ -232,12 +236,9 @@ fun QuickActionsEditorPanel() {
             )
             runBlocking {
                 prefs.smartbar.actionArrangement.set(newActionArrangement)
-                imeController.updateState {
-                    state = state.copy(
-                        flags = state.flags
-                            .withActionsEditorVisible(false),
-                    )
-                }
+            }
+            if (keyboardManager.activeState.isActionsEditorVisible) {
+                keyboardManager.activeState.isActionsEditorVisible = false
             }
         }
     }
@@ -254,12 +255,7 @@ fun QuickActionsEditorPanel() {
                     elementName = FlorisImeUi.SmartbarActionsEditorHeaderButton.elementName,
                     modifier = Modifier.fillMaxHeight().aspectRatio(1f),
                     onClick = {
-                        imeController.updateStateBlocking {
-                            state = state.copy(
-                                flags = state.flags
-                                    .withActionsEditorVisible(false),
-                            )
-                        }
+                        keyboardManager.activeState.isActionsEditorVisible = false
                     },
                 ) {
                     SnyggIcon(
@@ -298,6 +294,7 @@ fun QuickActionsEditorPanel() {
                     QuickActionButton(
                         modifier = Modifier.animateItem(),
                         action = stickyAction,
+                        evaluator = evaluator,
                         type = QuickActionBarType.EDITOR_TILE,
                     )
                 }
@@ -311,6 +308,7 @@ fun QuickActionsEditorPanel() {
                     QuickActionButton(
                         modifier = Modifier.animateItem(),
                         action = action,
+                        evaluator = evaluator,
                         type = QuickActionBarType.EDITOR_TILE,
                     )
                 }
@@ -324,6 +322,7 @@ fun QuickActionsEditorPanel() {
                     QuickActionButton(
                         modifier = Modifier.animateItem(),
                         action = action,
+                        evaluator = evaluator,
                         type = QuickActionBarType.EDITOR_TILE,
                     )
                 }
@@ -338,6 +337,7 @@ fun QuickActionsEditorPanel() {
                         .offset { activeDragPosition }
                         .offset(-size.width / 2, -size.height / 2),
                     action = activeDragAction!!,
+                    evaluator = evaluator,
                     type = QuickActionBarType.EDITOR_TILE,
                 )
             }

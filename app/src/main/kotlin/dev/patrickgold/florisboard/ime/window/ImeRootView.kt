@@ -24,13 +24,8 @@ import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.unit.LayoutDirection
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.app.FlorisPreferenceStore
-import dev.patrickgold.florisboard.ime.io.LocalStorageController
-import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.LocalInteractionController
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.rememberAndroidInteractionController
+import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.theme.FlorisImeTheme
-import dev.patrickgold.florisboard.ime.theme.LocalThemeController
 import org.florisboard.lib.compose.ProvideLocalizedResources
 
 /**
@@ -62,14 +57,8 @@ class ImeRootView(val ims: FlorisImeService) : AbstractComposeView(ims) {
 
     @Composable
     override fun Content() {
-        val prefs by FlorisPreferenceStore
-        val interactionController = rememberAndroidInteractionController(prefs)
-
         CompositionLocalProvider(
-            LocalImeController provides ims.imeController,
-            LocalInteractionController provides interactionController,
-            LocalStorageController provides ims.storageController,
-            LocalThemeController provides ims.themeController,
+            LocalInputFeedbackController provides ims.inputFeedbackController,
             LocalWindowController provides ims.windowController,
         ) {
             ProvideLocalizedResources(

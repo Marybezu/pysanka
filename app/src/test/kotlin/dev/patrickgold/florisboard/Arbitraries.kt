@@ -26,12 +26,12 @@ import io.kotest.property.arbitrary.map
 fun Arb.Companion.floatMaybeConstant(
     min: Float = -Float.MAX_VALUE,
     max: Float = Float.MAX_VALUE,
-    includeNaNs: Boolean = false,
-) = if (min == max) Arb.constant(min) else Arb.float(min, max, includeNaNs)
+    includeNonFiniteEdgeCases: Boolean = true,
+) = if (min == max) Arb.constant(min) else Arb.float(min, max, includeNonFiniteEdgeCases)
 
 fun Arb.Companion.dp(
     min: Dp = -Float.MAX_VALUE.dp,
     max: Dp = Float.MAX_VALUE.dp,
-    includeNaNs: Boolean = false,
-): Arb<Dp> = float(min.value..max.value, includeNaNs).map { it.dp }
+    includeNonFiniteEdgeCases: Boolean = true,
+): Arb<Dp> = float(min.value..max.value, includeNonFiniteEdgeCases).map { it.dp }
 

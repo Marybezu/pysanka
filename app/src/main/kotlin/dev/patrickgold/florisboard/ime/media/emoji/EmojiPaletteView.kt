@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2026 The FlorisBoard Contributors
+ * Copyright (C) 2022-2025 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -84,15 +83,16 @@ import androidx.emoji2.text.EmojiCompat
 import androidx.emoji2.widget.EmojiTextView
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.editorInstance
+import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
-import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.InteractionKind
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.LocalInteractionController
-import dev.patrickgold.florisboard.ime.keyboard3.interaction.showShortToast
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
-import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.jetpref.datastore.model.observeAsState
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidKeyguardManager
+import org.florisboard.lib.android.showShortToast
 import org.florisboard.lib.android.systemService
 import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.header
@@ -103,7 +103,6 @@ import org.florisboard.lib.snygg.ui.SnyggIcon
 import org.florisboard.lib.snygg.ui.SnyggRow
 import org.florisboard.lib.snygg.ui.SnyggText
 import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
-import org.k3lp.lib.text.asK3String
 import kotlin.math.ceil
 
 private val EmojiCategoryValues = EmojiCategory.entries
@@ -135,17 +134,17 @@ fun EmojiPaletteView(
 ) {
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
-    val imeController = LocalImeController.current
+    val editorInstance by context.editorInstance()
+    val keyboardManager by context.keyboardManager()
 
-    val imeState by imeController.activeState.collectAsState()
-    val editorInfo by remember { derivedStateOf { imeState.editor.info } }
+    val activeEditorInfo by editorInstance.activeInfoFlow.collectAsState()
     val systemFontPaint = remember(Typeface.DEFAULT) {
         Paint().apply {
             typeface = Typeface.DEFAULT
         }
     }
-    val metadataVersion = editorInfo.emojiCompatMetadataVersion
-    val replaceAll = editorInfo.emojiCompatReplaceAll
+    val metadataVersion = activeEditorInfo.emojiCompatMetadataVersion
+    val replaceAll = activeEditorInfo.emojiCompatReplaceAll
     val emojiCompatInstance by FlorisEmojiCompat.getAsFlow(replaceAll).collectAsState()
     val emojiMappings = remember(emojiCompatInstance, fullEmojiMappings, metadataVersion, systemFontPaint) {
         fullEmojiMappings.byCategory.mapValues { (_, emojiSetList) ->
@@ -161,8 +160,8 @@ fun EmojiPaletteView(
 
     val deviceLocked = androidKeyguardManager.let { it.isDeviceLocked || it.isKeyguardLocked }
 
-    val preferredSkinTone by prefs.emoji.preferredSkinTone.collectAsState()
-    val emojiHistoryEnabled by prefs.emoji.historyEnabled.collectAsState()
+    val preferredSkinTone by prefs.emoji.preferredSkinTone.observeAsState()
+    val emojiHistoryEnabled by prefs.emoji.historyEnabled.observeAsState()
 
     var activeCategory by remember(emojiHistoryEnabled) {
         if (emojiHistoryEnabled) {
@@ -195,10 +194,8 @@ fun EmojiPaletteView(
             isPinned = isPinned,
             isRecent = isRecent,
             onEmojiInput = { emoji ->
+                keyboardManager.inputEventDispatcher.sendDownUp(emoji)
                 scope.launch {
-                    imeController.updateState {
-                        emitText(emoji.value.asK3String())
-                    }
                     EmojiHistoryHelper.markEmojiUsed(prefs, emoji)
                 }
             },
@@ -236,7 +233,7 @@ fun EmojiPaletteView(
         activeCategory: EmojiCategory,
         onCategoryChange: (EmojiCategory) -> Unit,
     ) {
-        val interactionController = LocalInteractionController.current
+        val inputFeedbackController = LocalInputFeedbackController.current
         val selectedTabIndex = categoryToPageNumber(activeCategory)
         val style = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiTab.elementName)
         PrimaryTabRow(
@@ -264,7 +261,7 @@ fun EmojiPaletteView(
                 }
                 Tab(
                     onClick = {
-                        interactionController.performFeedback(InteractionKind.KeyPress)
+                        inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
                         onCategoryChange(category)
                     },
                     selected = activeCategory == category,
@@ -406,7 +403,7 @@ private fun EmojiKey(
     onEmojiInput: (Emoji) -> Unit,
     onHistoryAction: () -> Unit,
 ) {
-    val interactionController = LocalInteractionController.current
+    val inputFeedbackController = LocalInputFeedbackController.current
     val base = emojiSet.base(withSkinTone = preferredSkinTone)
     val variations = emojiSet.variations(withoutSkinTone = preferredSkinTone)
     var showVariantsBox by remember { mutableStateOf(false) }
@@ -417,13 +414,13 @@ private fun EmojiKey(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
-                        interactionController.performFeedback(InteractionKind.KeyPress)
+                        inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
                     },
                     onTap = {
                         onEmojiInput(base)
                     },
                     onLongPress = {
-                        interactionController.performFeedback(InteractionKind.LongPress)
+                        inputFeedbackController.keyLongPress(TextKeyData.UNSPECIFIED)
                         if (variations.isNotEmpty() || isPinned || isRecent) {
                             showVariantsBox = true
                         }
@@ -528,6 +525,7 @@ private fun EmojiVariationsPopup(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun EmojiHistoryPopup(
     emoji: Emoji,
@@ -539,9 +537,9 @@ private fun EmojiHistoryPopup(
     val prefs by FlorisPreferenceStore
     val scope = rememberCoroutineScope()
     val emojiKeyHeight = FlorisImeSizing.smartbarHeight
-    val interactionController = LocalInteractionController.current
-    val pinnedUS by prefs.emoji.historyPinnedUpdateStrategy.collectAsState()
-    val recentUS by prefs.emoji.historyRecentUpdateStrategy.collectAsState()
+    val context = LocalContext.current
+    val pinnedUS by prefs.emoji.historyPinnedUpdateStrategy.observeAsState()
+    val recentUS by prefs.emoji.historyRecentUpdateStrategy.observeAsState()
     val showMoveLeft = isCurrentlyPinned && !pinnedUS.isAutomatic || !recentUS.isAutomatic
     val showMoveRight = isCurrentlyPinned && !pinnedUS.isAutomatic || !recentUS.isAutomatic
 
@@ -614,13 +612,12 @@ private fun EmojiHistoryPopup(
                         },
                     )
                 }
-                val actionMsg = stringRes(R.string.emoji__history__removal_success_message)
                 Action(
                     icon = Icons.Outlined.Delete,
                     action = {
                         EmojiHistoryHelper.removeEmoji(prefs, emoji)
-                        interactionController.showShortToast(
-                            actionMsg,
+                        context.showShortToast(
+                            R.string.emoji__history__removal_success_message,
                             "emoji" to emoji.value,
                         )
                     },

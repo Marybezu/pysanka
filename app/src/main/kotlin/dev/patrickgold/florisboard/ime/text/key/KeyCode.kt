@@ -121,6 +121,12 @@ object KeyCode {
     const val CURRENCY_SLOT_5 =             -805
     const val CURRENCY_SLOT_6 =             -806
 
+    // Pysanka: its own actions on the bar above the keyboard
+    const val PYSANKA_AI =                  -951
+    const val PYSANKA_FIX_LAYOUT =          -952
+    const val PYSANKA_TEXT_FROM_PHOTO =     -953
+    const val PYSANKA_TEXT_FROM_CAMERA =    -954
+
     const val MULTIPLE_CODE_POINTS =        -902
     const val DRAG_MARKER =                 -991
     const val NOOP =                        -999

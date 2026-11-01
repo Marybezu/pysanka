@@ -49,6 +49,7 @@ import androidx.room.migration.AutoMigrationSpec
 import dev.patrickgold.florisboard.R
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.android.UriSerializer
@@ -79,7 +80,7 @@ enum class ItemType(val value: Int) {
  */
 @Serializable
 @Entity(tableName = CLIPBOARD_HISTORY_TABLE)
-data class ClipboardItem(
+data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = BaseColumns._ID, index = true)
     var id: Long = 0,
@@ -430,7 +431,7 @@ interface ClipboardFilesDao {
     fun getCursorById(uid: Long) : Cursor
 
     @Query("SELECT (:projection) FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:uid)")
-    fun getCursorByIdWithColumns(uid: Long, projection: String) : Cursor
+    fun getCurserByIdWithColums(uid: Long, projection: String) : Cursor
 
     @Query("DELETE FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:id)")
     fun delete(id: Long)

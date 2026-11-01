@@ -59,7 +59,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
-import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.jetpref.datastore.model.observeAsState
 import kotlinx.coroutines.delay
 import org.florisboard.lib.compose.conditional
 import org.florisboard.lib.compose.drawableRes
@@ -142,7 +142,7 @@ private fun ImeWindowResizeHandle(
     val thickness = windowSpec.constraints.resizeHandleDrawThickness
     val cornerRadius = windowSpec.constraints.resizeHandleDrawCornerRadius
 
-    val showWindowResizeHandleBoundaries by prefs.devtools.showWindowResizeHandleBoundaries.collectAsState()
+    val showWindowResizeHandleBoundaries by prefs.devtools.showWindowResizeHandleBoundaries.observeAsState()
 
     val attributes = remember(windowConfig.mode) {
         mapOf(

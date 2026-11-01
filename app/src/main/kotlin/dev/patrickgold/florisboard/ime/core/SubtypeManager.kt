@@ -18,6 +18,9 @@ package dev.patrickgold.florisboard.ime.core
 
 import android.content.Context
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.keyboard.CurrencySet
+import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +42,7 @@ val SubtypeJsonConfig = Json {
  */
 class SubtypeManager(context: Context) {
     private val prefs by FlorisPreferenceStore
+    private val keyboardManager by context.keyboardManager()
     private val scope = CoroutineScope(Dispatchers.Default)
 
     val subtypesFlow: StateFlow<List<Subtype>>
@@ -106,6 +110,16 @@ class SubtypeManager(context: Context) {
     }
 
     /**
+     * Gets the currency set from the given subtype and returns it. Falls back to a default one if the subtype does not
+     * exist.
+     *
+     * @return The currency set or a fallback.
+     */
+    fun getCurrencySet(subtypeToSearch: Subtype): CurrencySet {
+        return keyboardManager.resources.currencySets.value[subtypeToSearch.currencySet] ?: CurrencySet.Fallback
+    }
+
+    /**
      * Gets a subtype by the given [id].
      *
      * @param id The id of the subtype you want to get.
@@ -114,6 +128,18 @@ class SubtypeManager(context: Context) {
     fun getSubtypeById(id: Long): Subtype? {
         val subtypeList = subtypes
         return subtypeList.find { it.id == id }
+    }
+
+    /**
+     * Gets the default system subtype for a given [locale].
+     *
+     * @param locale The locale of the default system subtype to get.
+     * @return The default system locale or null, if no matching default system subtype could be
+     *  found.
+     */
+    fun getSubtypePresetForLocale(locale: FlorisLocale): SubtypePreset? {
+        val presets = keyboardManager.resources.subtypePresets.value
+        return presets.find { it.locale == locale } ?: presets.find { it.locale.language == locale.language }
     }
 
     /**

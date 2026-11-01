@@ -16,7 +16,9 @@
 
 package dev.patrickgold.florisboard.ime.keyboard
 
-import dev.patrickgold.florisboard.ime.keyboard3.touch.InputShiftState
+import androidx.compose.ui.unit.LayoutDirection
+import dev.patrickgold.florisboard.ime.input.InputShiftState
+import dev.patrickgold.florisboard.ime.popup.PopupSet
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
@@ -28,6 +30,16 @@ import kotlinx.serialization.Serializable
  * selectors. The implementation is as abstract as possible, as different features require different implementations.
  */
 interface AbstractKeyData {
+    /**
+     * Computes a [KeyData] object for this key data. Returns null if no computation is possible or if the key is
+     * not relevant based on the result of [evaluator].
+     *
+     * @param evaluator The evaluator used to retrieve different states from the parent controller.
+     *
+     * @return A [KeyData] object or null if no computation is possible.
+     */
+    fun compute(evaluator: ComputingEvaluator): KeyData?
+
     /**
      * Returns the data described by this key as a string.
      *
@@ -55,6 +67,7 @@ interface KeyData : AbstractKeyData {
     val code: Int
     val label: String
     val groupId: Int
+    val popup: PopupSet<AbstractKeyData>?
 
     companion object {
         /**
@@ -116,9 +129,9 @@ class CaseSelector(
     val lower: AbstractKeyData,
     val upper: AbstractKeyData,
 ) : AbstractKeyData {
-//    override fun compute(evaluator: ComputingEvaluator): KeyData? {
-//        return (if (evaluator.state.isUppercase) { upper } else { lower }).compute(evaluator)
-//    }
+    override fun compute(evaluator: ComputingEvaluator): KeyData? {
+        return (if (evaluator.state.isUppercase) { upper } else { lower }).compute(evaluator)
+    }
 
     override fun asString(isForDisplay: Boolean): String {
         return ""
@@ -161,14 +174,14 @@ class ShiftStateSelector(
     val capsLock: AbstractKeyData? = null,
     val default: AbstractKeyData? = null,
 ) : AbstractKeyData {
-//    override fun compute(evaluator: ComputingEvaluator): KeyData? {
-//        return when (evaluator.state.inputShiftState) {
-//            InputShiftState.UNSHIFTED -> unshifted ?: default
-//            InputShiftState.SHIFTED_MANUAL -> shiftedManual ?: shifted ?: default
-//            InputShiftState.SHIFTED_AUTOMATIC -> shiftedAutomatic ?: shifted ?: default
-//            InputShiftState.CAPS_LOCK -> capsLock ?: default
-//        }?.compute(evaluator)
-//    }
+    override fun compute(evaluator: ComputingEvaluator): KeyData? {
+        return when (evaluator.state.inputShiftState) {
+            InputShiftState.UNSHIFTED -> unshifted ?: default
+            InputShiftState.SHIFTED_MANUAL -> shiftedManual ?: shifted ?: default
+            InputShiftState.SHIFTED_AUTOMATIC -> shiftedAutomatic ?: shifted ?: default
+            InputShiftState.CAPS_LOCK -> capsLock ?: default
+        }?.compute(evaluator)
+    }
 
     override fun asString(isForDisplay: Boolean): String {
         return ""
@@ -210,15 +223,15 @@ data class VariationSelector(
     val normal: AbstractKeyData? = null,
     val password: AbstractKeyData? = null,
 ) : AbstractKeyData {
-//    override fun compute(evaluator: ComputingEvaluator): KeyData? {
-//        return when (evaluator.state.keyVariation) {
-//            KeyVariation.ALL -> default
-//            KeyVariation.EMAIL_ADDRESS -> email ?: default
-//            KeyVariation.NORMAL -> normal ?: default
-//            KeyVariation.PASSWORD -> password ?: default
-//            KeyVariation.URI -> uri ?: default
-//        }?.compute(evaluator)
-//    }
+    override fun compute(evaluator: ComputingEvaluator): KeyData? {
+        return when (evaluator.state.keyVariation) {
+            KeyVariation.ALL -> default
+            KeyVariation.EMAIL_ADDRESS -> email ?: default
+            KeyVariation.NORMAL -> normal ?: default
+            KeyVariation.PASSWORD -> password ?: default
+            KeyVariation.URI -> uri ?: default
+        }?.compute(evaluator)
+    }
 
     override fun asString(isForDisplay: Boolean): String {
         return ""
@@ -248,10 +261,10 @@ class LayoutDirectionSelector(
     val ltr: AbstractKeyData,
     val rtl: AbstractKeyData,
 ) : AbstractKeyData {
-//    override fun compute(evaluator: ComputingEvaluator): KeyData? {
-//        val isRtl = evaluator.state.layoutDirection == LayoutDirection.Rtl
-//        return (if (isRtl) { rtl } else { ltr }).compute(evaluator)
-//    }
+    override fun compute(evaluator: ComputingEvaluator): KeyData? {
+        val isRtl = evaluator.state.layoutDirection == LayoutDirection.Rtl
+        return (if (isRtl) { rtl } else { ltr }).compute(evaluator)
+    }
 
     override fun asString(isForDisplay: Boolean): String {
         return ""
@@ -280,10 +293,10 @@ class CharWidthSelector(
     val full: AbstractKeyData?,
     val half: AbstractKeyData?,
 ) : AbstractKeyData {
-//    override fun compute(evaluator: ComputingEvaluator): KeyData? {
-//        val data = if (evaluator.state.isCharHalfWidth) { half } else { full }
-//        return data?.compute(evaluator)
-//    }
+    override fun compute(evaluator: ComputingEvaluator): KeyData? {
+        val data = if (evaluator.state.isCharHalfWidth) { half } else { full }
+        return data?.compute(evaluator)
+    }
 
     override fun asString(isForDisplay: Boolean): String {
         return ""
@@ -312,10 +325,10 @@ class KanaSelector(
     val hira: AbstractKeyData,
     val kata: AbstractKeyData,
 ) : AbstractKeyData {
-//    override fun compute(evaluator: ComputingEvaluator): KeyData? {
-//        val data = if (evaluator.state.isKanaKata) { kata } else { hira }
-//        return data.compute(evaluator)
-//    }
+    override fun compute(evaluator: ComputingEvaluator): KeyData? {
+        val data = if (evaluator.state.isKanaKata) { kata } else { hira }
+        return data.compute(evaluator)
+    }
 
     override fun asString(isForDisplay: Boolean): String {
         return ""
