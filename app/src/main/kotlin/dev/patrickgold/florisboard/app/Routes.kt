@@ -79,7 +79,7 @@ inline fun <reified T : Any> NavGraphBuilder.composableWithDeepLink(
         "faulty class: $kClass with annotations ${kClass.annotations}"
     }
     composable<T>(
-        deepLinks = listOf(navDeepLink<T>(basePath = "ui://florisboard/${deeplink.path}")),
+        deepLinks = listOf(navDeepLink<T>(basePath = "ui://pysanka/${deeplink.path}")),
         content = content,
     )
 }

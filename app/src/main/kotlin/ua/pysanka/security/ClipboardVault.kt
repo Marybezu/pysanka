@@ -27,7 +27,7 @@ import javax.crypto.spec.SecretKeySpec
 
 /**
  * Pysanka: the key for everything the clipboard keeps (its two SQLCipher databases and the image
- * and video files).
+ * and video files), and for the learned words.
  *
  * A random 32-byte secret is stored only wrapped with an AES-256-GCM key in the phone's hardware
  * keystore (StrongBox when the phone has it). That key never leaves the hardware and, on Android 9+,
@@ -35,11 +35,11 @@ import javax.crypto.spec.SecretKeySpec
  * fingerprint, so the key itself needs no confirmation; an optional fingerprint lock for the
  * clipboard is a separate, later step.
  *
- * From the secret: the database passphrase (the secret itself) and a separate file key
- * (HMAC-SHA256 with a fixed label), so the two never share a key.
+ * From the secret: the database passphrase (the secret itself) and separate keys for files and
+ * for learned words (HMAC-SHA256 with a fixed label each), so no two share a key.
  *
  * If the hardware key is really gone (the keystore was reset), old clipboard data cannot be read:
- * after several attempts [open] reports [State.Lost] and the clipboard starts empty.
+ * after several attempts [open] reports [State.Lost] and the clipboard and learned words start empty.
  */
 object ClipboardVault {
     sealed interface State {
@@ -63,6 +63,7 @@ object ClipboardVault {
     private const val ANDROID_KEYSTORE = "AndroidKeyStore"
     private const val TRANSFORMATION = "AES/GCM/NoPadding"
     private val FILE_KEY_LABEL = "pysanka/clipboard-files/v1".toByteArray()
+    private val WORDS_KEY_LABEL = "pysanka/user-words/v1".toByteArray()
 
     @Volatile
     private var secret: ByteArray? = null
@@ -163,10 +164,16 @@ object ClipboardVault {
     }
 
     /** The key for clipboard files. Only after [open] returned [State.Open]. */
-    fun fileKey(): SecretKey {
+    fun fileKey(): SecretKey = derivedKey(FILE_KEY_LABEL)
+
+    /** The key for the learned words ([ua.pysanka.typing.UserWords]). Only after [open] returned [State.Open]. */
+    fun wordsKey(): SecretKey = derivedKey(WORDS_KEY_LABEL)
+
+    /** A separate AES key for each [label], so no two kinds of data share a key. */
+    private fun derivedKey(label: ByteArray): SecretKey {
         val s = checkNotNull(secret) { "Clipboard vault is not open" }
         val mac = Mac.getInstance("HmacSHA256").apply { init(SecretKeySpec(s, "HmacSHA256")) }
-        return SecretKeySpec(mac.doFinal(FILE_KEY_LABEL), "AES")
+        return SecretKeySpec(mac.doFinal(label), "AES")
     }
 
     fun isOpen(): Boolean = secret != null

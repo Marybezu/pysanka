@@ -1,8 +1,8 @@
 package ua.pysanka.typing
 
 /**
- * Pysanka: word suggestions from a frequency word list (assets/ime/dict/<language>.json), on the
- * phone and without learning anything.
+ * Pysanka: word suggestions from a frequency word list (assets/ime/dict/<language>.json) and the
+ * person's own words, on the phone.
  *
  * - Completions: the most frequent words that start with what has been typed.
  * - Corrections: words one typing error away (a letter missing, extra, wrong or two letters
@@ -12,6 +12,9 @@ package ua.pysanka.typing
  *   digits, nor for one taken back with Backspace ([rejected]); a capitalised word (often a name)
  *   only into a common word.
  * - Apostrophes: ', ’ and ʼ count as the same; the one typed is kept.
+ * - The person's own words ([PersonalWords], when given): a list word used often is offered
+ *   higher; a word of their own is offered once known and never corrected. Auto-correction goes
+ *   only into a list word (a learned word may itself be a typo typed twice).
  *
  * The case of what was typed is kept («Прив» → «Привіт», «ПРИВ» → «ПРИВІТ»).
  */
@@ -34,6 +37,15 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
         private const val MAX_CORRECTED_LENGTH = 30
 
         private val APOSTROPHES = charArrayOf('’', 'ʼ')
+
+        /** A list word gains this much per use (up to [BOOST_USES] uses). */
+        private const val BOOST = 8
+        private const val BOOST_USES = 10
+
+        /** A known word of the person's own: as common as a fairly common list word, more with use. */
+        private const val OWN_BASE = 60
+        private const val OWN_STEP = 15
+        private const val OWN_MAX = 200
     }
 
     /** Frequency (1..255) by the word in small letters. */
@@ -51,48 +63,67 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
     /** The most frequent words for each beginning of one or two letters (worked out once). */
     private val shortPrefixes = java.util.concurrent.ConcurrentHashMap<String, List<String>>()
 
-    private fun norm(word: String) = word.lowercase().let { w -> APOSTROPHES.fold(w) { s, c -> s.replace(c, '\'') } }
+    private fun norm(word: String) = PersonalWords.key(word)
 
-    fun contains(word: String) = norm(word) in freq
+    /** How common a word is for this person (0: not a word). */
+    private fun score(key: String, own: PersonalWords?): Int {
+        val base = freq[key]
+        val uses = own?.count(key) ?: 0
+        return when {
+            base != null -> if (uses > 0) minOf(255, base + BOOST * minOf(uses, BOOST_USES)) else base
+            uses >= PersonalWords.KNOWN -> minOf(OWN_MAX, OWN_BASE + OWN_STEP * uses)
+            else -> 0
+        }
+    }
+
+    fun contains(word: String, own: PersonalWords? = null) = score(norm(word), own) > 0
+
+    /** A word the person taught that the list does not have (it can be forgotten). */
+    fun isOwn(word: String, own: PersonalWords?): Boolean = norm(word).let { it !in freq && score(it, own) > 0 }
 
     fun words(): List<String> = sorted.map { display[it] ?: it }
 
     fun frequency(word: String): Int = freq[norm(word)] ?: 0
 
-    /** [rejected]: words whose auto-correction was taken back; they are left as typed. */
-    fun suggest(typed: String, max: Int, rejected: Set<String> = emptySet()): List<Suggestion> {
+    /**
+     * [rejected]: words whose auto-correction was taken back; they are left as typed.
+     * [own]: the person's own words, if any.
+     */
+    fun suggest(typed: String, max: Int, rejected: Set<String> = emptySet(), own: PersonalWords? = null): List<Suggestion> {
         if (typed.isEmpty() || max <= 0) return emptyList()
         val lower = norm(typed)
-        val known = lower in freq
+        val f = { key: String -> score(key, own) }
+        val known = f(lower) > 0
         val scored = HashMap<String, Double>()
         val hasDigit = lower.any { it.isDigit() }
 
         // Corrections first, so a completion of the same word keeps the better score
         if (lower.length in 3..MAX_CORRECTED_LENGTH && !hasDigit) {
             for ((cand, likely) in corrections(lower)) {
-                val f = freq[cand] ?: continue
-                scored.merge(cand, f * likely, ::maxOf)
+                val c = f(cand).takeIf { it > 0 } ?: continue
+                scored.merge(cand, c * likely, ::maxOf)
             }
         }
         // Completions: shorter words that are already complete rank a little higher
-        for (cand in withPrefix(lower)) {
-            val f = freq.getValue(cand).toDouble()
+        val ownStarts = own?.withPrefix(lower, 50).orEmpty()
+        for (cand in withPrefix(lower) + ownStarts) {
+            val c = f(cand).takeIf { it > 0 }?.toDouble() ?: continue
             val extra = cand.length - lower.length
-            scored.merge(cand, f * (if (extra == 0) 1.2 else 1.0 / (1 + extra * 0.05)), ::maxOf)
+            scored.merge(cand, c * (if (extra == 0) 1.2 else 1.0 / (1 + extra * 0.05)), ::maxOf)
         }
-        if (known) scored[lower] = maxOf(scored[lower] ?: 0.0, freq.getValue(lower) * 1.5)
+        if (known) scored[lower] = maxOf(scored[lower] ?: 0.0, f(lower) * 1.5)
 
         val ranked = scored.entries.sortedByDescending { it.value }.take(max)
         val best = ranked.firstOrNull()
         val second = ranked.getOrNull(1)?.value ?: 0.0
         val auto = best != null && !known && !hasDigit && lower.length >= AUTO_MIN_LENGTH &&
-            lower !in rejected && freq.getValue(best.key) >= AUTO_MIN_FREQ &&
-            (!typed.first().isUpperCase() || freq.getValue(best.key) >= AUTO_CAPITAL_MIN_FREQ) &&
+            lower !in rejected && best.key in freq && f(best.key) >= AUTO_MIN_FREQ &&
+            (!typed.first().isUpperCase() || f(best.key) >= AUTO_CAPITAL_MIN_FREQ) &&
             best.key.length in (lower.length - 1)..(lower.length + 1) &&
             isOneEditAway(lower, best.key) && best.value >= second * AUTO_MARGIN
         val apostrophe = typed.firstOrNull { it == '\'' || it in APOSTROPHES }
         return ranked.mapIndexed { i, e ->
-            val shown = display[e.key] ?: e.key
+            val shown = display[e.key] ?: (if (e.key !in freq) own?.display(e.key) else null) ?: e.key
             val word = if (apostrophe != null) shown.replace('\'', apostrophe) else shown
             Suggestion(matchCase(typed, word), autoCorrect = auto && i == 0)
         }

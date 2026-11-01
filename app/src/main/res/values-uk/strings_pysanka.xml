@@ -232,4 +232,11 @@
     <string name="pysanka__typing__auto_correct_summary">Лише явні описки, після пробілу; Backspace одразу повертає, як було написано</string>
     <string name="pysanka__typing__auto_correct_on">Виправлення описок увімкнено</string>
     <string name="pysanka__typing__auto_correct_off">Виправлення описок вимкнено</string>
+    <string name="pysanka__typing__learn_words">Вчитися моїх слів</string>
+    <string name="pysanka__typing__learn_words_summary">Слова, якими ви користуєтеся, пропонуються раніше, а ваші власні не виправляються. Зберігаються зашифровано на телефоні; ніколи з полів пароля та інкогніто</string>
+    <string name="pysanka__typing__forget_words">Забути вивчені слова</string>
+    <string name="pysanka__typing__forget_words_summary">Одне слово: утримуйте його в підказках</string>
+    <string name="pysanka__typing__forget_words_confirm">Забути всі слова, яких навчилася клавіатура?</string>
+    <string name="pysanka__typing__words_forgotten">Вивчені слова забуто</string>
+    <string name="pysanka__typing__word_forgotten">«{word}» забуто</string>
 </resources>

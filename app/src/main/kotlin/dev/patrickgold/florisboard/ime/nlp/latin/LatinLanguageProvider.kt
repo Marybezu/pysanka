@@ -31,10 +31,14 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
+import dev.patrickgold.florisboard.R
 import org.florisboard.lib.android.readText
+import org.florisboard.lib.android.showShortToast
 import org.florisboard.lib.kotlin.guardedByLock
 import ua.pysanka.typing.AutoCorrect
 import ua.pysanka.typing.KeyNeighbours
+import ua.pysanka.typing.PersonalWords
+import ua.pysanka.typing.UserWords
 import ua.pysanka.typing.WordSuggester
 
 class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProvider {
@@ -49,7 +53,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     private val prefs by FlorisPreferenceStore
 
     // Pysanka: a word list per language (assets/ime/dict/<language>.json), loaded when a language
-    // is first used; nothing is learnt or written
+    // is first used, and the person's own words (UserWords, encrypted)
     private val suggesters = guardedByLock { mutableMapOf<String, WordSuggester?>() }
     private val wordDataSerializer = MapSerializer(String.serializer(), Int.serializer())
 
@@ -65,6 +69,10 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
     }
 
+    /** Pysanka: the learned words, unless learning is off (then they are not used either). */
+    private fun own(subtype: Subtype): PersonalWords? =
+        if (prefs.correction.pysankaLearnWords.get()) UserWords.get(appContext, subtype.primaryLocale.language) else null
+
     override val providerId = ProviderId
 
     override suspend fun create() {
@@ -73,6 +81,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
 
     override suspend fun preload(subtype: Subtype) = withContext(Dispatchers.IO) {
         suggester(subtype)
+        own(subtype)
         Unit
     }
 
@@ -86,6 +95,8 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         isPrivateSession: Boolean,
     ): SpellingResult {
         val dict = suggester(subtype) ?: return SpellingResult.unspecified()
+        // Pysanka: the spell checker is open to other apps, so it never uses the learned words
+        // (an app could otherwise test which words the person uses)
         if (word.isBlank() || dict.contains(word)) return SpellingResult.validWord()
         val options = dict.suggest(word, maxSuggestionCount).map { it.word }.filter { !it.equals(word, ignoreCase = true) }
         return if (options.isEmpty()) SpellingResult.unspecified() else SpellingResult.typo(options.toTypedArray())
@@ -102,20 +113,26 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         if (word.isEmpty()) return emptyList()
         val dict = suggester(subtype) ?: return emptyList()
         val autoCorrect = prefs.correction.pysankaAutoCorrect.get()
-        val found = dict.suggest(word, maxCandidateCount, AutoCorrect.rejected)
+        val own = withContext(Dispatchers.IO) { own(subtype) }
+        val found = dict.suggest(word, maxCandidateCount, AutoCorrect.rejected, own)
         AutoCorrect.suggestedFor = word
         val list = found.map {
             WordSuggestionCandidate(
                 text = it.word,
                 confidence = if (it.autoCorrect) 0.9 else 0.5,
                 isEligibleForAutoCommit = autoCorrect && it.autoCorrect,
+                // Only a learned word can be forgotten with a long press
+                isEligibleForUserRemoval = dict.isOwn(it.word, own),
                 sourceProvider = this@LatinLanguageProvider,
             )
         }
         // The word as typed is offered next to its correction, so it can be kept with a tap
         val corrected = list.firstOrNull()?.isEligibleForAutoCommit == true
         return if (corrected) {
-            listOf(list.first(), WordSuggestionCandidate(text = word, confidence = 0.5, sourceProvider = this@LatinLanguageProvider)) +
+            listOf(
+                list.first(),
+                WordSuggestionCandidate(text = word, confidence = 0.5, isEligibleForUserRemoval = false, sourceProvider = this@LatinLanguageProvider),
+            ) +
                 list.drop(1).take(maxCandidateCount - 2)
         } else {
             list
@@ -123,14 +140,22 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     }
 
     override suspend fun notifySuggestionAccepted(subtype: Subtype, candidate: SuggestionCandidate) {
-        // Pysanka: nothing is learnt or logged from what is typed
+        // Pysanka: words are learned in KeyboardManager, where the field's privacy is known
     }
 
     override suspend fun notifySuggestionReverted(subtype: Subtype, candidate: SuggestionCandidate) {
     }
 
     override suspend fun removeSuggestion(subtype: Subtype, candidate: SuggestionCandidate): Boolean {
-        return false
+        // Pysanka: a long press on a learned word forgets it
+        val word = candidate.text.toString()
+        val dict = suggester(subtype) ?: return false
+        val language = subtype.primaryLocale.language
+        // Called on the main thread: only words already in memory (as they were just offered)
+        if (!dict.isOwn(word, UserWords.peek(language))) return false
+        return UserWords.forget(appContext, language, word).also { forgotten ->
+            if (forgotten) appContext.showShortToast(R.string.pysanka__typing__word_forgotten, "word" to word)
+        }
     }
 
     override suspend fun getListOfWords(subtype: Subtype): List<String> {

@@ -10,6 +10,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
@@ -26,7 +31,10 @@ import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
+import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
+import org.florisboard.lib.android.showShortToastSync
 import org.florisboard.lib.compose.stringRes
+import ua.pysanka.typing.UserWords
 
 /**
  * Pysanka: the short settings screens. Each shows the few settings most people change; the full
@@ -39,6 +47,8 @@ fun PysankaTypingScreen() = FlorisScreen {
     previewFieldVisible = true
 
     content {
+        val context = LocalContext.current
+        var confirmForget by remember { mutableStateOf(false) }
         SwitchPreference(
             prefs.glide.enabled,
             title = stringRes(R.string.pysanka__typing__glide),
@@ -60,6 +70,32 @@ fun PysankaTypingScreen() = FlorisScreen {
             summary = stringRes(R.string.pysanka__typing__auto_correct_summary),
             enabledIf = { prefs.suggestion.enabled isEqualTo true },
         )
+        SwitchPreference(
+            prefs.correction.pysankaLearnWords,
+            title = stringRes(R.string.pysanka__typing__learn_words),
+            summary = stringRes(R.string.pysanka__typing__learn_words_summary),
+            enabledIf = { prefs.suggestion.enabled isEqualTo true },
+        )
+        Preference(
+            title = stringRes(R.string.pysanka__typing__forget_words),
+            summary = stringRes(R.string.pysanka__typing__forget_words_summary),
+            onClick = { confirmForget = true },
+        )
+        if (confirmForget) {
+            JetPrefAlertDialog(
+                title = stringRes(R.string.pysanka__typing__forget_words),
+                confirmLabel = stringRes(R.string.action__yes),
+                dismissLabel = stringRes(R.string.action__no),
+                onDismiss = { confirmForget = false },
+                onConfirm = {
+                    confirmForget = false
+                    UserWords.clearAll(context)
+                    context.showShortToastSync(R.string.pysanka__typing__words_forgotten)
+                },
+            ) {
+                Text(stringRes(R.string.pysanka__typing__forget_words_confirm))
+            }
+        }
         SwitchPreference(
             prefs.correction.autoCapitalization,
             title = stringRes(R.string.pysanka__typing__auto_caps),

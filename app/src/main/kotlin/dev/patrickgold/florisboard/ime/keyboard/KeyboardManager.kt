@@ -83,6 +83,20 @@ import org.florisboard.lib.kotlin.collectLatestIn
 
 private val DoubleSpacePeriodMatcher = """([^.!?‽\s]\s)""".toRegex()
 
+// Pysanka: marks that end a word, so it is learned (an apostrophe or hyphen may be inside one)
+private val PYSANKA_WORD_ENDS = setOf(".", ",", "!", "?", ";", ":", "…", ")", "»", "\"")
+
+// Pysanka: fields whose words are never learned (besides password, incognito and "no learning" ones)
+private val PYSANKA_NO_LEARNING = setOf(
+    InputAttributes.Variation.PASSWORD,
+    InputAttributes.Variation.VISIBLE_PASSWORD,
+    InputAttributes.Variation.WEB_PASSWORD,
+    InputAttributes.Variation.EMAIL_ADDRESS,
+    InputAttributes.Variation.WEB_EMAIL_ADDRESS,
+    InputAttributes.Variation.URI,
+    InputAttributes.Variation.FILTER,
+)
+
 class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val prefs by FlorisPreferenceStore
     private val appContext by context.appContext()
@@ -425,9 +439,15 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         revertPreviouslyAcceptedCandidate()
         // Pysanka: Backspace right after an auto-correction brings back what was typed
         val undo = pysankaUndoReady
-        if (undo != null && unit == OperationUnit.CHARACTERS && editorInstance.pysankaUndoAutoCorrect(undo.first, undo.second)) {
-            // Taken back: this word is left as typed from now on (while the field is open)
-            ua.pysanka.typing.AutoCorrect.reject(undo.first)
+        if (undo != null && unit == OperationUnit.CHARACTERS && editorInstance.pysankaUndoAutoCorrect(undo.typed, undo.corrected)) {
+            // Taken back: this word is left as typed from now on (while the field is open), and
+            // learned as the person's own word
+            ua.pysanka.typing.AutoCorrect.reject(undo.typed)
+            if (pysankaMayLearn()) {
+                val language = subtypeManager.activeSubtype.primaryLocale.language
+                ua.pysanka.typing.UserWords.unlearn(appContext, language, undo.corrected)
+                ua.pysanka.typing.UserWords.learn(appContext, language, undo.typed, insisted = true, midSentence = undo.midSentence)
+            }
             return
         }
         editorInstance.deleteBackwards(unit)
@@ -451,6 +471,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      */
     private fun handleEnter() {
         val info = editorInstance.activeInfo
+        // Pysanka: the word before Enter is finished too
+        pysankaLearn(editorInstance.activeContent.composingText, null)
         val isShiftPressed = inputEventDispatcher.isPressed(KeyCode.SHIFT)
         if (editorInstance.tryPerformEnterCommitRaw()) {
             return
@@ -559,10 +581,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         val typed = editorInstance.activeContent.composingText
         // Pysanka: a correction worked out for an earlier keystroke is not applied
         val candidate = pysankaAutoCommitCandidate()
+        val midSentence = pysankaMidSentence(typed)
+        pysankaLearn(typed, candidate)
         candidate?.let { commitCandidate(it) }
         // Pysanka: the next Backspace takes an auto-correction back
         if (candidate != null && candidate.text.toString() != typed && typed.isNotEmpty()) {
-            pysankaUndo = typed to candidate.text.toString()
+            pysankaUndo = PysankaUndo(typed, candidate.text.toString(), midSentence)
         }
         if (prefs.keyboard.spaceBarSwitchesToCharacters.get()) {
             when (activeState.keyboardMode) {
@@ -717,9 +741,52 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             ua.pysanka.typing.AutoCorrect.suggestedFor == editorInstance.activeContent.composingText
     }
 
-    /** Pysanka: the last auto-correction (typed, corrected), until the next key. */
-    private var pysankaUndo: Pair<String, String>? = null
-    private var pysankaUndoReady: Pair<String, String>? = null
+    /** Pysanka: the last auto-correction, until the next key. */
+    private data class PysankaUndo(val typed: String, val corrected: String, val midSentence: Boolean)
+    private var pysankaUndo: PysankaUndo? = null
+    private var pysankaUndoReady: PysankaUndo? = null
+
+    /**
+     * Pysanka: whether words typed here may be learned: never in a password, incognito or
+     * "no learning" field, nor in addresses, numbers or codes.
+     */
+    private fun pysankaMayLearn(): Boolean {
+        val info = editorInstance.activeInfo
+        return prefs.correction.pysankaLearnWords.get() && prefs.suggestion.enabled.get() &&
+            !ua.pysanka.privacy.FieldPrivacy.isPrivate && !ua.pysanka.privacy.FieldPrivacy.isPassword &&
+            !activeState.isIncognitoMode && !info.isRawInputEditor &&
+            info.inputAttributes.type == InputAttributes.Type.TEXT &&
+            info.inputAttributes.variation !in PYSANKA_NO_LEARNING
+    }
+
+    /** Pysanka: whether the word being typed is not the first of a sentence (before it is committed). */
+    private fun pysankaMidSentence(typed: String): Boolean {
+        val before = editorInstance.activeContent.textBeforeSelection.dropLast(typed.length).trimEnd(' ')
+        return before.isNotEmpty() && before.last() !in ".!?…\n"
+    }
+
+    /**
+     * Pysanka: a word is finished: learns what ended up in the field ([candidate]'s word, or
+     * [typed] as it is). [insisted]: the person chose the word exactly as typed.
+     */
+    private fun pysankaLearn(typed: String, candidate: SuggestionCandidate?, insisted: Boolean = false) {
+        if (typed.isEmpty() || !pysankaMayLearn()) return
+        val word = when (candidate) {
+            null -> typed
+            is dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate -> candidate.text.toString()
+            else -> return
+        }
+        ua.pysanka.typing.UserWords.learn(
+            appContext, subtypeManager.activeSubtype.primaryLocale.language, word, insisted, pysankaMidSentence(typed),
+        )
+    }
+
+    /** Pysanka: a suggestion tapped. Choosing the word as typed teaches it at once. */
+    fun pysankaTapCandidate(candidate: SuggestionCandidate) {
+        val typed = editorInstance.activeContent.composingText
+        pysankaLearn(typed, candidate, insisted = candidate.text.toString() == typed)
+        commitCandidate(candidate)
+    }
 
     override fun onInputKeyUp(data: KeyData) = activeState.batchEdit {
         // Pysanka: an auto-correction can be taken back only by the very next key (Backspace)
@@ -849,7 +916,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                         KeyType.CHARACTER, KeyType.NUMERIC ->{
                             val text = data.asString(isForDisplay = false)
                             if (!UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
-                                pysankaAutoCommitCandidate()?.let { commitCandidate(it) }
+                                val typed = editorInstance.activeContent.composingText
+                                val candidate = pysankaAutoCommitCandidate()
+                                // Pysanka: a punctuation mark finishes the word (not an apostrophe or hyphen inside it)
+                                if (text in PYSANKA_WORD_ENDS) pysankaLearn(typed, candidate)
+                                candidate?.let { commitCandidate(it) }
                             }
                             editorInstance.commitChar(text)
                         }

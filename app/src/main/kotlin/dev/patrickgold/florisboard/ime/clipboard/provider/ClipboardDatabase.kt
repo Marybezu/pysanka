@@ -116,7 +116,8 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
         private val TEXT_PLAIN = listOf("text/plain")
         private val MEDIA_PROJECTION = arrayOf(OpenableColumns.DISPLAY_NAME)
 
-        const val FLORIS_CLIP_LABEL = "florisboard/clipboard_item"
+        // Pysanka: its own label, not FlorisBoard's (both can be installed)
+        const val FLORIS_CLIP_LABEL = "pysanka/clipboard_item"
 
         /** Pysanka: true when the app that copied marked the clip as sensitive (a password, a code). */
         fun isSensitive(data: ClipData): Boolean =
