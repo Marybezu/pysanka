@@ -416,21 +416,19 @@ private fun Note(text: String) {
     SnyggText(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), text = text)
 }
 
+/** A tile as the keyboard's own action tiles look (the theme decides). */
 @Composable
 private fun Tile(icon: ImageVector, label: String, enabled: Boolean = true, onClick: () -> Unit) {
     SnyggBox(
-        FlorisImeUi.ClipboardItem.elementName,
+        FlorisImeUi.SmartbarActionTile.elementName,
         selector = if (enabled) null else SnyggSelector.DISABLED,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 72.dp),
         clickAndSemanticsModifier = Modifier.clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp).alpha(if (enabled) 1f else 0.4f),
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             SnyggIcon(imageVector = icon)
-            SnyggText(text = label)
+            SnyggText(FlorisImeUi.SmartbarActionTileText.elementName, text = label)
         }
     }
 }

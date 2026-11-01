@@ -25,9 +25,11 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.snygg.SnyggStylesheet
 import org.florisboard.lib.snygg.ui.ProvideSnyggTheme
+import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.rememberSnyggTheme
 import org.junit.Before
 import org.junit.Test
@@ -100,7 +102,8 @@ class AiPanelScreensTest {
                                         .padding(12.dp),
                                 )
                                 Spacer(Modifier.weight(1f))
-                                AiPanelView(
+                                // Inside the keyboard window, which gives the panel its colours
+                                SnyggBox(FlorisImeUi.Window.elementName) { AiPanelView(
                                     stage = stage,
                                     note = note,
                                     loaded = true,
@@ -111,7 +114,7 @@ class AiPanelScreensTest {
                                     modifier = Modifier.fillMaxWidth().height(300.dp),
                                     headerHeight = 40.dp,
                                     actions = none,
-                                )
+                                ) }
                             }
                         }
                     }
