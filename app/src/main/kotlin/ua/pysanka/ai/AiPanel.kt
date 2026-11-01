@@ -34,7 +34,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCut
@@ -288,7 +287,7 @@ internal fun AiPanelView(
             val size = Modifier.sizeIn(maxHeight = headerHeight).aspectRatio(1f)
             // Back to the tiles; on the tiles themselves only ✕ (back to the keys) is needed
             if (stage is PanelStage.Menu || stage is PanelStage.NoModel) {
-                SnyggIcon(imageVector = Icons.Default.AutoAwesome, modifier = size.padding(10.dp))
+                SnyggIcon(imageVector = ua.pysanka.ui.AiMark, modifier = size.padding(10.dp))
             } else {
                 SnyggIconButton(FlorisImeUi.ClipboardHeaderButton.elementName, onClick = { actions.back() }, modifier = size) {
                     SnyggIcon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringRes(R.string.pysanka__ai__back))
@@ -464,7 +463,7 @@ private fun Working(text: String, onStop: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        SnyggIcon(imageVector = Icons.Default.AutoAwesome, modifier = Modifier.size(32.dp).alpha(pulse))
+        SnyggIcon(imageVector = ua.pysanka.ui.AiMark, modifier = Modifier.size(32.dp).alpha(pulse))
         SnyggText(text = text)
         Chip(stringRes(R.string.pysanka__ai__stop), onClick = onStop)
     }

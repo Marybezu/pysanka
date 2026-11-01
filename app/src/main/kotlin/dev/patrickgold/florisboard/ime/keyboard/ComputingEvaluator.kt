@@ -18,7 +18,6 @@ package dev.patrickgold.florisboard.ime.keyboard
 
 import android.content.Context
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.SwapHoriz
@@ -237,7 +236,7 @@ fun ComputingEvaluator.computeImageVector(data: KeyData): ImageVector? {
             Icons.Default.KeyboardHide
         }
         // Pysanka
-        KeyCode.PYSANKA_AI -> Icons.Default.AutoAwesome
+        KeyCode.PYSANKA_AI -> ua.pysanka.ui.AiMark
         KeyCode.PYSANKA_FIX_LAYOUT -> Icons.Default.SwapHoriz
         KeyCode.PYSANKA_TEXT_FROM_PHOTO -> Icons.Default.DocumentScanner
         KeyCode.PYSANKA_TEXT_FROM_CAMERA -> Icons.Default.PhotoCamera

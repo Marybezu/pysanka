@@ -185,7 +185,7 @@
     <string name="pysanka__ai__import_failed">The file could not be copied. Try again.</string>
     <string name="pysanka__ai__original_kept">The downloaded file could not be deleted: delete it in Files.</string>
     <string name="pysanka__ai__ready">Model installed ({size} MB).</string>
-    <string name="pysanka__ai__how_to_use">Tap ✨ on the bar above the keyboard: the AI assistant opens in place of the keys for the selected text (or the whole field): grammar, style, summary, translation, replies to the message on the clipboard and more. “Expand” opens the full editor. The AI never works in password fields or incognito.</string>
+    <string name="pysanka__ai__how_to_use">Tap ✦ on the bar above the keyboard: the AI assistant opens in place of the keys for the selected text (or the whole field): grammar, style, summary, translation, replies to the message on the clipboard and more. “Expand” opens the full editor. The AI never works in password fields or incognito.</string>
     <string name="pysanka__ai__delete">Delete the model</string>
     <string name="pysanka__ai__copied_instead">The answer could not be put back safely, so it was copied: paste it where you need it.</string>
     <string name="pysanka__links__group">Links</string>
