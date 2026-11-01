@@ -169,7 +169,7 @@
     <string name="pysanka__ai__replace">Replace</string>
     <string name="pysanka__ai__insert">Insert</string>
     <string name="pysanka__ai__fix_with_ai">Fix with AI</string>
-    <string name="pysanka__ai__action_fix">Grammar & punctuation</string>
+    <string name="pysanka__ai__action_fix">Grammar &amp; punctuation</string>
     <string name="pysanka__ai__action_fix_ocr">Fix recognised text</string>
     <string name="pysanka__ai__action_russisms">Russianisms</string>
     <string name="pysanka__ai__action_friendly">Friendlier</string>
