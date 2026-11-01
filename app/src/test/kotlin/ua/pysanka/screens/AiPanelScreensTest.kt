@@ -49,7 +49,8 @@ import java.io.File
 @RunWith(AndroidJUnit4::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 // A plain application: Pysanka's own starts the encrypted storage, which is not needed here
-@Config(sdk = [35], application = Application::class, qualifiers = "uk-w400dp-h760dp-xxhdpi")
+// SDK 34: Robolectric needs Java 21 for 35, and the build runs on 17
+@Config(sdk = [34], application = Application::class, qualifiers = "uk-w400dp-h760dp-xxhdpi")
 class AiPanelScreensTest {
     private lateinit var app: Application
 

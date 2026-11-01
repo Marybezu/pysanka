@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -286,13 +287,13 @@ internal fun AiPanelView(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val size = Modifier.sizeIn(maxHeight = headerHeight).aspectRatio(1f)
-            val inMenu = stage is PanelStage.Menu || stage is PanelStage.NoModel
-            SnyggIconButton(
-                FlorisImeUi.ClipboardHeaderButton.elementName,
-                onClick = { if (inMenu) actions.close() else actions.back() },
-                modifier = size,
-            ) {
-                SnyggIcon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringRes(R.string.pysanka__ai__back))
+            // Back to the tiles; on the tiles themselves only ✕ (back to the keys) is needed
+            if (stage is PanelStage.Menu || stage is PanelStage.NoModel) {
+                SnyggIcon(imageVector = Icons.Default.AutoAwesome, modifier = size.padding(10.dp))
+            } else {
+                SnyggIconButton(FlorisImeUi.ClipboardHeaderButton.elementName, onClick = { actions.back() }, modifier = size) {
+                    SnyggIcon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringRes(R.string.pysanka__ai__back))
+                }
             }
             SnyggText(
                 FlorisImeUi.ClipboardHeaderText.elementName,
@@ -525,6 +526,8 @@ private fun Done(
     }
 }
 
+private const val WARM_DELAY_MS = 1500L
+
 /** The panel's connection to [AiService], from opening to closing the panel. */
 private class AiLink(
     context: Context,
@@ -532,7 +535,9 @@ private class AiLink(
     private val onLost: () -> Unit,
 ) : ServiceConnection {
     private val app = context.applicationContext
+    private val main = Handler(Looper.getMainLooper())
     private val incoming = Messenger(Handler(Looper.getMainLooper()) { msg -> onMessage(msg.what, msg.data); true })
+    private val warm = Runnable { send(AiService.WARM) }
     private var service: Messenger? = null
 
     /** A run asked for before the service was connected. */
@@ -542,7 +547,8 @@ private class AiLink(
 
     override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
         service = binder?.let(::Messenger)
-        send(AiService.WARM)
+        // The model starts loading only if the panel stays open a moment (✨ then ✕ costs nothing)
+        main.postDelayed(warm, WARM_DELAY_MS)
         waiting?.let(::deliver)
         waiting = null
     }
@@ -569,6 +575,7 @@ private class AiLink(
     }
 
     fun close() {
+        main.removeCallbacks(warm)
         waiting = null
         if (bound) runCatching { app.unbindService(this) }
     }

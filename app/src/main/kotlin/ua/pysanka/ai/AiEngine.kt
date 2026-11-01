@@ -19,7 +19,7 @@ import kotlinx.coroutines.withContext
 /**
  * Pysanka: Gemma 4 on the phone through LiteRT-LM (as in Tarilka). Runs only in the editor's own
  * process (":ai"), so the 2.6 GB model never weighs on the keyboard. Nothing leaves the phone and
- * nothing is stored: the text lives only in this process while the editor is open.
+ * nothing is stored: the text lives only in this process while the editor or the keyboard panel uses it.
  */
 object AiEngine {
     private var engine: Engine? = null

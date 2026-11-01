@@ -44,7 +44,7 @@
     <string name="pysanka__tag__color">Колір</string>
     <string name="pysanka__tag__save">Зберегти</string>
     <string name="pysanka__tag__cancel">Скасувати</string>
-    <string name="pysanka__tag__edit">Змінити</string>
+    <string name="pysanka__tag__edit">Доробити</string>
     <string name="pysanka__tag__delete">Видалити</string>
     <string name="pysanka__tag__move_up">Вище</string>
     <string name="pysanka__tag__move_down">Нижче</string>
@@ -220,14 +220,14 @@
     <string name="pysanka__ai__panel_all">Увесь текст поля</string>
     <string name="pysanka__ai__panel_previous">Попередній результат: виберіть, що зробити далі</string>
     <string name="pysanka__ai__panel_empty">Виділіть текст або напишіть його в полі</string>
-    <string name="pysanka__ai__panel_clip">На повідомлення з буфера обміну. Торкніться варіанта — він вставиться в поле</string>
+    <string name="pysanka__ai__panel_clip">Відповіді на повідомлення з буфера обміну. Торкніться варіанта — він вставиться в поле</string>
     <string name="pysanka__ai__panel_tap_reply">Торкніться варіанта — він вставиться в поле</string>
     <string name="pysanka__ai__panel_too_long">Цей текст задовгий для панелі: відкрийте його у великому редакторі.</string>
     <string name="pysanka__ai__translate_into">Перекласти на:</string>
     <string name="pysanka__ai__more">Ще</string>
     <string name="pysanka__ai__less">Менше</string>
     <string name="pysanka__ai__again">Ще раз</string>
-    <string name="pysanka__ai__change">Змінити</string>
+    <string name="pysanka__ai__change">Доробити</string>
     <string name="pysanka__ai__expand">Розгорнути</string>
     <string name="pysanka__ai__back">Назад</string>
 </resources>

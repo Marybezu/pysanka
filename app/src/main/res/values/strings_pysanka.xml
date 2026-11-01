@@ -221,7 +221,7 @@
     <string name="pysanka__ai__panel_all">All text in the field</string>
     <string name="pysanka__ai__panel_previous">The previous result: choose what to do next</string>
     <string name="pysanka__ai__panel_empty">Select text or type it in the field</string>
-    <string name="pysanka__ai__panel_clip">To the message on the clipboard. Tap a reply to put it in the field</string>
+    <string name="pysanka__ai__panel_clip">Replies to the message on the clipboard. Tap a reply to put it in the field</string>
     <string name="pysanka__ai__panel_tap_reply">Tap a reply to put it in the field</string>
     <string name="pysanka__ai__panel_too_long">This text is too long for the panel: open it in the full editor.</string>
     <string name="pysanka__ai__translate_into">Translate into:</string>
