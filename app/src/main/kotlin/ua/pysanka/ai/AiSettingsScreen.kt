@@ -11,7 +11,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -29,11 +37,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.stringRes
 
 /**
  * Pysanka: "AI on the phone" in the settings: getting the model (the person downloads it in the
- * browser, then picks the file; only the exact published file is accepted), and removing it.
+ * browser, then picks the file; only the exact published file is accepted), removing it, and
+ * «Мій стиль» (samples of the person's own writing).
  */
 @androidx.compose.runtime.Composable
 fun AiSettingsScreen() = FlorisScreen {
@@ -103,6 +115,65 @@ fun AiSettingsScreen() = FlorisScreen {
                 }
             }
             error?.let { Text(stringRes(it, "file" to ModelStore.E2B_FILE), color = MaterialTheme.colorScheme.error) }
+            StyleSection()
         }
+    }
+}
+
+/** «Мій стиль»: the person's own samples, added and removed only by them. */
+@androidx.compose.runtime.Composable
+private fun StyleSection() {
+    val context = LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+    var samples by remember { mutableStateOf<List<String>?>(null) }
+    var adding by remember { mutableStateOf(false) }
+    var draft by remember { mutableStateOf("") }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        samples = withContext(Dispatchers.IO) { StyleSamples.read(context) }
+    }
+    fun save(new: List<String>) {
+        scope.launch {
+            val ok = withContext(Dispatchers.IO) { runCatching { StyleSamples.write(context, new) }.isSuccess }
+            if (ok) samples = new else Toast.makeText(context, R.string.pysanka__style__save_failed, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    HorizontalDivider()
+    Text(stringRes(R.string.pysanka__style__title), style = MaterialTheme.typography.titleMedium)
+    Text(stringRes(R.string.pysanka__style__about), style = MaterialTheme.typography.bodyMedium)
+    val list = samples ?: return
+    list.forEachIndexed { i, sample ->
+        OutlinedCard(Modifier.fillMaxWidth()) {
+            Row(Modifier.padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(sample, style = MaterialTheme.typography.bodySmall, maxLines = 3, modifier = Modifier.weight(1f).padding(vertical = 8.dp))
+                IconButton(onClick = { save(list.filterIndexed { j, _ -> j != i }) }) {
+                    Icon(Icons.Default.Delete, contentDescription = stringRes(R.string.pysanka__style__remove))
+                }
+            }
+        }
+    }
+    OutlinedButton(onClick = { draft = ""; adding = true }, enabled = list.size < StyleSamples.MAX) {
+        Text(stringRes(R.string.pysanka__style__add))
+    }
+    if (adding) {
+        AlertDialog(
+            onDismissRequest = { adding = false },
+            title = { Text(stringRes(R.string.pysanka__style__add)) },
+            text = {
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it.take(StyleSamples.MAX_CHARS) },
+                    label = { Text(stringRes(R.string.pysanka__style__hint, "n" to draft.length.toString(), "max" to StyleSamples.MAX_CHARS.toString())) },
+                    minLines = 4,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { adding = false; save(list + draft) }, enabled = draft.isNotBlank()) {
+                    Text(stringRes(R.string.pysanka__style__save))
+                }
+            },
+            dismissButton = { TextButton(onClick = { adding = false }) { Text(stringRes(R.string.action__cancel)) } },
+        )
     }
 }

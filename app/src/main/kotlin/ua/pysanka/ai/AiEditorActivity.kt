@@ -171,6 +171,7 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val installed = remember { ModelStore(context).modelFile() != null }
+    val hasStyle = remember { StyleSamples.has(context) }
     // The texts stay in memory only (up to 60 000 characters would be too much for saved state);
     // turning the phone does not recreate this screen
     var source by remember { mutableStateOf(original) }
@@ -244,7 +245,7 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
             modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp, max = 260.dp),
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (a in AiAction.entries) {
+            for (a in AiAction.entries.filter { it != AiAction.MY_STYLE || hasStyle }) {
                 FilterChip(
                     selected = a == action, enabled = !busy,
                     onClick = { action = a; if (stage !is AiStage.Working) stage = AiStage.Idle },

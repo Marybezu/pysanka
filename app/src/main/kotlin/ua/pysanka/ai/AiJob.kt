@@ -22,7 +22,7 @@ object AiJob {
     const val PART = 3500
 
     /** Changes of style, asked again when they changed almost nothing. */
-    private val STYLES = setOf(AiAction.FRIENDLY, AiAction.FORMAL, AiAction.SHORTER)
+    private val STYLES = setOf(AiAction.FRIENDLY, AiAction.FORMAL, AiAction.SHORTER, AiAction.MY_STYLE)
 
     /** The most a [AiAction.Kind.WHOLE] or [AiAction.Kind.ADVICE] action takes at once. */
     const val WHOLE_MAX = 6000
@@ -77,6 +77,9 @@ object AiJob {
         var unconfirmed = false
         // A part asked again takes longer than the speed of this phone says
         var retried = false
+        // The person's own samples, read here (in the AI's process) only for this action
+        val style = if (action == AiAction.MY_STYLE) StyleSamples.forPrompt(StyleSamples.read(context)) else emptyList()
+        check(action != AiAction.MY_STYLE || style.isNotEmpty()) { "No style samples" }
         val result = when (action.kind) {
             AiAction.Kind.WHOLE, AiAction.Kind.ADVICE -> {
                 onPart(1, 1)
@@ -88,7 +91,7 @@ object AiJob {
                     for ((i, p) in parts.withIndex()) {
                         onPart(i + 1, parts.size)
                         // Whitespace alone (a part between two breaks) is kept as it is
-                        if (p.text.isBlank()) append(p.text) else append(rewrite(context, run, action, target, p.text) { retried = true })
+                        if (p.text.isBlank()) append(p.text) else append(rewrite(context, run, action, target, p.text, style) { retried = true })
                         append(p.after)
                     }
                 }
@@ -144,9 +147,10 @@ object AiJob {
         action: AiAction,
         target: AiLanguage,
         text: String,
+        style: List<String>,
         onRetry: () -> Unit,
     ): String {
-        val system = AiPrompts.system(action, target, text)
+        val system = AiPrompts.system(action, target, text, style)
         val first = ask(context, run, system, text, action.temperature, text)
         if (action !in STYLES || !TextChanges.tooLittle(action, text, first)) return first
         onRetry()

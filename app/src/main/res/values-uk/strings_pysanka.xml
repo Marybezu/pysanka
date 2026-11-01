@@ -197,6 +197,14 @@
     <string name="pysanka__ai__action_replies">Варіанти відповіді</string>
     <string name="pysanka__ai__action_tone">Як це звучить?</string>
     <string name="pysanka__ai__action_redact">Приховати особисте</string>
+    <string name="pysanka__ai__action_my_style">Моїм стилем</string>
+    <string name="pysanka__style__title">Мій стиль</string>
+    <string name="pysanka__style__about">Додайте кілька повідомлень, які ви написали самі, — і «Моїм стилем» перепише текст так, як пишете ви. Додаєте й видаляєте їх лише ви; вони зберігаються зашифровано на цьому телефоні й використовуються тільки для цієї дії.</string>
+    <string name="pysanka__style__add">Додати зразок</string>
+    <string name="pysanka__style__hint">Ваше власне повідомлення ({n}/{max})</string>
+    <string name="pysanka__style__save">Зберегти</string>
+    <string name="pysanka__style__remove">Видалити зразок</string>
+    <string name="pysanka__style__save_failed">Не вдалося зберегти зразки</string>
     <string name="pysanka__ai__source_count">Текст, знаків: {n}</string>
     <string name="pysanka__ai__stop">Зупинити</string>
     <string name="pysanka__ai__cancel">Скасувати</string>

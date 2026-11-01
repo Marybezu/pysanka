@@ -37,6 +37,7 @@ import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Email
@@ -101,6 +102,8 @@ fun AiPanel(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
     val panel = remember { AiBridge.takePanel() }
+    // «Моїм стилем» only once the person added samples (the file is not read here)
+    val hasStyle = remember { StyleSamples.has(context) }
 
     fun closePanel() {
         keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
@@ -216,6 +219,7 @@ fun AiPanel(modifier: Modifier = Modifier) {
         intoEmptyField = panel.taken.mode == AiBridge.Mode.INSERT,
         canExpand = panel.canExpand,
         canRun = { input(it).isNotBlank() },
+        available = { it != AiAction.MY_STYLE || hasStyle },
         modifier = modifier.fillMaxWidth().height(FlorisImeSizing.imeUiHeight()),
         headerHeight = FlorisImeSizing.smartbarHeight,
         actions = object : PanelActions {
@@ -274,6 +278,8 @@ internal fun AiPanelView(
     intoEmptyField: Boolean,
     canExpand: Boolean,
     canRun: (AiAction) -> Boolean,
+    /** Whether an action is shown at all («Моїм стилем» only with samples). */
+    available: (AiAction) -> Boolean = { true },
     modifier: Modifier,
     headerHeight: Dp,
     actions: PanelActions,
@@ -309,7 +315,7 @@ internal fun AiPanelView(
                 }
                 PanelStage.Menu -> Column(Modifier.fillMaxSize()) {
                     Note(stringRes(note))
-                    val shown = if (more) AiAction.entries else MAIN
+                    val shown = (if (more) AiAction.entries else MAIN).filter(available)
                     // At least 112 dp a tile (three across on a phone): narrower, longer words broke in the
                     // middle («Граматик-а»), above all with large text
                     LazyVerticalGrid(columns = GridCells.Adaptive(112.dp), modifier = Modifier.fillMaxWidth().weight(1f)) {
@@ -365,7 +371,7 @@ internal fun AiPanelView(
 
 /** The actions shown first; "More" shows all. */
 private val MAIN = listOf(
-    AiAction.FIX, AiAction.FRIENDLY, AiAction.FORMAL, AiAction.SHORTER,
+    AiAction.FIX, AiAction.MY_STYLE, AiAction.FRIENDLY, AiAction.FORMAL, AiAction.SHORTER,
     AiAction.REPLIES, AiAction.TONE, AiAction.TRANSLATE, AiAction.RUSSISMS,
     AiAction.SUMMARY, AiAction.LIST, AiAction.TABLE,
 )
@@ -386,6 +392,7 @@ private fun icon(action: AiAction): ImageVector = when (action) {
     AiAction.REPLIES -> Icons.Default.QuestionAnswer
     AiAction.TONE -> Icons.Default.TheaterComedy
     AiAction.REDACT -> Icons.Default.VisibilityOff
+    AiAction.MY_STYLE -> Icons.Default.Face
 }
 
 internal sealed interface PanelStage {

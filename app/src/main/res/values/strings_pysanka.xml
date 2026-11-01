@@ -198,6 +198,14 @@
     <string name="pysanka__ai__action_replies">Reply options</string>
     <string name="pysanka__ai__action_tone">How it sounds</string>
     <string name="pysanka__ai__action_redact">Hide personal data</string>
+    <string name="pysanka__ai__action_my_style">In my style</string>
+    <string name="pysanka__style__title">My style</string>
+    <string name="pysanka__style__about">Add a few messages you wrote yourself, and “In my style” will rewrite a text the way you write. Only you add or remove them; they are kept encrypted on this phone and used only for that action.</string>
+    <string name="pysanka__style__add">Add a sample</string>
+    <string name="pysanka__style__hint">Your own message ({n}/{max})</string>
+    <string name="pysanka__style__save">Save</string>
+    <string name="pysanka__style__remove">Remove the sample</string>
+    <string name="pysanka__style__save_failed">Could not save the samples</string>
     <string name="pysanka__ai__source_count">Text ({n} characters)</string>
     <string name="pysanka__ai__stop">Stop</string>
     <string name="pysanka__ai__cancel">Cancel</string>
