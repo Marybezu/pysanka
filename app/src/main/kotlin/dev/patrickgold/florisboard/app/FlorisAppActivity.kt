@@ -45,10 +45,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
-import dev.patrickgold.florisboard.app.ext.ExtensionImportScreenType
 import dev.patrickgold.florisboard.app.setup.NotificationPermissionState
 import dev.patrickgold.florisboard.appContext
-import dev.patrickgold.florisboard.cacheManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.LocalPreviewFieldController
 import dev.patrickgold.florisboard.lib.compose.PreviewKeyboardField
@@ -80,7 +78,6 @@ val LocalNavController = staticCompositionLocalOf<NavController> {
 class FlorisAppActivity : ComponentActivity() {
     private val prefs by FlorisPreferenceStore
     private val appContext by appContext()
-    private val cacheManager by cacheManager()
     private var appTheme by mutableStateOf(AppTheme.AUTO)
     private var showAppIcon = true
     private var resourcesContext by mutableStateOf(this as Context)
@@ -157,19 +154,8 @@ class FlorisAppActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
 
-        if (intent.action == Intent.ACTION_VIEW && intent.data?.scheme == "ui") {
-            intentToBeHandled = intent
-            return
-        }
-        if (intent.action == Intent.ACTION_VIEW && intent.data != null) {
-            intentToBeHandled = intent
-            return
-        }
-        if (intent.action == Intent.ACTION_SEND && intent.clipData != null) {
-            intentToBeHandled = intent
-            return
-        }
-        intentToBeHandled = null
+        // Pysanka: only the settings' own links; files (extensions) are not imported any more
+        intentToBeHandled = intent.takeIf { it.action == Intent.ACTION_VIEW && it.data?.scheme == "ui" }
     }
 
     @Composable
@@ -209,24 +195,7 @@ class FlorisAppActivity : ComponentActivity() {
 
         LaunchedEffect(intentToBeHandled) {
             val intent = intentToBeHandled
-            if (intent != null) {
-                if (intent.action == Intent.ACTION_VIEW && intent.data?.scheme == "ui") {
-                    navController.handleDeepLink(intent)
-                } else {
-                    val data = if (intent.action == Intent.ACTION_VIEW) {
-                        intent.data
-                    } else {
-                        intent.clipData?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.uri
-                    }
-                    // Pysanka: an extension is imported only from a content:// file another app hands over
-                    if (data == null || data.scheme != "content") {
-                        intentToBeHandled = null
-                        return@LaunchedEffect
-                    }
-                    val workspace = runCatching { cacheManager.readFromUriIntoCache(data) }.getOrNull()
-                    navController.navigate(Routes.Ext.Import(ExtensionImportScreenType.EXT_ANY, workspace?.uuid))
-                }
-            }
+            if (intent != null) navController.handleDeepLink(intent)
             intentToBeHandled = null
         }
     }

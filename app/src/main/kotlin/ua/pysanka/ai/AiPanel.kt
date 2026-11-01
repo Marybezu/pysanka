@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +40,9 @@ import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCut
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.OpenInFull
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Email
@@ -202,7 +207,10 @@ fun AiPanel(modifier: Modifier = Modifier) {
         val t = panel.taken
         // Replies are never put in place of the text
         val taken = if (action == AiAction.REPLIES) t.copy(mode = AiBridge.Mode.INSERT) else t
-        AiBridge.openEditor(panel.info, taken, input(action), action)
+        // An answer already written goes along, so the work is not lost
+        val done = (stage as? PanelStage.Done)?.takeIf { it.action == action }
+            ?.let { AiJob.Output(it.text, it.removed, it.unconfirmed, it.seconds, it.backend) }
+        AiBridge.openEditor(panel.info, taken, input(action), action, done)
     }
 
     AiPanelView(
@@ -441,6 +449,14 @@ private fun Tile(icon: ImageVector, label: String, enabled: Boolean = true, onCl
     }
 }
 
+/** A quiet action as an icon (its name is read out, and shown on a long press by the system). */
+@Composable
+private fun ActionIcon(icon: ImageVector, label: String, onClick: () -> Unit) {
+    SnyggIconButton(FlorisImeUi.ClipboardHeaderButton.elementName, onClick = onClick, modifier = Modifier.size(44.dp)) {
+        SnyggIcon(imageVector = icon, contentDescription = label)
+    }
+}
+
 @Composable
 private fun Chip(text: String, primary: Boolean = false, onClick: () -> Unit) {
     SnyggChip(
@@ -522,15 +538,20 @@ private fun Done(
                 }
             },
         )
-        FlowRow(Modifier.fillMaxWidth()) {
-            // Replies are put in by tapping one
-            if (replaceLabel != null && replies == null) {
-                Chip(stringRes(replaceLabel), primary = true) { onPlace(s.text, s.action == AiAction.REPLIES) }
+        // One tidy row: the quieter actions as icons on the left, the main one on the right
+        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            val primary = replaceLabel != null && replies == null
+            if (primary) ActionIcon(Icons.Default.ContentCopy, stringRes(R.string.pysanka__ocr__copy), onCopy)
+            ActionIcon(Icons.Default.Refresh, stringRes(R.string.pysanka__ai__again), onAgain)
+            if (onChange != null) ActionIcon(Icons.Default.EditNote, stringRes(R.string.pysanka__ai__change), onChange)
+            if (onExpand != null) ActionIcon(Icons.Default.OpenInFull, stringRes(R.string.pysanka__ai__expand), onExpand)
+            Spacer(Modifier.weight(1f))
+            // Replies are put in by tapping one; advice is only copied
+            if (primary) {
+                Chip(stringRes(replaceLabel!!), primary = true) { onPlace(s.text, s.action == AiAction.REPLIES) }
+            } else {
+                Chip(stringRes(R.string.pysanka__ocr__copy), primary = true, onClick = onCopy)
             }
-            Chip(stringRes(R.string.pysanka__ocr__copy), primary = replaceLabel == null, onClick = onCopy)
-            Chip(stringRes(R.string.pysanka__ai__again), onClick = onAgain)
-            if (onChange != null) Chip(stringRes(R.string.pysanka__ai__change), onClick = onChange)
-            if (onExpand != null) Chip(stringRes(R.string.pysanka__ai__expand), onClick = onExpand)
         }
     }
 }
