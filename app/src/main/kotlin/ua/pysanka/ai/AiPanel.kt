@@ -453,7 +453,7 @@ private fun Tile(icon: ImageVector, label: String, enabled: Boolean = true, onCl
 @Composable
 private fun ActionIcon(icon: ImageVector, label: String, onClick: () -> Unit) {
     SnyggIconButton(FlorisImeUi.ClipboardHeaderButton.elementName, onClick = onClick, modifier = Modifier.size(44.dp)) {
-        SnyggIcon(imageVector = icon, contentDescription = label)
+        SnyggIcon(imageVector = icon, contentDescription = label, modifier = Modifier.size(22.dp))
     }
 }
 
