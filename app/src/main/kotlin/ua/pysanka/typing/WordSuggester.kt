@@ -15,6 +15,8 @@ package ua.pysanka.typing
  * - The person's own words ([PersonalWords], when given): a list word used often is offered
  *   higher; a word of their own is offered once known and never corrected. Auto-correction goes
  *   only into a list word (a learned word may itself be a typo typed twice).
+ * - The word before ([PersonalWords] pairs): a word that often followed it is offered higher, and
+ *   before anything is typed the usual next words are offered ([predict]).
  *
  * The case of what was typed is kept («Прив» → «Привіт», «ПРИВ» → «ПРИВІТ»).
  */
@@ -46,6 +48,10 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
         private const val OWN_BASE = 60
         private const val OWN_STEP = 15
         private const val OWN_MAX = 200
+
+        /** A word that followed the previous one gains this share per time (up to [PAIR_USES] times). */
+        private const val PAIR_GAIN = 0.6
+        private const val PAIR_USES = 5
     }
 
     /** Frequency (1..255) by the word in small letters. */
@@ -87,9 +93,15 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
 
     /**
      * [rejected]: words whose auto-correction was taken back; they are left as typed.
-     * [own]: the person's own words, if any.
+     * [own]: the person's own words, if any; [previous]: the word before, in the same sentence.
      */
-    fun suggest(typed: String, max: Int, rejected: Set<String> = emptySet(), own: PersonalWords? = null): List<Suggestion> {
+    fun suggest(
+        typed: String,
+        max: Int,
+        rejected: Set<String> = emptySet(),
+        own: PersonalWords? = null,
+        previous: String? = null,
+    ): List<Suggestion> {
         if (typed.isEmpty() || max <= 0) return emptyList()
         val lower = norm(typed)
         val f = { key: String -> score(key, own) }
@@ -112,6 +124,14 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
             scored.merge(cand, c * (if (extra == 0) 1.2 else 1.0 / (1 + extra * 0.05)), ::maxOf)
         }
         if (known) scored[lower] = maxOf(scored[lower] ?: 0.0, f(lower) * 1.5)
+        // What usually comes after the previous word
+        if (own != null && previous != null) {
+            val prev = norm(previous)
+            for (e in scored.entries) {
+                val n = own.pairCount(prev, e.key)
+                if (n > 0) e.setValue(e.value * (1 + PAIR_GAIN * minOf(n, PAIR_USES)))
+            }
+        }
 
         val ranked = scored.entries.sortedByDescending { it.value }.take(max)
         val best = ranked.firstOrNull()
@@ -126,6 +146,17 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
             val shown = display[e.key] ?: (if (e.key !in freq) own?.display(e.key) else null) ?: e.key
             val word = if (apostrophe != null) shown.replace('\'', apostrophe) else shown
             Suggestion(matchCase(typed, word), autoCorrect = auto && i == 0)
+        }
+    }
+
+    /**
+     * The words that usually follow [previous] in a sentence (from the person's own typing),
+     * before anything is typed.
+     */
+    fun predict(previous: String, max: Int, own: PersonalWords?): List<String> {
+        if (own == null || max <= 0) return emptyList()
+        return own.next(norm(previous), max).filter { score(it, own) > 0 }.map { key ->
+            display[key] ?: (if (key !in freq) own.display(key) else null) ?: key
         }
     }
 

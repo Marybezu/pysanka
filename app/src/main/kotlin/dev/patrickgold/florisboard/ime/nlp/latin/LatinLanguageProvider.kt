@@ -38,6 +38,7 @@ import org.florisboard.lib.kotlin.guardedByLock
 import ua.pysanka.typing.AutoCorrect
 import ua.pysanka.typing.KeyNeighbours
 import ua.pysanka.typing.PersonalWords
+import ua.pysanka.typing.PreviousWord
 import ua.pysanka.typing.UserWords
 import ua.pysanka.typing.WordSuggester
 
@@ -110,11 +111,19 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         isPrivateSession: Boolean,
     ): List<SuggestionCandidate> {
         val word = content.composingText
-        if (word.isEmpty()) return emptyList()
         val dict = suggester(subtype) ?: return emptyList()
-        val autoCorrect = prefs.correction.pysankaAutoCorrect.get()
         val own = withContext(Dispatchers.IO) { own(subtype) }
-        val found = dict.suggest(word, maxCandidateCount, AutoCorrect.rejected, own)
+        // Pysanka: before a word is begun, the words that usually follow the one before
+        if (word.isEmpty()) {
+            if (!content.selection.isCursorMode) return emptyList()
+            val previous = PreviousWord.of(content.textBeforeSelection) ?: return emptyList()
+            return dict.predict(previous, maxCandidateCount, own).map {
+                NextWordCandidate(text = it, previous = previous, sourceProvider = this@LatinLanguageProvider)
+            }
+        }
+        val autoCorrect = prefs.correction.pysankaAutoCorrect.get()
+        val previous = PreviousWord.of(content.textBeforeSelection.dropLast(word.length))
+        val found = dict.suggest(word, maxCandidateCount, AutoCorrect.rejected, own, previous)
         AutoCorrect.suggestedFor = word
         val list = found.map {
             WordSuggestionCandidate(
@@ -147,10 +156,15 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     }
 
     override suspend fun removeSuggestion(subtype: Subtype, candidate: SuggestionCandidate): Boolean {
-        // Pysanka: a long press on a learned word forgets it
+        // Pysanka: a long press on a learned word forgets it; on an offered next word, that it follows
         val word = candidate.text.toString()
         val dict = suggester(subtype) ?: return false
         val language = subtype.primaryLocale.language
+        if (candidate is NextWordCandidate) {
+            return UserWords.forgetPair(appContext, language, candidate.previous, word).also { forgotten ->
+                if (forgotten) appContext.showShortToast(R.string.pysanka__typing__next_word_forgotten, "word" to word)
+            }
+        }
         // Called on the main thread: only words already in memory (as they were just offered)
         if (!dict.isOwn(word, UserWords.peek(language))) return false
         return UserWords.forget(appContext, language, word).also { forgotten ->
@@ -170,4 +184,17 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         // Here we have the chance to de-allocate memory and finish our work. However this might never be called if
         // the app process is killed (which will most likely always be the case).
     }
+}
+
+/** Pysanka: a word offered before anything is typed, because it often followed [previous]. */
+data class NextWordCandidate(
+    override val text: CharSequence,
+    val previous: String,
+    override val sourceProvider: SuggestionProvider?,
+) : SuggestionCandidate {
+    override val secondaryText: CharSequence? = null
+    override val confidence: Double = 0.5
+    override val isEligibleForAutoCommit: Boolean = false
+    override val isEligibleForUserRemoval: Boolean = true
+    override val icon: androidx.compose.ui.graphics.vector.ImageVector? = null
 }

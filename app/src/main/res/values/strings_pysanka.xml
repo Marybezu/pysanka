@@ -234,10 +234,11 @@
     <string name="pysanka__typing__auto_correct_on">Typo correction on</string>
     <string name="pysanka__typing__auto_correct_off">Typo correction off</string>
     <string name="pysanka__typing__learn_words">Learn my words</string>
-    <string name="pysanka__typing__learn_words_summary">Words you use are offered sooner, and your own words are not corrected. Kept encrypted on the phone; never from password or incognito fields</string>
+    <string name="pysanka__typing__learn_words_summary">Words you use are offered sooner, your own words are not corrected, and after a word the ones that usually follow it are offered. Kept encrypted on the phone; never from password or incognito fields</string>
     <string name="pysanka__typing__forget_words">Forget learned words</string>
     <string name="pysanka__typing__forget_words_summary">A single word: long-press it in the suggestions</string>
     <string name="pysanka__typing__forget_words_confirm">Forget every word the keyboard has learned?</string>
     <string name="pysanka__typing__words_forgotten">Learned words forgotten</string>
     <string name="pysanka__typing__word_forgotten">“{word}” forgotten</string>
+    <string name="pysanka__typing__next_word_forgotten">“{word}” is no longer offered after that word</string>
 </resources>

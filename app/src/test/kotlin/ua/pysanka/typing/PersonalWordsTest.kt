@@ -103,4 +103,53 @@ class PersonalWordsTest : FunSpec({
         shouldThrow<IOException> { PersonalWords.decode(byteArrayOf(0, 0, 0, 9)) }
         shouldThrow<IOException> { PersonalWords.decode(own.encode() + 1) }
     }
+
+    test("a file from before pairs (format 1) is still read") {
+        val bytes = java.io.ByteArrayOutputStream().also { b ->
+            java.io.DataOutputStream(b).use { out ->
+                out.writeInt(1); out.writeInt(1)
+                out.writeUTF("кава"); out.writeUTF(""); out.writeInt(3); out.writeInt(1)
+            }
+        }.toByteArray()
+        PersonalWords.decode(bytes).count("кава") shouldBe 3
+    }
+
+    test("the next word: offered after two uses of the pair, written and read back") {
+        val own = PersonalWords()
+        own.learnPair("добрий", "ранок", 1)
+        s.predict("добрий", 3, own) shouldBe emptyList()
+        own.learnPair("Добрий", "ранок", 1)
+        own.learn("ранок", false, true, 1)
+        own.learn("ранок", false, true, 1)
+        s.predict("добрий", 3, own) shouldBe listOf("ранок")
+        PersonalWords.decode(own.encode()).next("добрий", 3) shouldBe listOf("ранок")
+        own.forgetPair("добрий", "ранок") shouldBe true
+        s.predict("добрий", 3, own) shouldBe emptyList()
+    }
+
+    test("the word before lifts what usually follows it") {
+        val own = PersonalWords()
+        s.suggest("при", 2, own = own, previous = "дуже").map { it.word } shouldBe listOf("привіт", "привести")
+        repeat(3) { own.learnPair("дуже", "привести", 1) }
+        s.suggest("при", 2, own = own, previous = "дуже").map { it.word } shouldBe listOf("привести", "привіт")
+    }
+
+    test("forgetting a word forgets its pairs") {
+        val own = PersonalWords()
+        own.learnPair("мій", "борщ", 1)
+        own.learnPair("борщ", "смачний", 1)
+        own.forget("борщ") shouldBe true
+        own.pairCount shouldBe 0
+    }
+
+    test("the word before the cursor, only in the same sentence") {
+        PreviousWord.of("Привіт, мій ") shouldBe "мій"
+        PreviousWord.of("мій  ") shouldBe "мій"
+        PreviousWord.of("Кінець. ") shouldBe null
+        PreviousWord.of("привіт,") shouldBe null
+        PreviousWord.of("ab12 ") shouldBe null
+        PreviousWord.of("рядок\n") shouldBe null
+        PreviousWord.of("") shouldBe null
+        PreviousWord.of("x".repeat(100) + " ") shouldBe null
+    }
 })
