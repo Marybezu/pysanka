@@ -151,7 +151,6 @@
     <string name="pysanka__ai__not_here">The AI does not work in password fields, in incognito or where the app asks for no learning.</string>
     <string name="pysanka__ai__no_model">The AI model is not downloaded yet. It works fully on the phone; download it once in the settings.</string>
     <string name="pysanka__ai__open_settings">Open AI settings</string>
-    <string name="pysanka__ai__source">Text</string>
     <string name="pysanka__ai__result">Result (you can edit it)</string>
     <string name="pysanka__ai__run">Go</string>
     <string name="pysanka__ai__loading">Loading the model… This takes up to a minute.</string>

@@ -24,10 +24,17 @@ object TextChunks {
                 if (s.text.length <= max) { pieces.add(Part(s.text, after)); continue }
                 var rest = s.text
                 while (rest.length > max) {
-                    // Rather at a space than inside a word
-                    val at = rest.lastIndexOf(' ', max).takeIf { it > max / 2 } ?: max
-                    pieces.add(Part(rest.substring(0, at), ""))
-                    rest = rest.substring(at)
+                    // Rather at a line break, then at a space, than inside a word; the whitespace
+                    // stays between the parts (rewritten parts are trimmed)
+                    val at = rest.lastIndexOf('\n', max - 1).takeIf { it > max / 2 }
+                        ?: rest.lastIndexOf(' ', max - 1).takeIf { it > max / 2 }
+                    if (at != null) {
+                        pieces.add(Part(rest.substring(0, at), rest.substring(at, at + 1)))
+                        rest = rest.substring(at + 1)
+                    } else {
+                        pieces.add(Part(rest.substring(0, max), ""))
+                        rest = rest.substring(max)
+                    }
                 }
                 pieces.add(Part(rest, after))
             }
@@ -36,15 +43,18 @@ object TextChunks {
         val parts = ArrayList<Part>()
         val sb = StringBuilder()
         var pendingAfter = ""
+        var started = false
         for (p in pieces) {
-            if (sb.isNotEmpty() && sb.length + pendingAfter.length + p.text.length > max) {
+            if (started && sb.isNotEmpty() && sb.length + pendingAfter.length + p.text.length > max) {
                 parts.add(Part(sb.toString(), pendingAfter))
                 sb.setLength(0)
-            } else if (sb.isNotEmpty()) {
+            } else if (started) {
+                // Also a break before the first words (a text starting with an empty line)
                 sb.append(pendingAfter)
             }
             sb.append(p.text)
             pendingAfter = p.after
+            started = true
         }
         if (sb.isNotEmpty() || parts.isEmpty()) parts.add(Part(sb.toString(), pendingAfter))
         return parts

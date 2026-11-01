@@ -9,6 +9,8 @@ import androidx.activity.result.contract.ActivityResultContracts
  * Pysanka: the AI editor from other apps, without the keyboard:
  * - "Share" → "Pysanka AI" with any text (an article, a long message, a document): opens the
  *   editor with "Summary" chosen; the answer can be copied.
+ * These are the person's explicit choice in another app, so the keyboard's field rules (password,
+ * incognito) do not apply here: the text is what the person chose to send.
  * - The text selection menu → "Pysanka AI": opens the editor with "Grammar" chosen; if the app
  *   allows it, "Replace" puts the answer in place of the selection.
  *
@@ -51,8 +53,14 @@ class AiEntryActivity : ComponentActivity() {
             finish()
             return
         }
-        editor.launch(
-            AiEditorActivity.intent(this, text.take(AiJob.HARD_MAX), preset, receiver = null, canReplace = canReplace, forResult = true),
-        )
+        val body = text.take(AiJob.HARD_MAX)
+        if (canReplace) {
+            // The answer comes back here and goes in place of the selection
+            editor.launch(AiEditorActivity.intent(this, body, preset, receiver = null, canReplace = true, forResult = true))
+        } else {
+            // Nothing to put back: the editor only shows and copies the answer
+            startActivity(AiEditorActivity.intent(this, body, preset, receiver = null, canReplace = false))
+            finish()
+        }
     }
 }

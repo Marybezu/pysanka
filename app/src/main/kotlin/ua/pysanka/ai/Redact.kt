@@ -9,7 +9,11 @@ object Redact {
     private val email = Regex("""[\p{L}\d._%+\-]+@[\p{L}\d.\-]+\.\p{L}{2,}""")
     private val iban = Regex("""\b[A-Z]{2}\d{2}(?:\s?[A-Z\d]){11,30}\b""")
     private val card = Regex("""\b\d(?:[ \-]?\d){12,18}\b""")
-    private val phone = Regex("""(?<![\d\p{L}])\+?\d[\d ()\-]{7,}\d(?![\d\p{L}])""")
+    /**
+     * A phone number as people write it: with a + (international) or starting with 0 (national,
+     * maybe in brackets). Sums like "125 000 000", years, order and waybill numbers do not start so.
+     */
+    private val phone = Regex("""(?<![\d\p{L}+(])(?:\+\d[\d ()\-]{7,}\d|\(?0\d[\d ()\-]{6,}\d)(?![\d\p{L}])""")
 
     fun apply(text: String): String {
         // The text's own language, not counting the addresses themselves
@@ -21,7 +25,7 @@ object Redact {
         var s = email.replace(text, label("пошта", "email"))
         s = iban.replace(s, label("рахунок", "account"))
         s = card.replace(s) { m -> if (luhn(m.value)) label("картка", "card") else m.value }
-        s = phone.replace(s) { m -> if (m.value.count { it.isDigit() } in 9..15) label("телефон", "phone") else m.value }
+        s = phone.replace(s) { m -> if (m.value.count { it.isDigit() } in 10..15) label("телефон", "phone") else m.value }
         return s
     }
 

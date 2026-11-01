@@ -304,7 +304,7 @@
     <string name="pref__keyboard__group_keypress__label" comment="Preference group title">Натискання клавіші</string>
     <string name="pref__keyboard__popup_enabled__label" comment="Preference title">Видимість спливних вікон</string>
     <string name="pref__keyboard__popup_enabled__summary" comment="Preference summary">Показувати спливаючу підказку при натисканні клавіші</string>
-    <string name="pref__keyboard__merge_hint_popups_enabled__label" comment="Preference title">Об'єднати акценти й символи у спливному вікні</string>
+    <string name="pref__keyboard__merge_hint_popups_enabled__label" comment="Preference title">Об\'єднати акценти й символи у спливному вікні</string>
     <string name="pref__keyboard__merge_hint_popups_enabled__summary" comment="Preference summary">Додає спливні вікна з символами до акцентів по стандарту у макеті</string>
     <string name="pref__keyboard__long_press_delay__label" comment="Preference title">Затримка при натисканні</string>
     <string name="pref__keyboard__space_bar_switches_to_characters__label" comment="Preference title">Пробіл перемикає на літери</string>

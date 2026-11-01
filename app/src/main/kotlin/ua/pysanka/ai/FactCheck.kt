@@ -13,7 +13,8 @@ package ua.pysanka.ai
 object FactCheck {
     data class Result(val text: String, val removed: Int, val allRemoved: Boolean)
 
-    private val number = Regex("""\d(?:[\d  .,:/\-]*\d)?""")
+    /** A number with its separators; a comma counts only between digits ("100, 200" is two). */
+    private val number = Regex("""\d(?:(?:[\d\u00A0 .:/\-–—]|,(?=\d))*\d)?""")
     private val listMarker = Regex("""^\s*(?:[•*\-–—]|\d{1,2}[.)])\s*""")
     private val word = Regex("""[\p{L}][\p{L}'’\-]*""")
     private val sentenceStart = Regex("""(^|[.!?…:]\s+|^\s*[•*\-–—]\s*|^\s*\d{1,2}[.)]\s*)$""")
@@ -23,7 +24,10 @@ object FactCheck {
         val sourceNumbers = HashSet<String>()
         for (m in number.findAll(source)) {
             sourceNumbers.add(digits(m.value))
-            m.value.split('.', ',', ':', '/', '-').map { digits(it) }.filterTo(sourceNumbers) { it.isNotEmpty() }
+            val parts = m.value.split('.', ',', ':', '/', '-', '–', '—').map { digits(it) }.filter { it.isNotEmpty() }
+            sourceNumbers.addAll(parts)
+            // Neighbouring parts together too (31.10 from 31.10.2026, 8:00 from 8:00:00)
+            for (i in 0 until parts.size - 1) sourceNumbers.add(parts[i] + parts[i + 1])
         }
         val sourceStems = word.findAll(source).map { stem(it.value) }.toHashSet()
         val lines = summary.lines()

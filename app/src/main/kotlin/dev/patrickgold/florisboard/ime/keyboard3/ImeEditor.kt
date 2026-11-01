@@ -115,13 +115,15 @@ open class ImeEditor(
                 return true
             }
             val before = ic.getTextBeforeCursor(64, 0)?.toString() ?: return false
-            // The last word: back to whitespace (punctuation keys are letters on the other layout)
-            val word = before.takeLastWhile { !it.isWhitespace() }
+            // The last word: back to whitespace (punctuation keys are letters on the other layout);
+            // a space just typed after it (the usual moment a mistake is seen) stays as it is
+            val trailing = before.takeLastWhile { it == ' ' }
+            val word = before.dropLast(trailing.length).takeLastWhile { !it.isWhitespace() }
             if (word.isEmpty()) return false
             val fixed = ua.pysanka.typing.LayoutSwitch.convert(word)
             if (fixed == word) return false
-            ic.deleteSurroundingText(word.length, 0)
-            return ic.commitText(fixed, 1)
+            ic.deleteSurroundingText(word.length + trailing.length, 0)
+            return ic.commitText(fixed + trailing, 1)
         } finally {
             ic.endBatchEdit()
         }
@@ -176,8 +178,9 @@ open class ImeEditor(
             curStart = now.startOffset + minOf(now.selectionStart, now.selectionEnd)
             curEnd = now.startOffset + maxOf(now.selectionStart, now.selectionEnd)
         } else {
-            curStart = minOf(info.initialSelection.start, info.initialSelection.end)
-            curEnd = maxOf(info.initialSelection.start, info.initialSelection.end)
+            // As the field reported it when it opened; -1 when it did not say
+            curStart = minOf(info.base.initialSelStart, info.base.initialSelEnd)
+            curEnd = maxOf(info.base.initialSelStart, info.base.initialSelEnd)
         }
         ic.beginBatchEdit()
         try {
@@ -209,7 +212,8 @@ open class ImeEditor(
             // Never overwrite something else: go to the end of the selection first; if where it is
             // cannot be told, do not touch the field at all
             if (curStart < 0 || curEnd < 0) {
-                if (!ic.getSelectedText(0).isNullOrEmpty()) return false
+                // Where the cursor is cannot be told: only an empty field is safe to write into
+                if (result.mode != ua.pysanka.ai.AiBridge.Mode.INSERT || !ic.getSelectedText(0).isNullOrEmpty()) return false
             } else if (curStart != curEnd) {
                 ic.setSelection(curEnd, curEnd)
             }

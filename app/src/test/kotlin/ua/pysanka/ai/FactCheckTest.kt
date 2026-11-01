@@ -23,6 +23,10 @@ class FactCheckTest : FunSpec({
         val s = "1. Відкрили пункт.\n2. Сума 1250 грн."
         FactCheck.check(source, s).removed shouldBe 0
     }
+    test("shortened dates, ranges with a dash, numbers listed with commas") {
+        val src2 = "Подія 31.10.2026, сезон 2024–2025, ціни 100 і 200 грн."
+        FactCheck.check(src2, "• 31.10: подія.\n• Сезон 2024-2025.\n• Ціни 100, 200 грн.").removed shouldBe 0
+    }
     test("if nothing would be left, the text stays and is marked") {
         val s = "• Допомога 9999 грн."
         FactCheck.check(source, s) shouldBe FactCheck.Result(s, 1, true)

@@ -15,6 +15,11 @@ class LayoutSwitchTest : FunSpec({
         LayoutSwitch.convert("руддщ") shouldBe "hello"
         LayoutSwitch.convert("Руддщ цщкдв") shouldBe "Hello world"
     }
+    test("apostrophe and ґ") {
+        LayoutSwitch.convert("v`zcj") shouldBe "м'ясо"
+        LayoutSwitch.convert("м'ясо") shouldBe "v`zcj"
+        LayoutSwitch.convert("\\fyjr") shouldBe "ґанок"
+    }
     test("there and back") {
         val s = "Привіт, як справи. Їжак і ганок"
         LayoutSwitch.convert(LayoutSwitch.convert(s)) shouldBe s

@@ -76,10 +76,10 @@ import kotlin.math.min
  *   no permission is needed.
  * - From the camera: the phone's own camera app takes one picture for Pysanka (Pysanka has no
  *   camera permission at all). The picture is not saved in the gallery: it comes back into a file
- *   in Pysanka's cache, is read and deleted at once.
+ *   in Pysanka's private storage, is read and deleted at once.
  * - The recognised words are highlighted; tap or swipe over them, then insert into the field the
- *   keyboard was in, copy, or keep in the clipboard history. Nothing is stored otherwise, and the
- *   screen cannot be captured in screenshots.
+ *   keyboard was in, copy, keep in the clipboard history, or have the AI fix recognition errors.
+ *   Nothing is stored otherwise; screenshots of this screen are blocked if the owner chose so.
  */
 class TextFromImageActivity : ComponentActivity() {
     companion object {
@@ -105,7 +105,9 @@ class TextFromImageActivity : ComponentActivity() {
         val source = intent.getStringExtra(EXTRA_SOURCE) ?: SOURCE_PHOTO
         setContent {
             // The app's texts (stringRes) are read through this; without it the screen fails at once
-            org.florisboard.lib.compose.ProvideLocalizedResources(this, appName = dev.patrickgold.florisboard.R.string.app_name) {
+            val prefs by dev.patrickgold.florisboard.app.FlorisPreferenceStore
+            val language = runCatching { prefs.other.settingsLanguage.get() }.getOrNull()
+            org.florisboard.lib.compose.ProvideLocalizedResources(ua.pysanka.settings.AppLanguage.context(this, language), appName = dev.patrickgold.florisboard.R.string.app_name) {
                 FlorisAppTheme(theme = AppTheme.AUTO) {
                     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         TextFromImageScreen(source) { finish() }
@@ -171,7 +173,8 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
                 return@launch
             }
             android.widget.Toast.makeText(context, R.string.pysanka__photo_history__added, android.widget.Toast.LENGTH_SHORT).show()
-            val text = runCatching { AllText.read(context, uri) }.getOrNull()
+            // Off the main thread: a tall picture is read in many parts
+            val text = runCatching { withContext(Dispatchers.Default) { AllText.read(context, uri) } }.getOrNull()
             if (!text.isNullOrBlank()) {
                 withContext(Dispatchers.IO) {
                     runCatching { clipboardManager.setImageText(id, text.take(dev.patrickgold.florisboard.ime.clipboard.ClipboardManager.MAX_IMAGE_TEXT)) }
@@ -350,7 +353,8 @@ private fun ResultView(bitmap: Bitmap, lines: List<OcrLine>, close: () -> Unit) 
             TextButton(onClick = { selected = words.indices.toSet() }) { Text(stringRes(R.string.pysanka__ocr__all)) }
             TextButton(onClick = { selected = emptySet() }) { Text(stringRes(R.string.pysanka__ocr__none)) }
             // Pysanka: the AI fixes recognition errors, if the model is installed
-            val aiReady = remember { ua.pysanka.ai.ModelStore(context).modelFile() != null }
+            // Not for a password, incognito or no-learning field: nothing from it goes to the AI
+            val aiReady = remember { ua.pysanka.ai.ModelStore(context).modelFile() != null && !PendingInsert.fromPrivateField }
             if (aiReady) {
                 TextButton(enabled = selected.isNotEmpty(), onClick = {
                     ua.pysanka.ai.AiBridge.openFromPhoto(context, selectedText())
@@ -382,7 +386,7 @@ private fun ResultView(bitmap: Bitmap, lines: List<OcrLine>, close: () -> Unit) 
 }
 
 /**
- * Where the system camera app puts the photo: a file in Pysanka's cache, shared with that app only
+ * Where the system camera app puts the photo: a file in Pysanka's private storage, shared with that app only
  * for this one shot. It is deleted as soon as the photo is read (and whenever the screen closes).
  */
 internal object CameraShot {

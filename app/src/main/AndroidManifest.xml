@@ -139,7 +139,7 @@
             android:excludeFromRecents="true"
             android:taskAffinity="ua.pysanka.ai"
             android:windowSoftInputMode="adjustResize"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|locale|layoutDirection|fontScale|density"
             android:theme="@style/FlorisAppTheme"
             android:label="@string/pysanka__ai__title" />
 

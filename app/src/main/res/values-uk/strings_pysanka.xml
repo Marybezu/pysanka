@@ -150,7 +150,6 @@
     <string name="pysanka__ai__not_here">ШІ не працює в полях пароля, в інкогніто й там, де застосунок просить не вчитися.</string>
     <string name="pysanka__ai__no_model">Модель ШІ ще не завантажено. Вона працює повністю на телефоні; завантажте її один раз у налаштуваннях.</string>
     <string name="pysanka__ai__open_settings">Відкрити налаштування ШІ</string>
-    <string name="pysanka__ai__source">Текст</string>
     <string name="pysanka__ai__result">Результат (можна змінити)</string>
     <string name="pysanka__ai__run">Виконати</string>
     <string name="pysanka__ai__loading">Завантажую модель… Це триває до хвилини.</string>

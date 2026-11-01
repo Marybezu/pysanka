@@ -58,7 +58,8 @@ import org.florisboard.lib.compose.stringRes
  * Pysanka: the AI editor. Runs in its own process (":ai"; see AndroidManifest.xml): the model
  * needs about 2.6 GB and must not weigh on the keyboard. This process reads no settings and
  * touches no stored data: it gets the text in the intent and gives the answer back through the
- * [ResultReceiver] it was handed, or copies it. Nothing is written anywhere.
+ * [ResultReceiver] it was handed (or as its result), or copies it. No text is written anywhere; only
+ * the model's cache and two numbers of measured speed (see [AiJob]).
  */
 class AiEditorActivity : ComponentActivity() {
     companion object {
@@ -70,6 +71,7 @@ class AiEditorActivity : ComponentActivity() {
         private const val EXTRA_SECURE = "secure"
 
         private const val EXTRA_FOR_RESULT = "for_result"
+        private const val EXTRA_LANGUAGE = "language"
 
         /**
          * [receiver]: where the answer goes back to the keyboard; or [forResult]: the answer is
@@ -79,10 +81,9 @@ class AiEditorActivity : ComponentActivity() {
             context: Context, text: String, preset: AiAction?, receiver: ResultReceiver?, canReplace: Boolean,
             forResult: Boolean = false,
         ): Intent {
-            val secure = runCatching {
-                val prefs by dev.patrickgold.florisboard.app.FlorisPreferenceStore
-                prefs.pysankaOcr.blockScreenshots.get()
-            }.getOrDefault(false)
+            val prefs by dev.patrickgold.florisboard.app.FlorisPreferenceStore
+            val secure = runCatching { prefs.pysankaOcr.blockScreenshots.get() }.getOrDefault(false)
+            val language = runCatching { prefs.other.settingsLanguage.get() }.getOrDefault("auto")
             return Intent(context, AiEditorActivity::class.java)
                 .putExtra(EXTRA_TEXT, text)
                 .putExtra(EXTRA_PRESET, preset?.name)
@@ -90,6 +91,7 @@ class AiEditorActivity : ComponentActivity() {
                 .putExtra(EXTRA_CAN_REPLACE, canReplace)
                 .putExtra(EXTRA_SECURE, secure)
                 .putExtra(EXTRA_FOR_RESULT, forResult)
+                .putExtra(EXTRA_LANGUAGE, language)
                 // A result comes back only within the same task
                 .apply { if (!forResult) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP) }
         }
@@ -107,14 +109,15 @@ class AiEditorActivity : ComponentActivity() {
         val canReplace = intent.getBooleanExtra(EXTRA_CAN_REPLACE, false)
         val forResult = intent.getBooleanExtra(EXTRA_FOR_RESULT, false) && callingActivity?.packageName == packageName
         setContent {
-            ProvideLocalizedResources(this, appName = R.string.app_name) {
+            ProvideLocalizedResources(ua.pysanka.settings.AppLanguage.context(this, intent.getStringExtra(EXTRA_LANGUAGE)), appName = R.string.app_name) {
                 FlorisAppTheme(theme = AppTheme.AUTO) {
                     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                         AiEditorScreen(
                             original = text,
                             preset = preset,
                             replaceLabel = when {
-                                receiver == null && !forResult -> null
+                                forResult -> if (canReplace) R.string.pysanka__ai__replace else null
+                                receiver == null -> null
                                 canReplace -> R.string.pysanka__ai__replace
                                 else -> R.string.pysanka__ai__insert
                             },
@@ -161,11 +164,13 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val installed = remember { ModelStore(context).modelFile() != null }
-    var source by rememberSaveable { mutableStateOf(original) }
+    // The texts stay in memory only (up to 60 000 characters would be too much for saved state);
+    // turning the phone does not recreate this screen
+    var source by remember { mutableStateOf(original) }
     var action by rememberSaveable { mutableStateOf(preset ?: AiAction.FIX) }
     var language by rememberSaveable { mutableStateOf(AiLanguage.EN) }
     var stage by remember { mutableStateOf<AiStage>(AiStage.Idle) }
-    var result by rememberSaveable { mutableStateOf("") }
+    var result by remember { mutableStateOf("") }
     var job by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     // Start loading the model while the person chooses what to do
     if (installed) androidx.compose.runtime.LaunchedEffect(Unit) { runCatching { AiEngine.warmUp(context) } }
@@ -319,10 +324,7 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
     }
 }
 
-private fun copy(context: Context, text: String) {
-    val cm = context.getSystemService(android.content.ClipboardManager::class.java) ?: return
-    cm.setPrimaryClip(ClipData.newPlainText("Pysanka", text))
-}
+private fun copy(context: Context, text: String) = ua.pysanka.privacy.Clip.copy(context, text)
 
 /** Opens the AI settings (model download) in Pysanka's settings. */
 fun openAiSettings(context: Context) {

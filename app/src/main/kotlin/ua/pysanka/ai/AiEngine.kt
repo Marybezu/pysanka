@@ -56,8 +56,15 @@ object AiEngine {
     /** Still no editor screen (one may have opened while a text was being stopped). */
     fun screenClosedStill(): Boolean = screens.get() == 0
 
-    /** Stops the text being written now, if any (the native call does not stop by itself). */
+    /** Counts "Stop" presses: an answer asked for before the last one is not started (or is dropped). */
+    private val stops = java.util.concurrent.atomic.AtomicLong(0)
+
+    /**
+     * Stops the text being written now, if any (the native call does not stop by itself), and any
+     * answer already asked for but still waiting for the model to load.
+     */
     fun cancel() {
+        stops.incrementAndGet()
         synchronized(runningLock) { runCatching { running?.cancelProcess() } }
     }
 
@@ -98,9 +105,13 @@ object AiEngine {
      * One answer of the model: [system] instructions, [user] message. Returns the raw answer (the
      * caller cleans it). Stopped by [cancel]; the caller checks for that.
      */
-    suspend fun generate(context: Context, system: String, user: String, temperature: Double, maxOutput: Int): String = mutex.withLock {
-        withContext(Dispatchers.Default) {
+    suspend fun generate(context: Context, system: String, user: String, temperature: Double, maxOutput: Int): String {
+        val asked = stops.get()
+        return mutex.withLock { withContext(Dispatchers.Default) {
+            // Stopped while waiting for the model (or for another answer): do not start
+            if (stops.get() != asked) throw kotlinx.coroutines.CancellationException("stopped")
             val e = engineLocked(context.applicationContext)
+            if (stops.get() != asked) throw kotlinx.coroutines.CancellationException("stopped")
             e.createConversation(
                 ConversationConfig(
                     systemInstruction = Contents.of(system),
@@ -112,13 +123,14 @@ object AiEngine {
             ).use { conv ->
                 synchronized(runningLock) { running = conv }
                 try {
+                    if (stops.get() != asked) throw kotlinx.coroutines.CancellationException("stopped")
                     conv.sendMessage(user).toString()
                 } finally {
                     // Before the conversation is closed, so cancel() never reaches a closed one
                     synchronized(runningLock) { running = null }
                 }
             }
-        }
+        } }
     }
 
     /** Frees the model's memory; waits for a running action to finish first. */

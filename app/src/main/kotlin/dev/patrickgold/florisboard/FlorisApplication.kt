@@ -92,9 +92,9 @@ class FlorisApplication : Application() {
         super.onCreate()
         FlorisApplicationReference = WeakReference(this)
         // Pysanka: the AI editor's own process (":ai") holds only the model and its screen. It must
-        // not open the clipboard database, watch screenshots, clear the cache or load settings,
+        // not open the clipboard database, clear the cache or load settings,
         // which belong to the keyboard's process.
-        if (ua.pysanka.ai.AiProcess.isAiProcess(this)) {
+        if (ua.pysanka.ai.AiProcess.isAiProcess()) {
             CrashUtility.install(this)
             return
         }

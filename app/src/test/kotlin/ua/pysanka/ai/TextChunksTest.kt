@@ -19,6 +19,14 @@ class TextChunksTest : FunSpec({
         joined(parts) shouldBe text
         parts.forEach { it.text.length shouldBeLessThanOrEqual 120 }
     }
+    test("a text without full stops is cut at line breaks, whitespace kept between parts") {
+        val text = (1..60).joinToString("\n") { "рядок номер $it без крапки" }
+        val parts = TextChunks.split(text, 200)
+        joined(parts) shouldBe text
+        parts.forEach { it.text.startsWith("\n") shouldBe false }
+        val leading = "\n\nПочаток після порожнього рядка."
+        joined(TextChunks.split(leading, 100)) shouldBe leading
+    }
     test("short text is one part") {
         TextChunks.split("Привіт", 100) shouldBe listOf(TextChunks.Part("Привіт", ""))
         TextChunks.split("", 100).size shouldBe 1

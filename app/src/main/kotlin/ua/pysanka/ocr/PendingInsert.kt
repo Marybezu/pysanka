@@ -21,7 +21,13 @@ object PendingInsert {
     fun opened(packageName: String?, fieldId: Int) {
         target = Target(packageName, fieldId)
         text = null
+        fromPrivateField = ua.pysanka.privacy.FieldPrivacy.isPrivate || ua.pysanka.privacy.FieldPrivacy.isPassword
     }
+
+    /** Opened from a password, incognito or no-learning field: its text never goes to the AI. */
+    @Volatile
+    var fromPrivateField = false
+        private set
 
     /** Whether the screen was opened from a field (so there is somewhere to insert). */
     @Synchronized
@@ -36,13 +42,13 @@ object PendingInsert {
 
     /** The waiting text if [packageName]/[fieldId] is the field it was meant for; it is cleared either way. */
     @Synchronized
-    fun takeFor(packageName: String?, fieldId: Int, isPassword: Boolean): String? {
+    fun takeFor(packageName: String?, fieldId: Int, isPassword: Boolean, isPrivate: Boolean = false): String? {
         val t = text ?: return null
         val wanted = target
         text = null
         target = null
         val fresh = System.currentTimeMillis() - at < MAX_AGE_MS
-        return t.takeIf { fresh && !isPassword && wanted == Target(packageName, fieldId) }
+        return t.takeIf { fresh && !isPassword && !isPrivate && wanted == Target(packageName, fieldId) }
     }
 }
 

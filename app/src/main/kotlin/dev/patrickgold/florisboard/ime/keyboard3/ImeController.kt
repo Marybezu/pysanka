@@ -300,7 +300,7 @@ class ImeController(
             resetContent(initialSelection, initialSurrounding)
             expectedContentQueue.clear()
             // Pysanka: text picked from a photo goes only into the field it was picked for
-            ua.pysanka.ocr.PendingInsert.takeFor(info.packageName, info.base.fieldId, isPasswordField)
+            ua.pysanka.ocr.PendingInsert.takeFor(info.packageName, info.base.fieldId, isPasswordField, ua.pysanka.privacy.FieldPrivacy.isPrivate)
                 ?.let { state.editor.pysankaInsertText(it) }
             // Pysanka: text from the AI editor goes only into the field it was taken from
             ua.pysanka.ai.AiBridge.takeFor(info, isPasswordField)

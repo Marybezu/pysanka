@@ -102,9 +102,7 @@ object AiBridge {
 
     /** When the answer could not be put back safely, it is copied so it is not lost. */
     fun couldNotPlace(text: String) {
-        val app = FlorisApplication.getHack()
-        app.getSystemService(android.content.ClipboardManager::class.java)
-            ?.setPrimaryClip(android.content.ClipData.newPlainText("Pysanka", text))
+        ua.pysanka.privacy.Clip.copy(FlorisApplication.getHack(), text)
         toast(R.string.pysanka__ai__copied_instead)
     }
 
