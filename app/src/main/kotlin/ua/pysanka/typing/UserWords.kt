@@ -36,7 +36,8 @@ object UserWords {
     private val scope = CoroutineScope(SupervisorJob() + worker)
 
     private val lock = Any()
-    private val loaded = HashMap<String, PersonalWords>()
+    /** Read without the lock by [peek], so the main thread never waits for a file. */
+    private val loaded = java.util.concurrent.ConcurrentHashMap<String, PersonalWords>()
     private val dirty = HashSet<String>()
     @Volatile
     private var lastVaultTry = 0L
@@ -60,7 +61,7 @@ object UserWords {
     }
 
     /** The words already in memory (never reads a file; for the main thread). */
-    fun peek(language: String): PersonalWords? = synchronized(lock) { loaded[language] }
+    fun peek(language: String): PersonalWords? = loaded[language]
 
     /** One use of [word]; see [PersonalWords.learn]. */
     fun learn(context: Context, language: String, word: String, insisted: Boolean, midSentence: Boolean) {
@@ -125,8 +126,10 @@ object UserWords {
         // A damaged file (or one from a lost key) is started over; the next write replaces it
         return runCatching {
             check(file.length() <= MAX_FILE_BYTES)
-            val bytes = file.inputStream().use { SealedFile.open(ClipboardVault.wordsKey(), label(language), it).readBytes() }
-            PersonalWords.decode(bytes)
+            val bytes = file.inputStream().use { input ->
+                SealedFile.open(ClipboardVault.wordsKey(), label(language), input).use { it.readBytes() }
+            }
+            try { PersonalWords.decode(bytes) } finally { bytes.fill(0) }
         }.getOrElse { PersonalWords() }
     }
 
@@ -151,7 +154,12 @@ object UserWords {
                 val target = file(context, language)
                 target.parentFile?.mkdirs()
                 val tmp = File(target.parentFile, "$language.tmp")
-                SealedFile.writer(ClipboardVault.wordsKey(), label(language), FileOutputStream(tmp)).use { it.write(bytes) }
+                FileOutputStream(tmp).use { file ->
+                    // The writer closes the file too; a second close does nothing
+                    SealedFile.writer(ClipboardVault.wordsKey(), label(language), file).use { it.write(bytes) }
+                }
+                // On the disk before it replaces the old file (a power cut leaves one of the two whole)
+                FileOutputStream(tmp, true).use { it.fd.sync() }
                 // Whole or not at all: a write cut short never replaces the old file
                 if (!tmp.renameTo(target)) tmp.delete()
             }

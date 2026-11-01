@@ -13,7 +13,8 @@ package ua.pysanka.typing
  *   only into a common word.
  * - Apostrophes: ', ’ and ʼ count as the same; the one typed is kept.
  * - The person's own words ([PersonalWords], when given): a list word used often is offered
- *   higher; a word of their own is offered once known and never corrected.
+ *   higher; a word of their own is offered once known and never corrected. Auto-correction goes
+ *   only into a list word (a learned word may itself be a typo typed twice).
  *
  * The case of what was typed is kept («Прив» → «Привіт», «ПРИВ» → «ПРИВІТ»).
  */
@@ -116,7 +117,7 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
         val best = ranked.firstOrNull()
         val second = ranked.getOrNull(1)?.value ?: 0.0
         val auto = best != null && !known && !hasDigit && lower.length >= AUTO_MIN_LENGTH &&
-            lower !in rejected && f(best.key) >= AUTO_MIN_FREQ &&
+            lower !in rejected && best.key in freq && f(best.key) >= AUTO_MIN_FREQ &&
             (!typed.first().isUpperCase() || f(best.key) >= AUTO_CAPITAL_MIN_FREQ) &&
             best.key.length in (lower.length - 1)..(lower.length + 1) &&
             isOneEditAway(lower, best.key) && best.value >= second * AUTO_MARGIN

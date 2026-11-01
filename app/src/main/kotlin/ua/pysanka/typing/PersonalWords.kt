@@ -50,18 +50,19 @@ class PersonalWords(private val max: Int = MAX_WORDS) {
             var script: Character.UnicodeScript? = null
             for (c in word) {
                 when {
+                    // Before letters: ʼ counts as a letter, of no alphabet
+                    c == '\'' || c == '-' || c in APOSTROPHES -> {}
                     c.isLetter() -> {
                         val s = Character.UnicodeScript.of(c.code)
                         if (script == null) script = s else if (s != script) return false
                     }
-                    c == '\'' || c == '-' || c in APOSTROPHES -> {}
                     else -> return false
                 }
             }
             return true
         }
 
-        /** Reads what [encode] wrote; throws [IOException] on anything else. */
+        /** Reads what [encode] wrote; throws [IOException] on anything else (a single odd word is skipped). */
         fun decode(bytes: ByteArray, max: Int = MAX_WORDS): PersonalWords {
             val out = PersonalWords(max)
             DataInputStream(ByteArrayInputStream(bytes)).use { input ->
@@ -73,9 +74,8 @@ class PersonalWords(private val max: Int = MAX_WORDS) {
                     val display = input.readUTF().takeIf { it.isNotEmpty() }
                     val count = input.readInt()
                     val day = input.readInt()
-                    if (key != key(key) || !isLearnable(key) || count !in 1..MAX_COUNT) throw IOException("Bad entry")
-                    if (display != null && key(display) != key) throw IOException("Bad entry")
-                    out.words[key] = Entry(count, display, day)
+                    if (key != key(key) || !isLearnable(key) || count !in 1..MAX_COUNT) return@repeat
+                    out.words[key] = Entry(count, display?.takeIf { key(it) == key }, day)
                 }
                 if (input.read() != -1) throw IOException("Trailing data")
             }
@@ -98,9 +98,11 @@ class PersonalWords(private val max: Int = MAX_WORDS) {
      */
     @Synchronized
     fun learn(word: String, insisted: Boolean, midSentence: Boolean, day: Int): Boolean {
-        if (!isLearnable(word)) return false
         val key = key(word)
-        val capital = midSentence && word != key && word.first().isUpperCase()
+        // The key too: small letters can be longer or different («İ»)
+        if (!isLearnable(word) || !isLearnable(key)) return false
+        // A name (Ярина), not a word in capitals (НАТО, or Caps Lock)
+        val capital = midSentence && word.first().isUpperCase() && word.drop(1).any { it.isLowerCase() }
         val e = words[key]
         if (e == null) {
             words[key] = Entry(if (insisted) KNOWN else 1, if (capital) normalized(word) else null, day)

@@ -12,6 +12,7 @@ class PersonalWordsTest : FunSpec({
     test("only things that look like words are learned") {
         PersonalWords.isLearnable("сонечко") shouldBe true
         PersonalWords.isLearnable("п'ятниця") shouldBe true
+        PersonalWords.isLearnable("пʼять") shouldBe true
         PersonalWords.isLearnable("будь-що") shouldBe true
         PersonalWords.isLearnable("а") shouldBe false
         PersonalWords.isLearnable("abc123") shouldBe false
@@ -29,6 +30,19 @@ class PersonalWordsTest : FunSpec({
         s.suggest("борщуля", 5, own = own).none { it.autoCorrect } shouldBe true
         s.isOwn("борщуля", own) shouldBe true
         s.isOwn("борщ", own) shouldBe false
+    }
+
+    test("auto-correction goes only into a list word, never into a learned one") {
+        val own = PersonalWords()
+        repeat(2) { own.learn("борщуля", insisted = false, midSentence = true, day = 1) }
+        s.suggest("борщул", 3, own = own).none { it.autoCorrect } shouldBe true
+    }
+
+    test("a word whose small letters are odd is not learned (and never spoils the file)") {
+        val own = PersonalWords()
+        own.learn("İstanbul", insisted = true, midSentence = true, day = 1) shouldBe false
+        own.learn("кава", insisted = true, midSentence = true, day = 1)
+        PersonalWords.decode(own.encode()).count("кава") shouldBe 2
     }
 
     test("a word the person insists on is known at once") {
@@ -53,6 +67,9 @@ class PersonalWordsTest : FunSpec({
         val other = PersonalWords()
         other.learn("Сонячно", insisted = true, midSentence = false, day = 1)
         s.suggest("сон", 1, own = other).map { it.word } shouldBe listOf("сонячно")
+        val caps = PersonalWords()
+        caps.learn("НАТО", insisted = true, midSentence = true, day = 1)
+        caps.display("нато") shouldBe null
     }
 
     test("undo and forget") {
