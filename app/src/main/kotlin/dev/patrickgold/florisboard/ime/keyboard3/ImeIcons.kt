@@ -23,6 +23,7 @@ object ImeIcons {
     val PysankaTextFromPhoto = flIcon("pysanka_text_from_photo")
     val PysankaTextFromCamera = flIcon("pysanka_text_from_camera")
     val PysankaAi = flIcon("pysanka_ai")
+    val PysankaFixLayout = flIcon("pysanka_fix_layout")
 
     val ArrowDown = flIcon("arrow_down")
     val ArrowLeft = flIcon("arrow_left")

@@ -149,7 +149,6 @@
     <string name="pysanka__ai__quick_action">AI editor</string>
     <string name="pysanka__ai__quick_action__tooltip">Edit the text with AI on the phone</string>
     <string name="pysanka__ai__not_here">The AI does not work in password fields, in incognito or where the app asks for no learning.</string>
-    <string name="pysanka__ai__too_long">The text is too long for the AI: select a part (up to 4000 characters).</string>
     <string name="pysanka__ai__no_model">The AI model is not downloaded yet. It works fully on the phone; download it once in the settings.</string>
     <string name="pysanka__ai__open_settings">Open AI settings</string>
     <string name="pysanka__ai__source">Text</string>
@@ -197,4 +196,25 @@
     <string name="pysanka__links__clean_summary">Removes tracking from links you copy (utm_…, fbclid, YouTube and Spotify “si”, X\'s “s” and “t” and similar), so they don\'t tell who shared them, where and when. The rest of the link stays the same; works on the phone.</string>
     <string name="pysanka__photo_history__added">Added to the clipboard history</string>
     <string name="pysanka__photo_history__button">Add a photo to the history</string>
+    <string name="pysanka__layout__quick_action">Fix layout</string>
+    <string name="pysanka__layout__quick_action__tooltip">Text typed on the wrong layout: "ghbdsn" → "привіт" (the selection or the last word)</string>
+    <string name="pysanka__ai__entry_label">Pysanka AI</string>
+    <string name="pysanka__ai__action_list">List</string>
+    <string name="pysanka__ai__action_table">Table</string>
+    <string name="pysanka__ai__action_notes">Tidy notes</string>
+    <string name="pysanka__ai__action_letter">Letter from a description</string>
+    <string name="pysanka__ai__action_replies">Reply options</string>
+    <string name="pysanka__ai__action_tone">How will it sound?</string>
+    <string name="pysanka__ai__action_redact">Hide personal data</string>
+    <string name="pysanka__ai__source_count">Text ({n} characters)</string>
+    <string name="pysanka__ai__stop">Stop</string>
+    <string name="pysanka__ai__cancel">Cancel</string>
+    <string name="pysanka__ai__working_part">Working… part {k} of {n}</string>
+    <string name="pysanka__ai__too_long_time">The text is long (about {n} thousand characters). On this phone about {limit} thousand fit in two minutes.</string>
+    <string name="pysanka__ai__too_long_whole">This action takes up to about {limit} thousand characters at once; the text has about {n} thousand.</string>
+    <string name="pysanka__ai__take_first">Use the first {n} thousand (about {s} s)</string>
+    <string name="pysanka__ai__done_in">Done in {s} s ({where})</string>
+    <string name="pysanka__ai__fact_removed">Points removed because their numbers or names are not in the text: {n}</string>
+    <string name="pysanka__ai__fact_unconfirmed">The summary could not be confirmed against the text: check it before using.</string>
+    <string name="pysanka__ai__too_long">The text is too long for the AI: select a part (up to 60 000 characters).</string>
 </resources>

@@ -94,23 +94,25 @@ object AiEngine {
         Unit
     }
 
-    /** Runs [action] on [text]; [target] is the language for translation. Returns only the new text. */
-    suspend fun run(context: Context, action: AiAction, text: String, target: AiLanguage): String = mutex.withLock {
+    /**
+     * One answer of the model: [system] instructions, [user] message. Returns the raw answer (the
+     * caller cleans it). Stopped by [cancel]; the caller checks for that.
+     */
+    suspend fun generate(context: Context, system: String, user: String, temperature: Double, maxOutput: Int): String = mutex.withLock {
         withContext(Dispatchers.Default) {
             val e = engineLocked(context.applicationContext)
             e.createConversation(
                 ConversationConfig(
-                    systemInstruction = Contents.of(AiPrompts.system(action, target)),
-                    samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = action.temperature),
+                    systemInstruction = Contents.of(system),
+                    samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = temperature),
                     // No hidden "thinking": it would use up the output before the text is written
                     thinkingConfig = ThinkingConfig(enableThinking = false),
-                    // About 4000 characters of Ukrainian are up to ~2000 tokens, more after translation
-                    maxOutputToken = 4096,
+                    maxOutputToken = maxOutput,
                 ),
             ).use { conv ->
                 synchronized(runningLock) { running = conv }
                 try {
-                    AiPrompts.clean(conv.sendMessage(AiPrompts.user(action, text, target)).toString(), text)
+                    conv.sendMessage(user).toString()
                 } finally {
                     // Before the conversation is closed, so cancel() never reaches a closed one
                     synchronized(runningLock) { running = null }

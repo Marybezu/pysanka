@@ -69,7 +69,16 @@ class AiEditorActivity : ComponentActivity() {
         private const val EXTRA_CAN_REPLACE = "can_replace"
         private const val EXTRA_SECURE = "secure"
 
-        fun intent(context: Context, text: String, preset: AiAction?, receiver: ResultReceiver?, canReplace: Boolean): Intent {
+        private const val EXTRA_FOR_RESULT = "for_result"
+
+        /**
+         * [receiver]: where the answer goes back to the keyboard; or [forResult]: the answer is
+         * this screen's result (for Pysanka's own entry from the selection menu).
+         */
+        fun intent(
+            context: Context, text: String, preset: AiAction?, receiver: ResultReceiver?, canReplace: Boolean,
+            forResult: Boolean = false,
+        ): Intent {
             val secure = runCatching {
                 val prefs by dev.patrickgold.florisboard.app.FlorisPreferenceStore
                 prefs.pysankaOcr.blockScreenshots.get()
@@ -80,7 +89,9 @@ class AiEditorActivity : ComponentActivity() {
                 .putExtra(EXTRA_RECEIVER, receiver)
                 .putExtra(EXTRA_CAN_REPLACE, canReplace)
                 .putExtra(EXTRA_SECURE, secure)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                .putExtra(EXTRA_FOR_RESULT, forResult)
+                // A result comes back only within the same task
+                .apply { if (!forResult) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP) }
         }
     }
 
@@ -90,10 +101,11 @@ class AiEditorActivity : ComponentActivity() {
         // The keyboard's setting, passed along (this process does not read settings)
         if (intent.getBooleanExtra(EXTRA_SECURE, false)) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         if (Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(false)
-        val text = intent.getStringExtra(EXTRA_TEXT).orEmpty().take(AiBridge.MAX_CHARS)
+        val text = intent.getStringExtra(EXTRA_TEXT).orEmpty().take(AiJob.HARD_MAX)
         val preset = intent.getStringExtra(EXTRA_PRESET)?.let { n -> AiAction.entries.firstOrNull { it.name == n } }
         val receiver: ResultReceiver? = androidx.core.content.IntentCompat.getParcelableExtra(intent, EXTRA_RECEIVER, ResultReceiver::class.java)
         val canReplace = intent.getBooleanExtra(EXTRA_CAN_REPLACE, false)
+        val forResult = intent.getBooleanExtra(EXTRA_FOR_RESULT, false) && callingActivity?.packageName == packageName
         setContent {
             ProvideLocalizedResources(this, appName = R.string.app_name) {
                 FlorisAppTheme(theme = AppTheme.AUTO) {
@@ -101,9 +113,17 @@ class AiEditorActivity : ComponentActivity() {
                         AiEditorScreen(
                             original = text,
                             preset = preset,
-                            replaceLabel = if (receiver == null) null else if (canReplace) R.string.pysanka__ai__replace else R.string.pysanka__ai__insert,
+                            replaceLabel = when {
+                                receiver == null && !forResult -> null
+                                canReplace -> R.string.pysanka__ai__replace
+                                else -> R.string.pysanka__ai__insert
+                            },
                             onUse = { result ->
-                                receiver?.send(RESULT_TEXT, Bundle().apply { putString(EXTRA_TEXT, result) })
+                                if (forResult) {
+                                    setResult(RESULT_OK, Intent().putExtra(EXTRA_TEXT, result))
+                                } else {
+                                    receiver?.send(RESULT_TEXT, Bundle().apply { putString(EXTRA_TEXT, result) })
+                                }
                                 finish()
                             },
                             close = { finish() },
@@ -128,8 +148,10 @@ class AiEditorActivity : ComponentActivity() {
 
 private sealed interface AiStage {
     data object Idle : AiStage
-    data object Working : AiStage
-    data class Done(val text: String) : AiStage
+    /** Longer than fits in the time budget (or than a whole-text action takes). */
+    data class TooLong(val limit: Int, val whole: Boolean) : AiStage
+    data class Working(val part: Int, val parts: Int) : AiStage
+    data class Done(val output: AiJob.Output) : AiStage
     data class Failed(val reason: String) : AiStage
 }
 
@@ -144,17 +166,17 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
     var language by rememberSaveable { mutableStateOf(AiLanguage.EN) }
     var stage by remember { mutableStateOf<AiStage>(AiStage.Idle) }
     var result by rememberSaveable { mutableStateOf("") }
+    var job by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     // Start loading the model while the person chooses what to do
     if (installed) androidx.compose.runtime.LaunchedEffect(Unit) { runCatching { AiEngine.warmUp(context) } }
 
-    fun run() {
-        if (source.isBlank()) return
-        stage = AiStage.Working
-        scope.launch {
+    fun start(text: String) {
+        stage = AiStage.Working(1, 1)
+        job = scope.launch {
             stage = try {
-                val out = AiEngine.run(context, action, source.take(AiBridge.MAX_CHARS), language)
-                result = out
-                if (out.isBlank()) AiStage.Failed("empty") else AiStage.Done(out)
+                val out = AiJob.run(context, action, text, language) { part, parts -> stage = AiStage.Working(part, parts) }
+                result = out.text
+                if (out.text.isBlank()) AiStage.Failed("empty") else AiStage.Done(out)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
@@ -162,6 +184,25 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
             }
         }
     }
+
+    fun run() {
+        if (source.isBlank()) return
+        val limit = AiJob.limit(context, action)
+        if (source.length > limit) {
+            stage = AiStage.TooLong(limit, whole = action.kind == AiAction.Kind.WHOLE || action.kind == AiAction.Kind.ADVICE)
+            return
+        }
+        start(source)
+    }
+
+    fun stop() {
+        AiEngine.cancel()
+        job?.cancel()
+        job = null
+        stage = AiStage.Idle
+    }
+
+    fun thousands(n: Int) = ((n + 500) / 1000).toString()
 
     Column(
         Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()
@@ -177,33 +218,66 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
             TextButton(onClick = close) { Text(stringRes(R.string.pysanka__ocr__close)) }
             return@Column
         }
+        val busy = stage is AiStage.Working
         OutlinedTextField(
             value = source,
-            onValueChange = { source = it.take(AiBridge.MAX_CHARS); if (stage is AiStage.Done) stage = AiStage.Idle },
-            label = { Text(stringRes(R.string.pysanka__ai__source)) },
+            onValueChange = { source = it.take(AiJob.HARD_MAX); if (stage !is AiStage.Working) stage = AiStage.Idle },
+            enabled = !busy,
+            label = { Text(stringRes(R.string.pysanka__ai__source_count, "n" to source.length.toString())) },
             modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp, max = 260.dp),
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (a in AiAction.entries) {
-                FilterChip(selected = a == action, onClick = { action = a }, label = { Text(stringRes(a.label)) })
+                FilterChip(
+                    selected = a == action, enabled = !busy,
+                    onClick = { action = a; if (stage !is AiStage.Working) stage = AiStage.Idle },
+                    label = { Text(stringRes(a.label)) },
+                )
             }
         }
         if (action == AiAction.TRANSLATE) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (l in AiLanguage.entries) {
-                    FilterChip(selected = l == language, onClick = { language = l }, label = { Text(stringRes(l.label)) })
+                    FilterChip(selected = l == language, enabled = !busy, onClick = { language = l }, label = { Text(stringRes(l.label)) })
                 }
             }
         }
-        Button(onClick = { run() }, enabled = stage !is AiStage.Working && source.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
-            Text(stringRes(R.string.pysanka__ai__run))
+        if (busy) {
+            OutlinedButton(onClick = { stop() }, modifier = Modifier.fillMaxWidth()) { Text(stringRes(R.string.pysanka__ai__stop)) }
+        } else {
+            Button(onClick = { run() }, enabled = source.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+                Text(stringRes(R.string.pysanka__ai__run))
+            }
         }
         when (val s = stage) {
             AiStage.Idle -> {}
-            AiStage.Working -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            is AiStage.TooLong -> {
+                Text(
+                    stringRes(
+                        if (s.whole) R.string.pysanka__ai__too_long_whole else R.string.pysanka__ai__too_long_time,
+                        "n" to thousands(source.length), "limit" to thousands(s.limit),
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                val first = TextChunks.prefix(source, s.limit)
+                Button(onClick = { start(first) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        stringRes(
+                            R.string.pysanka__ai__take_first,
+                            "n" to thousands(first.length), "s" to AiJob.estimate(context, action, first.length).toString(),
+                        ),
+                    )
+                }
+                TextButton(onClick = { stage = AiStage.Idle }) { Text(stringRes(R.string.pysanka__ai__cancel)) }
+            }
+            is AiStage.Working -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CircularProgressIndicator()
                 Text(
-                    stringRes(if (AiEngine.loaded) R.string.pysanka__ai__working else R.string.pysanka__ai__loading),
+                    when {
+                        !AiEngine.loaded -> stringRes(R.string.pysanka__ai__loading)
+                        s.parts > 1 -> stringRes(R.string.pysanka__ai__working_part, "k" to s.part.toString(), "n" to s.parts.toString())
+                        else -> stringRes(R.string.pysanka__ai__working)
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -219,8 +293,18 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
                     label = { Text(stringRes(R.string.pysanka__ai__result)) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp),
                 )
+                Text(
+                    stringRes(R.string.pysanka__ai__done_in, "s" to s.output.seconds.toString(), "where" to s.output.backend),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                if (s.output.removed > 0 && !s.output.unconfirmed) {
+                    Text(stringRes(R.string.pysanka__ai__fact_removed, "n" to s.output.removed.toString()), style = MaterialTheme.typography.bodySmall)
+                }
+                if (s.output.unconfirmed) {
+                    Text(stringRes(R.string.pysanka__ai__fact_unconfirmed), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    if (replaceLabel != null) {
+                    if (replaceLabel != null && action.replaces) {
                         Button(onClick = { onUse(result) }, enabled = result.isNotBlank(), modifier = Modifier.weight(1f)) {
                             Text(stringRes(replaceLabel))
                         }

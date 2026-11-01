@@ -394,6 +394,7 @@ class ImeController(
                 ImeActions.Redo -> state.editor.performRedo()
                 ImeActions.Settings -> FlorisImeService.launchSettings()
                 ImeActions.PysankaAi -> ua.pysanka.ai.AiBridge.openFromKeyboard(state.editor)
+                ImeActions.PysankaFixLayout -> state.editor.pysankaFixLayout()
                 ImeActions.PysankaTextFromPhoto, ImeActions.PysankaTextFromCamera -> {
                     ua.pysanka.ocr.PendingInsert.opened(state.editor.info.packageName, state.editor.info.base.fieldId)
                     ua.pysanka.ocr.openTextFromImage(

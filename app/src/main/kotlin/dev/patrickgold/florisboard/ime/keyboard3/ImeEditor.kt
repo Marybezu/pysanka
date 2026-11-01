@@ -95,6 +95,39 @@ open class ImeEditor(
     }
 
     /**
+     * Pysanka: text typed on the wrong layout, turned into what was meant: the selection, or else
+     * the word just before the cursor (back to the last space). Nothing leaves the keyboard.
+     */
+    fun pysankaFixLayout(): Boolean {
+        val ic = ic.get() ?: return false
+        ic.beginBatchEdit()
+        try {
+            ic.finishComposingText()
+            val selected = ic.getSelectedText(0)?.toString()
+            if (!selected.isNullOrEmpty()) {
+                val fixed = ua.pysanka.typing.LayoutSwitch.convert(selected)
+                if (fixed == selected) return false
+                // Keep it selected, so a second tap turns it back
+                val et = ic.getExtractedText(android.view.inputmethod.ExtractedTextRequest(), 0)
+                val start = et?.let { it.startOffset + minOf(it.selectionStart, it.selectionEnd) }
+                ic.commitText(fixed, 1)
+                if (start != null && start >= 0) ic.setSelection(start, start + fixed.length)
+                return true
+            }
+            val before = ic.getTextBeforeCursor(64, 0)?.toString() ?: return false
+            // The last word: back to whitespace (punctuation keys are letters on the other layout)
+            val word = before.takeLastWhile { !it.isWhitespace() }
+            if (word.isEmpty()) return false
+            val fixed = ua.pysanka.typing.LayoutSwitch.convert(word)
+            if (fixed == word) return false
+            ic.deleteSurroundingText(word.length, 0)
+            return ic.commitText(fixed, 1)
+        } finally {
+            ic.endBatchEdit()
+        }
+    }
+
+    /**
      * Pysanka: the text the AI editor works on: the selection, or else the whole field (up to
      * [limit] + 1 characters, so a longer text can be told apart), with where the selection was
      * (absolute offsets, -1 if the app does not say). Null if the field cannot be read.

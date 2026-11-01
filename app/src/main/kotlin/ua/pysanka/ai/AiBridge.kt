@@ -23,8 +23,8 @@ import ua.pysanka.privacy.FieldPrivacy
  * Never for password fields, incognito or fields that ask for no learning.
  */
 object AiBridge {
-    /** The longest text the editor takes (the small model handles about this much well). */
-    const val MAX_CHARS = 4000
+    /** The longest text the editor takes (a long one is done in parts; see [AiJob]). */
+    const val MAX_CHARS = AiJob.HARD_MAX
 
     /** From pressing "Replace" to the keyboard being back in the field: seconds, not minutes. */
     private const val MAX_AGE_MS = 60 * 1000L

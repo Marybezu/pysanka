@@ -157,6 +157,25 @@
             android:theme="@style/FlorisAppTheme"
             android:label="@string/pysanka__ai__title" />
 
+        <!-- Pysanka: the AI editor from "Share" and the text selection menu of any app (only plain text) -->
+        <activity
+            android:name="ua.pysanka.ai.AiEntryActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:label="@string/pysanka__ai__entry_label">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
+
         <!-- Pysanka: text from a photo or the camera; its own task, not in recent apps -->
         <activity
             android:name="ua.pysanka.ocr.TextFromImageActivity"

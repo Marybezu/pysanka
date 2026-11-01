@@ -148,7 +148,6 @@
     <string name="pysanka__ai__quick_action">ШІ-редактор</string>
     <string name="pysanka__ai__quick_action__tooltip">Редагувати текст ШІ на телефоні</string>
     <string name="pysanka__ai__not_here">ШІ не працює в полях пароля, в інкогніто й там, де застосунок просить не вчитися.</string>
-    <string name="pysanka__ai__too_long">Текст задовгий для ШІ: виділіть частину (до 4000 знаків).</string>
     <string name="pysanka__ai__no_model">Модель ШІ ще не завантажено. Вона працює повністю на телефоні; завантажте її один раз у налаштуваннях.</string>
     <string name="pysanka__ai__open_settings">Відкрити налаштування ШІ</string>
     <string name="pysanka__ai__source">Текст</string>
@@ -196,4 +195,25 @@
     <string name="pysanka__links__clean_summary">Прибирає стеження з посилань, які ви копіюєте (utm_…, fbclid, «si» YouTube і Spotify, «s» і «t» в X тощо), щоб вони не казали, хто, де й коли ними поділився. Решта посилання не змінюється; працює на телефоні.</string>
     <string name="pysanka__photo_history__added">Додано в історію буфера</string>
     <string name="pysanka__photo_history__button">Додати фото в історію</string>
+    <string name="pysanka__layout__quick_action">Виправити розкладку</string>
+    <string name="pysanka__layout__quick_action__tooltip">Набране не тією розкладкою: «ghbdsn» → «привіт» (виділене або останнє слово)</string>
+    <string name="pysanka__ai__entry_label">Писанка ШІ</string>
+    <string name="pysanka__ai__action_list">Список</string>
+    <string name="pysanka__ai__action_table">Таблиця</string>
+    <string name="pysanka__ai__action_notes">Упорядкувати нотатки</string>
+    <string name="pysanka__ai__action_letter">Лист з опису</string>
+    <string name="pysanka__ai__action_replies">Варіанти відповіді</string>
+    <string name="pysanka__ai__action_tone">Як це прозвучить?</string>
+    <string name="pysanka__ai__action_redact">Приховати особисте</string>
+    <string name="pysanka__ai__source_count">Текст ({n} знаків)</string>
+    <string name="pysanka__ai__stop">Зупинити</string>
+    <string name="pysanka__ai__cancel">Скасувати</string>
+    <string name="pysanka__ai__working_part">Працюю… частина {k} з {n}</string>
+    <string name="pysanka__ai__too_long_time">Текст довгий (≈{n} тис. знаків). На цьому телефоні за дві хвилини вкладається ≈{limit} тис.</string>
+    <string name="pysanka__ai__too_long_whole">Ця дія бере за раз до ≈{limit} тис. знаків, а в тексті ≈{n} тис.</string>
+    <string name="pysanka__ai__take_first">Взяти перші {n} тис. (≈{s} с)</string>
+    <string name="pysanka__ai__done_in">Готово за {s} с ({where})</string>
+    <string name="pysanka__ai__fact_removed">Прибрано пунктів, чиїх чисел чи назв немає в тексті: {n}</string>
+    <string name="pysanka__ai__fact_unconfirmed">Підсумок не вдалося звірити з текстом: перевірте його, перш ніж використати.</string>
+    <string name="pysanka__ai__too_long">Текст задовгий для ШІ: виділіть частину (до 60 000 знаків).</string>
 </resources>

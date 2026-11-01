@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.keyboard3.ui
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.SwapHoriz
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
@@ -177,6 +178,7 @@ fun staticIcon3(value: K3Descriptor, context: Context): ImageVector? {
         ImeIcons.PysankaTextFromPhoto -> Icons.Default.DocumentScanner
         ImeIcons.PysankaTextFromCamera -> Icons.Default.PhotoCamera
         ImeIcons.PysankaAi -> Icons.Default.AutoAwesome
+        ImeIcons.PysankaFixLayout -> Icons.Default.SwapHoriz
         else -> null
     }
 }
