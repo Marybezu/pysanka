@@ -36,7 +36,6 @@ import dev.patrickgold.florisboard.ime.media.emoji.FlorisEmojiCompat
 import dev.patrickgold.florisboard.ime.nlp.NlpManager
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingManager
 import dev.patrickgold.florisboard.ime.theme.ThemeManager
-import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.crashutility.CrashUtility
 import dev.patrickgold.florisboard.lib.devtools.Flog
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
@@ -76,7 +75,6 @@ class FlorisApplication : Application() {
     private val scope = CoroutineScope(Dispatchers.Default)
     val preferenceStoreLoaded = MutableStateFlow(false)
 
-    val cacheManager = lazy { CacheManager(this) }
     val clipboardManager = lazy { ClipboardManager(this) }
     val editorInstance = lazy { EditorInstance(this) }
     val extensionManager = lazy { ExtensionManager(this) }
@@ -171,8 +169,6 @@ private tailrec fun Context.florisApplication(): FlorisApplication {
 }
 
 fun Context.appContext() = lazyOf(this.florisApplication())
-
-fun Context.cacheManager() = this.florisApplication().cacheManager
 
 fun Context.clipboardManager() = this.florisApplication().clipboardManager
 

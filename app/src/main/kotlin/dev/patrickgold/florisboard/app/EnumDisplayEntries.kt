@@ -18,8 +18,6 @@ package dev.patrickgold.florisboard.app
 
 import androidx.compose.runtime.Composable
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.app.settings.theme.DisplayKbdAfterDialogs
-import dev.patrickgold.florisboard.app.settings.theme.SnyggLevel
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
 import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.ime.input.CapitalizationBehavior
@@ -45,9 +43,7 @@ import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.ime.window.ImeWindowMode
 import dev.patrickgold.jetpref.datastore.ui.ListPreferenceEntry
 import dev.patrickgold.jetpref.datastore.ui.listPrefEntries
-import dev.patrickgold.jetpref.material.ui.ColorRepresentation
 import org.florisboard.lib.compose.stringRes
-import org.florisboard.lib.kotlin.curlyFormat
 import kotlin.reflect.KClass
 
 private const val DEFAULT = ""
@@ -126,50 +122,6 @@ private val ENUM_DISPLAY_ENTRIES = mapOf<Pair<KClass<*>, String>, @Composable ()
                 key = ClipboardSyncBehavior.ALL_EVENTS,
                 label = stringRes(R.string.enum__clipboard_sync_behavior__all_events),
                 description = stringRes(R.string.enum__clipboard_sync_behavior__all_events__description),
-            )
-        }
-    },
-    ColorRepresentation::class to DEFAULT to {
-        listPrefEntries {
-            entry(
-                key = ColorRepresentation.HEX,
-                label = stringRes(R.string.enum__color_representation__hex),
-                description = stringRes(R.string.general__example_given).curlyFormat("example" to "#4caf50ff"),
-                showDescriptionOnlyIfSelected = true,
-            )
-            entry(
-                key = ColorRepresentation.RGB,
-                label = stringRes(R.string.enum__color_representation__rgb),
-                description = stringRes(R.string.general__example_given).curlyFormat("example" to "rgba(76, 175, 80, 1.0)"),
-                showDescriptionOnlyIfSelected = true,
-            )
-            entry(
-                key = ColorRepresentation.HSV,
-                label = stringRes(R.string.enum__color_representation__hsv),
-                description = stringRes(R.string.general__example_given).curlyFormat("example" to "hsva(122, 56, 68, 1.0)"),
-                showDescriptionOnlyIfSelected = true,
-            )
-        }
-    },
-    DisplayKbdAfterDialogs::class to DEFAULT to {
-        listPrefEntries {
-            entry(
-                key = DisplayKbdAfterDialogs.ALWAYS,
-                label = stringRes(R.string.enum__display_kbd_after_dialogs__always),
-                description = stringRes(R.string.enum__display_kbd_after_dialogs__always__description),
-                showDescriptionOnlyIfSelected = true,
-            )
-            entry(
-                key = DisplayKbdAfterDialogs.NEVER,
-                label = stringRes(R.string.enum__display_kbd_after_dialogs__never),
-                description = stringRes(R.string.enum__display_kbd_after_dialogs__never__description),
-                showDescriptionOnlyIfSelected = true,
-            )
-            entry(
-                key = DisplayKbdAfterDialogs.REMEMBER,
-                label = stringRes(R.string.enum__display_kbd_after_dialogs__remember),
-                description = stringRes(R.string.enum__display_kbd_after_dialogs__remember__description),
-                showDescriptionOnlyIfSelected = true,
             )
         }
     },
@@ -492,28 +444,6 @@ private val ENUM_DISPLAY_ENTRIES = mapOf<Pair<KClass<*>, String>, @Composable ()
                 key = SmartbarLayout.SUGGESTIONS_ACTIONS_EXTENDED,
                 label = stringRes(R.string.enum__smartbar_layout__suggestions_actions_extended),
                 description = stringRes(R.string.enum__smartbar_layout__suggestions_actions_extended__description),
-            )
-        }
-    },
-    SnyggLevel::class to DEFAULT to {
-        listPrefEntries {
-            entry(
-                key = SnyggLevel.BASIC,
-                label = stringRes(R.string.enum__snygg_level__basic),
-                description = stringRes(R.string.enum__snygg_level__basic__description),
-                showDescriptionOnlyIfSelected = true,
-            )
-            entry(
-                key = SnyggLevel.ADVANCED,
-                label = stringRes(R.string.enum__snygg_level__advanced),
-                description = stringRes(R.string.enum__snygg_level__advanced__description),
-                showDescriptionOnlyIfSelected = true,
-            )
-            entry(
-                key = SnyggLevel.DEVELOPER,
-                label = stringRes(R.string.enum__snygg_level__developer),
-                description = stringRes(R.string.enum__snygg_level__developer__description),
-                showDescriptionOnlyIfSelected = true,
             )
         }
     },

@@ -220,6 +220,9 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
                 val shapeProbability = calcGaussianProbability(shapeDistance, 0.0f, SHAPE_STD)
                 val locationProbability = calcGaussianProbability(locationDistance, 0.0f, LOCATION_STD * radius)
                 val frequency = 255f * nlpManager.getFrequencyForWord(currentSubtype!!, word).toFloat()
+                // Pysanka: a word with no frequency is not a word here (a learned word forgotten,
+                // or not to be shown in this field)
+                if (frequency <= 0f) continue
                 val confidence = 1.0f / (shapeProbability * locationProbability * frequency)
 
                 var candidateDistanceSortedIndex = 0

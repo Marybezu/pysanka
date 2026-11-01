@@ -29,5 +29,4 @@ object ExtensionDefaults {
         extensionName: String = System.currentTimeMillis().toString(),
     ) = ID_LOCAL_TEMPLATE.curlyFormat("groupName" to groupName, "extensionName" to extensionName)
 
-    fun createFlexName(id: String) = "$id.$FILE_EXTENSION"
 }

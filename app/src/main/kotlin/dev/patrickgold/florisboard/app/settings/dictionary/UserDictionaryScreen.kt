@@ -20,6 +20,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,6 +33,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,13 +43,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
-import dev.patrickgold.florisboard.app.settings.theme.DialogProperty
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MAX
 import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MIN
@@ -401,5 +403,28 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 }
             }
         }
+    }
+}
+
+// Pysanka: from the theme editor, which was cut
+@Composable
+private fun DialogProperty(
+    text: String,
+    modifier: Modifier = Modifier,
+    trailingIconTitle: @Composable () -> Unit = { },
+    content: @Composable () -> Unit,
+) {
+    Column(modifier = modifier.padding(bottom = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 8.dp),
+                text = text,
+                style = MaterialTheme.typography.titleMedium,
+            )
+            trailingIconTitle()
+        }
+        content()
     }
 }

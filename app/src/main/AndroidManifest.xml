@@ -79,20 +79,7 @@
                      FlorisBoard installed alongside never sees Pysanka's links (nor the other way) -->
                 <data android:scheme="ui" android:host="pysanka" android:pathPrefix="/" />
             </intent-filter>
-            <intent-filter android:label="Import Extension">
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:scheme="content"/>
-                <!-- Pysanka: only extension files (not every unknown file, so it stays out of other choosers) -->
-                <data android:mimeType="application/vnd.florisboard.extension+zip"/>
-            </intent-filter>
-            <intent-filter android:label="Import Extension">
-                <action android:name="android.intent.action.SEND"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <!-- The file comes as an extra here; FlorisAppActivity takes only content:// -->
-                <!-- Pysanka: only extension files (not every unknown file, so it stays out of other choosers) -->
-                <data android:mimeType="application/vnd.florisboard.extension+zip"/>
-            </intent-filter>
+            <!-- Pysanka: no "Import Extension" from files: extensions were cut -->
         </activity>
 
         <!-- Using an activity alias to disable/enable the app icon in the launcher -->

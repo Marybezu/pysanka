@@ -16,10 +16,13 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,6 +40,10 @@ import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCut
+import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.OpenInFull
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Email
@@ -101,6 +108,8 @@ fun AiPanel(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
     val panel = remember { AiBridge.takePanel() }
+    // «Моїм стилем» only once the person added samples (the file is not read here)
+    val hasStyle = remember { StyleSamples.has(context) }
 
     fun closePanel() {
         keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
@@ -199,7 +208,12 @@ fun AiPanel(modifier: Modifier = Modifier) {
         val t = panel.taken
         // Replies are never put in place of the text
         val taken = if (action == AiAction.REPLIES) t.copy(mode = AiBridge.Mode.INSERT) else t
-        AiBridge.openEditor(panel.info, taken, input(action), action)
+        // An answer already written goes along, so the work is not lost
+        // (not a very long text with its answer: together they could be too big to hand over)
+        val text = input(action)
+        val done = (stage as? PanelStage.Done)?.takeIf { it.action == action && text.length + it.text.length <= HANDOVER_MAX }
+            ?.let { AiJob.Output(it.text, it.removed, it.unconfirmed, it.seconds, it.backend) }
+        AiBridge.openEditor(panel.info, taken, text, action, done, target)
     }
 
     AiPanelView(
@@ -216,6 +230,7 @@ fun AiPanel(modifier: Modifier = Modifier) {
         intoEmptyField = panel.taken.mode == AiBridge.Mode.INSERT,
         canExpand = panel.canExpand,
         canRun = { input(it).isNotBlank() },
+        available = { it != AiAction.MY_STYLE || hasStyle },
         modifier = modifier.fillMaxWidth().height(FlorisImeSizing.imeUiHeight()),
         headerHeight = FlorisImeSizing.smartbarHeight,
         actions = object : PanelActions {
@@ -274,6 +289,8 @@ internal fun AiPanelView(
     intoEmptyField: Boolean,
     canExpand: Boolean,
     canRun: (AiAction) -> Boolean,
+    /** Whether an action is shown at all («Моїм стилем» only with samples). */
+    available: (AiAction) -> Boolean = { true },
     modifier: Modifier,
     headerHeight: Dp,
     actions: PanelActions,
@@ -309,7 +326,7 @@ internal fun AiPanelView(
                 }
                 PanelStage.Menu -> Column(Modifier.fillMaxSize()) {
                     Note(stringRes(note))
-                    val shown = if (more) AiAction.entries else MAIN
+                    val shown = (if (more) AiAction.entries else MAIN).filter(available)
                     // At least 112 dp a tile (three across on a phone): narrower, longer words broke in the
                     // middle («Граматик-а»), above all with large text
                     LazyVerticalGrid(columns = GridCells.Adaptive(112.dp), modifier = Modifier.fillMaxWidth().weight(1f)) {
@@ -365,7 +382,7 @@ internal fun AiPanelView(
 
 /** The actions shown first; "More" shows all. */
 private val MAIN = listOf(
-    AiAction.FIX, AiAction.FRIENDLY, AiAction.FORMAL, AiAction.SHORTER,
+    AiAction.FIX, AiAction.MY_STYLE, AiAction.FRIENDLY, AiAction.FORMAL, AiAction.SHORTER,
     AiAction.REPLIES, AiAction.TONE, AiAction.TRANSLATE, AiAction.RUSSISMS,
     AiAction.SUMMARY, AiAction.LIST, AiAction.TABLE,
 )
@@ -386,6 +403,7 @@ private fun icon(action: AiAction): ImageVector = when (action) {
     AiAction.REPLIES -> Icons.Default.QuestionAnswer
     AiAction.TONE -> Icons.Default.TheaterComedy
     AiAction.REDACT -> Icons.Default.VisibilityOff
+    AiAction.MY_STYLE -> Icons.Default.Face
 }
 
 internal sealed interface PanelStage {
@@ -431,6 +449,26 @@ private fun Tile(icon: ImageVector, label: String, enabled: Boolean = true, onCl
             SnyggIcon(imageVector = icon)
             SnyggText(FlorisImeUi.SmartbarActionTileText.elementName, text = label)
         }
+    }
+}
+
+/** A quiet action as an icon: its name is read out, and shown on a long press. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun ActionIcon(icon: ImageVector, label: String, onClick: () -> Unit) {
+    val context = LocalContext.current
+    SnyggBox(
+        FlorisImeUi.ClipboardHeaderButton.elementName,
+        modifier = Modifier.size(48.dp),
+        clickAndSemanticsModifier = Modifier.combinedClickable(
+            role = androidx.compose.ui.semantics.Role.Button,
+            onClickLabel = label,
+            onLongClick = { android.widget.Toast.makeText(context, label, android.widget.Toast.LENGTH_SHORT).show() },
+            onClick = onClick,
+        ),
+        contentAlignment = Alignment.Center,
+    ) {
+        SnyggIcon(imageVector = icon, contentDescription = label, modifier = Modifier.size(22.dp))
     }
 }
 
@@ -515,20 +553,28 @@ private fun Done(
                 }
             },
         )
-        FlowRow(Modifier.fillMaxWidth()) {
-            // Replies are put in by tapping one
-            if (replaceLabel != null && replies == null) {
-                Chip(stringRes(replaceLabel), primary = true) { onPlace(s.text, s.action == AiAction.REPLIES) }
+        // One tidy row: the quieter actions as icons on the left, the main one on the right
+        Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            val primary = replaceLabel != null && replies == null
+            if (primary) ActionIcon(Icons.Default.ContentCopy, stringRes(R.string.pysanka__ocr__copy), onCopy)
+            ActionIcon(Icons.Default.Refresh, stringRes(R.string.pysanka__ai__again), onAgain)
+            if (onChange != null) ActionIcon(Icons.Default.EditNote, stringRes(R.string.pysanka__ai__change), onChange)
+            if (onExpand != null) ActionIcon(Icons.Default.OpenInFull, stringRes(R.string.pysanka__ai__expand), onExpand)
+            Spacer(Modifier.weight(1f))
+            // Replies are put in by tapping one; advice is only copied
+            if (primary) {
+                Chip(stringRes(replaceLabel!!), primary = true) { onPlace(s.text, s.action == AiAction.REPLIES) }
+            } else {
+                Chip(stringRes(R.string.pysanka__ocr__copy), primary = true, onClick = onCopy)
             }
-            Chip(stringRes(R.string.pysanka__ocr__copy), primary = replaceLabel == null, onClick = onCopy)
-            Chip(stringRes(R.string.pysanka__ai__again), onClick = onAgain)
-            if (onChange != null) Chip(stringRes(R.string.pysanka__ai__change), onClick = onChange)
-            if (onExpand != null) Chip(stringRes(R.string.pysanka__ai__expand), onClick = onExpand)
         }
     }
 }
 
 private const val WARM_DELAY_MS = 1500L
+
+/** At most this many characters of text and answer together go to the editor on "Expand". */
+private const val HANDOVER_MAX = 80_000
 
 /** The panel's connection to [AiService], from opening to closing the panel. */
 private class AiLink(

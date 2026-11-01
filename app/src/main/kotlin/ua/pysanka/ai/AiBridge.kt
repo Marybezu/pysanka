@@ -92,8 +92,12 @@ object AiBridge {
      * "Expand" in the panel: the full editor on [text] (the field's text, or what the panel made of
      * it), its answer going back to the field as from the panel.
      */
-    fun openEditor(info: FlorisEditorInfo, taken: Taken, text: String, preset: AiAction) {
-        open(fieldOf(info), taken, text, preset)
+    /** [done]: an answer the panel already has, shown at once. */
+    fun openEditor(
+        info: FlorisEditorInfo, taken: Taken, text: String, preset: AiAction,
+        done: AiJob.Output? = null, language: AiLanguage? = null,
+    ) {
+        open(fieldOf(info), taken, text, preset, done, language)
     }
 
     /**
@@ -109,7 +113,7 @@ object AiBridge {
     }
 
     @Synchronized
-    private fun open(field: Field, taken: Taken, text: String, preset: AiAction) {
+    private fun open(field: Field, taken: Taken, text: String, preset: AiAction, done: AiJob.Output? = null, language: AiLanguage? = null) {
         // A new session: an answer from an editor opened earlier is not taken for this one
         val session = ++sessions
         target = Target(field, taken, session)
@@ -117,6 +121,8 @@ object AiBridge {
         FlorisImeService.pysankaLaunch { context ->
             AiEditorActivity.intent(
                 context, text, preset, receiver { result -> set(session, result) }, canReplace = taken.mode != Mode.INSERT,
+                done = done,
+                target = language,
             )
         }
     }

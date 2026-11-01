@@ -71,6 +71,8 @@ class AiEditorActivity : ComponentActivity() {
 
         private const val EXTRA_FOR_RESULT = "for_result"
         private const val EXTRA_LANGUAGE = "language"
+        private const val EXTRA_DONE = "done"
+        private const val EXTRA_TARGET = "target"
 
         /**
          * [receiver]: where the answer goes back to the keyboard; or [forResult]: the answer is
@@ -81,6 +83,10 @@ class AiEditorActivity : ComponentActivity() {
             forResult: Boolean = false,
             /** From "Share": opened on top, an editor already open from the keyboard stays. */
             alongside: Boolean = false,
+            /** An answer the keyboard's panel already has: shown at once, not asked for again. */
+            done: AiJob.Output? = null,
+            /** The language the panel translated into. */
+            target: AiLanguage? = null,
         ): Intent {
             val prefs by dev.patrickgold.florisboard.app.FlorisPreferenceStore
             val secure = runCatching { prefs.pysankaOcr.blockScreenshots.get() }.getOrDefault(false)
@@ -93,6 +99,18 @@ class AiEditorActivity : ComponentActivity() {
                 .putExtra(EXTRA_SECURE, secure)
                 .putExtra(EXTRA_FOR_RESULT, forResult)
                 .putExtra(EXTRA_LANGUAGE, language)
+                .putExtra(EXTRA_TARGET, target?.name)
+                .apply {
+                    if (done != null) {
+                        putExtra(EXTRA_DONE, Bundle().apply {
+                            putString("text", done.text)
+                            putInt("removed", done.removed)
+                            putBoolean("unconfirmed", done.unconfirmed)
+                            putInt("seconds", done.seconds)
+                            putString("backend", done.backend)
+                        })
+                    }
+                }
                 // A result comes back only within the same task
                 .apply {
                     when {
@@ -115,6 +133,11 @@ class AiEditorActivity : ComponentActivity() {
         val receiver: ResultReceiver? = androidx.core.content.IntentCompat.getParcelableExtra(intent, EXTRA_RECEIVER, ResultReceiver::class.java)
         val canReplace = intent.getBooleanExtra(EXTRA_CAN_REPLACE, false)
         val forResult = intent.getBooleanExtra(EXTRA_FOR_RESULT, false) && callingActivity?.packageName == packageName
+        val done = intent.getBundleExtra(EXTRA_DONE)?.let { b ->
+            b.getString("text")?.takeIf { it.isNotBlank() }?.let {
+                AiJob.Output(it.take(AiJob.HARD_MAX), b.getInt("removed"), b.getBoolean("unconfirmed"), b.getInt("seconds"), b.getString("backend").orEmpty())
+            }
+        }
         setContent {
             ProvideLocalizedResources(ua.pysanka.settings.AppLanguage.context(this, intent.getStringExtra(EXTRA_LANGUAGE)), appName = R.string.app_name) {
                 FlorisAppTheme(theme = AppTheme.AUTO) {
@@ -122,6 +145,8 @@ class AiEditorActivity : ComponentActivity() {
                         AiEditorScreen(
                             original = text,
                             preset = preset,
+                            done = done,
+                            target = intent.getStringExtra(EXTRA_TARGET)?.let { n -> AiLanguage.entries.firstOrNull { it.name == n } },
                             replaceLabel = when {
                                 forResult -> if (canReplace) R.string.pysanka__ai__replace else null
                                 receiver == null -> null
@@ -167,17 +192,26 @@ private sealed interface AiStage {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: Int?, onUse: (String) -> Unit, close: () -> Unit) {
+private fun AiEditorScreen(
+    original: String,
+    preset: AiAction?,
+    done: AiJob.Output?,
+    target: AiLanguage?,
+    replaceLabel: Int?,
+    onUse: (String) -> Unit,
+    close: () -> Unit,
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val installed = remember { ModelStore(context).modelFile() != null }
+    val hasStyle = remember { StyleSamples.has(context) }
     // The texts stay in memory only (up to 60 000 characters would be too much for saved state);
     // turning the phone does not recreate this screen
     var source by remember { mutableStateOf(original) }
     var action by rememberSaveable { mutableStateOf(preset ?: AiAction.FIX) }
-    var language by rememberSaveable { mutableStateOf(AiLanguage.EN) }
-    var stage by remember { mutableStateOf<AiStage>(AiStage.Idle) }
-    var result by remember { mutableStateOf("") }
+    var language by rememberSaveable { mutableStateOf(target ?: AiLanguage.EN) }
+    var stage by remember { mutableStateOf<AiStage>(if (done != null) AiStage.Done(done) else AiStage.Idle) }
+    var result by remember { mutableStateOf(done?.text.orEmpty()) }
     var job by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     var run by remember { mutableStateOf(0L) }
     // Start loading the model while the person chooses what to do
@@ -244,7 +278,7 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
             modifier = Modifier.fillMaxWidth().heightIn(min = 96.dp, max = 260.dp),
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (a in AiAction.entries) {
+            for (a in AiAction.entries.filter { it != AiAction.MY_STYLE || hasStyle }) {
                 FilterChip(
                     selected = a == action, enabled = !busy,
                     onClick = { action = a; if (stage !is AiStage.Working) stage = AiStage.Idle },

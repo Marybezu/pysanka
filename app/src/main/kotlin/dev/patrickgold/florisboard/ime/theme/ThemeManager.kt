@@ -75,8 +75,7 @@ class ThemeManager(context: Context) {
     val indexedThemeConfigs get() = _indexedThemeConfigs.asStateFlow()
     private val indexedThemeConfigVersion = AtomicInteger(0)
 
-    val previewThemeId = MutableStateFlow<ExtensionComponentName?>(null)
-    val previewThemeInfo = MutableStateFlow<ThemeInfo?>(null)
+    // Pysanka: no theme preview (the theme editor and manager that set it were cut)
     val configurationChangeCounter = MutableStateFlow(0)
 
     private val cachedThemeInfos = mutableListOf<ThemeInfo>()
@@ -102,10 +101,8 @@ class ThemeManager(context: Context) {
             prefs.theme.mode.asFlow(),
             prefs.theme.dayThemeId.asFlow(),
             prefs.theme.nightThemeId.asFlow(),
-            previewThemeId,
-            previewThemeInfo,
             configurationChangeCounter,
-        ) {}.collectIn(scope) {
+        ) { _, _, _, _ -> }.collectIn(scope) {
             updateActiveTheme()
         }
     }
@@ -116,10 +113,6 @@ class ThemeManager(context: Context) {
      */
     suspend fun updateActiveTheme(action: () -> Unit = { }) = activeThemeGuard.withLock {
         action()
-        previewThemeInfo.value?.let { previewThemeInfo ->
-            _activeThemeInfo.value = previewThemeInfo
-            return@withLock
-        }
         val activeName = evaluateActiveThemeName()
         val cachedInfo = cachedThemeInfos.find { it.name == activeName }
         if (cachedInfo != null) {
@@ -161,7 +154,6 @@ class ThemeManager(context: Context) {
     }
 
     private fun evaluateActiveThemeName(): ExtensionComponentName {
-        previewThemeId.value?.let { return it }
         return when (prefs.theme.mode.get()) {
             ThemeMode.ALWAYS_DAY -> {
                 prefs.theme.dayThemeId.get()

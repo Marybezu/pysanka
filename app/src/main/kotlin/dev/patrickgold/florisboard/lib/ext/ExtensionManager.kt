@@ -17,8 +17,6 @@
 package dev.patrickgold.florisboard.lib.ext
 
 import android.content.Context
-import android.net.Uri
-import android.os.FileObserver
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardExtension
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
@@ -28,14 +26,9 @@ import dev.patrickgold.florisboard.ime.text.composing.HangulUnicode
 import dev.patrickgold.florisboard.ime.text.composing.KanaUnicode
 import dev.patrickgold.florisboard.ime.text.composing.WithRules
 import dev.patrickgold.florisboard.ime.theme.ThemeExtension
-import dev.patrickgold.florisboard.lib.devtools.LogTopic
-import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.io.FlorisRef
-import dev.patrickgold.florisboard.lib.io.ZipUtils
-import dev.patrickgold.florisboard.lib.io.delete
 import dev.patrickgold.florisboard.lib.io.listDirs
-import dev.patrickgold.florisboard.lib.io.listFiles
 import dev.patrickgold.florisboard.lib.io.loadJsonAsset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,10 +46,6 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
-import org.florisboard.lib.android.FileObserver
-import org.florisboard.lib.kotlin.io.FsFile
-import org.florisboard.lib.kotlin.io.writeJson
-import org.florisboard.lib.kotlin.throwOnFailure
 
 @OptIn(ExperimentalSerializationApi::class)
 val ExtensionJsonConfig = Json {
@@ -87,9 +76,6 @@ class ExtensionManager(context: Context) {
         const val IME_KEYBOARD_PATH = "ime/keyboard"
         const val IME_THEME_PATH = "ime/theme"
         const val IME_LANGUAGEPACK_PATH = "ime/languagepack"
-
-        private const val FILE_OBSERVER_MASK =
-            FileObserver.CLOSE_WRITE or FileObserver.DELETE or FileObserver.MOVED_FROM or FileObserver.MOVED_TO
     }
 
     private val appContext by context.appContext()
@@ -114,47 +100,8 @@ class ExtensionManager(context: Context) {
         }
     }
 
-    fun import(ext: Extension) {
-        val workingDir = requireNotNull(ext.workingDir) { "No working dir specified" }
-        val extFileName = ExtensionDefaults.createFlexName(ext.meta.id)
-        val relGroupPath = when (ext) {
-            is KeyboardExtension -> IME_KEYBOARD_PATH
-            is ThemeExtension -> IME_THEME_PATH
-            is LanguagePackExtension -> IME_LANGUAGEPACK_PATH
-            else -> error("Unknown extension type")
-        }
-        ext.sourceRef = FlorisRef.internal(relGroupPath).subRef(extFileName)
-        FsFile(workingDir, ExtensionDefaults.MANIFEST_FILE_NAME).writeJson(ext, ExtensionJsonConfig)
-        writeExtension(ext).throwOnFailure()
-        ext.unload(appContext)
-        ext.workingDir = null
-    }
-
-    fun export(ext: Extension, uri: Uri) {
-        ext.load(appContext).throwOnFailure()
-        val workingDir = requireNotNull(ext.workingDir) { "No working dir specified" }
-        ZipUtils.zip(appContext, workingDir, uri).throwOnFailure()
-        ext.unload(appContext)
-    }
-
-    private fun writeExtension(ext: Extension) = runCatching {
-        val workingDir = requireNotNull(ext.workingDir) { "No working dir specified" }
-        val sourceRef = requireNotNull(ext.sourceRef) { "No source ref specified" }
-        ZipUtils.zip(appContext, workingDir, sourceRef).throwOnFailure()
-    }
-
     fun getExtensionById(id: String): Extension? {
         return extensions.value.find { it.meta.id == id }
-    }
-
-    fun canDelete(ext: Extension): Boolean {
-        return ext.sourceRef?.isInternal == true
-    }
-
-    fun delete(ext: Extension) {
-        check(canDelete(ext)) { "Cannot delete extension!" }
-        ext.unload(appContext)
-        ext.sourceRef!!.delete(appContext)
     }
 
     @OptIn(ExperimentalForInheritanceCoroutinesApi::class)
@@ -164,43 +111,21 @@ class ExtensionManager(context: Context) {
         private val flow: MutableStateFlow<List<T>> = MutableStateFlow(emptyList()),
     ) : StateFlow<List<T>> by flow {
         private val assetsModuleRef = FlorisRef.assets(modulePath)
-        private val internalModuleRef = FlorisRef.internal(modulePath)
-        var internalModuleDir = internalModuleRef.absoluteFile(appContext)
 
         private var staticExtensions = listOf<T>()
-        private var fileObserver: FileObserver? = null
         private val initGuard = Mutex()
         private val refreshGuard = Mutex()
 
         suspend fun init() {
             initGuard.withLock {
-                // Update internal module dir to actual path and make directory if not exists
-                internalModuleDir = internalModuleRef.absoluteFile(appContext)
-                internalModuleDir.mkdirs()
-
-                // Refresh index to new state
+                // Pysanka: only the extensions that come with the keyboard. Files imported in an
+                // earlier build are neither read nor watched any more (extensions were cut); they
+                // are left where they are, untouched
                 refreshGuard.withLock {
                     staticExtensions = indexAssetsModule()
-                    refresh()
+                    flow.value = staticExtensions
                 }
-
-                // Stop watching on old file observer if one exists and start new observer on new path
-                fileObserver?.stopWatching()
-                fileObserver = FileObserver(internalModuleDir, FILE_OBSERVER_MASK) { event, path ->
-                    flogDebug(LogTopic.EXT_INDEXING) { "FileObserver.onEvent { event=$event path=$path }" }
-                    if (path == null) return@FileObserver
-                    ioScope.launch {
-                        refreshGuard.withLock {
-                            refresh()
-                        }
-                    }
-                }.also { it.startWatching() }
             }
-        }
-
-        private fun refresh() {
-            val dynamicExtensions = staticExtensions + indexInternalModule()
-            flow.value = dynamicExtensions
         }
 
         private fun indexAssetsModule(): List<T> {
@@ -213,40 +138,6 @@ class ExtensionManager(context: Context) {
                             onSuccess = { ext ->
                                 ext.sourceRef = extRef
                                 list.add(ext)
-                            },
-                            onFailure = { error ->
-                                flogError { error.toString() }
-                            },
-                        )
-                    }
-                },
-                onFailure = { error ->
-                    flogError { error.toString() }
-                },
-            )
-            return list.toList()
-        }
-
-        private fun indexInternalModule(): List<T> {
-            val list = mutableListOf<T>()
-            internalModuleRef.listFiles(appContext).fold(
-                onSuccess = { extRefs ->
-                    for (extRef in extRefs) {
-                        val fileRef = extRef.absoluteFile(appContext)
-                        if (!fileRef.name.endsWith(ExtensionDefaults.FILE_EXTENSION)) {
-                            continue
-                        }
-                        ZipUtils.readFileFromArchive(appContext, extRef, ExtensionDefaults.MANIFEST_FILE_NAME).fold(
-                            onSuccess = { metaStr ->
-                                loadJsonAsset(metaStr, serializer, ExtensionJsonConfig).fold(
-                                    onSuccess = { ext ->
-                                        ext.sourceRef = extRef
-                                        list.add(ext)
-                                    },
-                                    onFailure = { error ->
-                                        flogError { error.toString() }
-                                    },
-                                )
                             },
                             onFailure = { error ->
                                 flogError { error.toString() }

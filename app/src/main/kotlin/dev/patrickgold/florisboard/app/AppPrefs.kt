@@ -20,8 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import dev.patrickgold.florisboard.app.settings.theme.ColorPreferenceSerializer
-import dev.patrickgold.florisboard.app.settings.theme.DisplayKbdAfterDialogs
-import dev.patrickgold.florisboard.app.settings.theme.SnyggLevel
 import dev.patrickgold.florisboard.app.setup.NotificationPermissionState
 import dev.patrickgold.florisboard.ime.clipboard.CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
@@ -63,7 +61,6 @@ import dev.patrickgold.jetpref.datastore.model.PreferenceData
 import dev.patrickgold.jetpref.datastore.model.PreferenceMigrationEntry
 import dev.patrickgold.jetpref.datastore.model.PreferenceModel
 import dev.patrickgold.jetpref.datastore.model.PreferenceType
-import dev.patrickgold.jetpref.material.ui.ColorRepresentation
 import kotlinx.serialization.json.Json
 import org.florisboard.lib.android.isOrientationPortrait
 
@@ -765,18 +762,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "theme__sunset_time",
             default = LocalTime(18, 0),
         )
-        val editorColorRepresentation = enum(
-            key = "theme__editor_color_representation",
-            default = ColorRepresentation.HEX,
-        )
-        val editorDisplayKbdAfterDialogs = enum(
-            key = "theme__editor_display_kbd_after_dialogs",
-            default = DisplayKbdAfterDialogs.REMEMBER,
-        )
-        val editorLevel = enum(
-            key = "theme__editor_level",
-            default = SnyggLevel.ADVANCED,
-        )
     }
 
     override fun migrate(entry: PreferenceMigrationEntry): PreferenceMigrationEntry {
@@ -786,6 +771,8 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             in PYSANKA_FIXED_KEYS -> entry.reset()
             // Pysanka: Russian is no longer offered as the settings language
             "other__settings_language" -> if (entry.rawValue == "ru") entry.reset() else entry.keepAsIs()
+            // Pysanka: "by the time of day" needs times nobody can set any more
+            "theme__mode" -> if (entry.rawValue == "FOLLOW_TIME") entry.reset() else entry.keepAsIs()
 
 
             // Migrate media prefs to emoji prefs
@@ -892,19 +879,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                 entry.transform(rawValue = json)
             }
 
-            // Migrate theme editor fine-tuning
-            // Keep migration rule until: 0.6 dev cycle
-            "theme__editor_display_colors_as" -> {
-                val colorRepresentation = when (entry.rawValue) {
-                    "RGBA" -> ColorRepresentation.RGB
-                    else -> ColorRepresentation.HEX
-                }
-                entry.transform(
-                    key = "theme__editor_color_representation",
-                    rawValue = colorRepresentation.name,
-                )
-            }
-
             // Migrate clipboard history pref names
             // Keep migration rules until: 0.7 dev cycle
             "clipboard__sync_to_floris", "clipboard__sync_to_system" -> {
@@ -970,6 +944,15 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
 /** Pysanka: keys of settings that have no screen any more (see [AppPrefs.migrate]). */
 private val PYSANKA_FIXED_KEYS = setOf(
+            // The theme editor and the language screens were cut (November 2026)
+            "theme__accent_color",
+            "theme__sunrise_time",
+            "theme__sunset_time",
+            "theme__editor_color_representation",
+            "theme__editor_display_kbd_after_dialogs",
+            "theme__editor_level",
+            "localization__display_language_names_in",
+            "localization__display_keyboard_labels_in_subtype_language",
             "clipboard__use_internal_clipboard",
             "clipboard__sync_to_floris",
             "clipboard__sync_to_system",
