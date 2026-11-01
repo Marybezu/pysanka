@@ -1,6 +1,9 @@
 package ua.pysanka.ai
 
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,6 +64,22 @@ class AiEntryActivity : ComponentActivity() {
             // Nothing to put back: the editor only shows and copies the answer
             startActivity(AiEditorActivity.intent(this, body, preset, receiver = null, canReplace = false))
             finish()
+        }
+    }
+}
+
+/**
+ * Pysanka: "Pysanka AI" shows up in "Share" and in the text selection menu only while the model is
+ * installed (without it there is nothing it could do).
+ */
+object AiEntry {
+    fun sync(context: Context) {
+        val on = ModelStore(context).modelFile() != null
+        val pm = context.packageManager
+        val component = ComponentName(context, AiEntryActivity::class.java)
+        val wanted = if (on) PackageManager.COMPONENT_ENABLED_STATE_ENABLED else PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+        if (pm.getComponentEnabledSetting(component) != wanted) {
+            runCatching { pm.setComponentEnabledSetting(component, wanted, PackageManager.DONT_KILL_APP) }
         }
     }
 }

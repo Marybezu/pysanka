@@ -51,6 +51,7 @@ object ModelImport {
             } catch (e: Throwable) {
                 error = R.string.pysanka__ai__import_failed
             } finally {
+                AiEntry.sync(context.applicationContext)
                 status.value = Status(progress = null, error = error, originalKept = kept, finished = status.value.finished + 1)
             }
         }

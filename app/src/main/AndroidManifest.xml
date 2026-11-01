@@ -143,9 +143,11 @@
             android:theme="@style/FlorisAppTheme"
             android:label="@string/pysanka__ai__title" />
 
-        <!-- Pysanka: the AI editor from "Share" and the text selection menu of any app (only plain text) -->
+        <!-- Pysanka: the AI editor from "Share" and the text selection menu of any app (only plain text);
+             turned on only while the AI model is installed (AiEntry.sync) -->
         <activity
             android:name="ua.pysanka.ai.AiEntryActivity"
+            android:enabled="false"
             android:exported="true"
             android:excludeFromRecents="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar"
