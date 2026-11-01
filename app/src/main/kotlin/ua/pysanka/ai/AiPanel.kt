@@ -217,6 +217,7 @@ fun AiPanel(modifier: Modifier = Modifier) {
         more = more,
         target = target,
         intoEmptyField = panel.taken.mode == AiBridge.Mode.INSERT,
+        canExpand = panel.canExpand,
         canRun = { input(it).isNotBlank() },
         modifier = modifier.fillMaxWidth().height(FlorisImeSizing.imeUiHeight()),
         headerHeight = FlorisImeSizing.smartbarHeight,
@@ -274,6 +275,7 @@ internal fun AiPanelView(
     more: Boolean,
     target: AiLanguage,
     intoEmptyField: Boolean,
+    canExpand: Boolean,
     canRun: (AiAction) -> Boolean,
     modifier: Modifier,
     headerHeight: Dp,
@@ -329,7 +331,7 @@ internal fun AiPanelView(
                     }
                 }
                 is PanelStage.TooLong -> Notice(stringRes(R.string.pysanka__ai__panel_too_long)) {
-                    Chip(stringRes(R.string.pysanka__ai__expand), primary = true) { actions.expand(s.action) }
+                    if (canExpand) Chip(stringRes(R.string.pysanka__ai__expand), primary = true) { actions.expand(s.action) }
                 }
                 is PanelStage.Working -> Working(
                     when {
@@ -340,7 +342,7 @@ internal fun AiPanelView(
                 ) { actions.back() }
                 is PanelStage.Failed -> Notice(stringRes(R.string.pysanka__ai__failed)) {
                     Chip(stringRes(R.string.pysanka__ai__again), primary = true) { actions.again(s.action) }
-                    Chip(stringRes(R.string.pysanka__ai__expand)) { actions.expand(s.action) }
+                    if (canExpand) Chip(stringRes(R.string.pysanka__ai__expand)) { actions.expand(s.action) }
                 }
                 is PanelStage.Done -> Done(
                     s,
@@ -355,7 +357,7 @@ internal fun AiPanelView(
                     onChange = if (s.action.kind == AiAction.Kind.ADVICE || s.action == AiAction.REPLIES) null else {
                         { actions.change(s.text) }
                     },
-                    onExpand = { actions.expand(s.action) },
+                    onExpand = if (canExpand) { { actions.expand(s.action) } } else null,
                 )
             }
         }
@@ -479,7 +481,7 @@ private fun Done(
     onCopy: () -> Unit,
     onAgain: () -> Unit,
     onChange: (() -> Unit)?,
-    onExpand: () -> Unit,
+    onExpand: (() -> Unit)?,
 ) {
     val replies = remember(s) { if (s.action == AiAction.REPLIES) Replies.parse(s.text).takeIf { it.size >= 2 } else null }
     Column(Modifier.fillMaxSize()) {
@@ -522,7 +524,7 @@ private fun Done(
             Chip(stringRes(R.string.pysanka__ocr__copy), primary = replaceLabel == null, onClick = onCopy)
             Chip(stringRes(R.string.pysanka__ai__again), onClick = onAgain)
             if (onChange != null) Chip(stringRes(R.string.pysanka__ai__change), onClick = onChange)
-            Chip(stringRes(R.string.pysanka__ai__expand), onClick = onExpand)
+            if (onExpand != null) Chip(stringRes(R.string.pysanka__ai__expand), onClick = onExpand)
         }
     }
 }

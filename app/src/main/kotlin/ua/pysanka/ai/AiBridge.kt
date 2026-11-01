@@ -60,17 +60,18 @@ object AiBridge {
     }
 
     /** What the panel works on, from pressing ✨ until the panel takes it. */
-    class Panel(val editor: ImeEditor, val taken: Taken)
+    class Panel(val editor: ImeEditor, val taken: Taken) {
+        /** In Pysanka's own fields the full editor is not offered (it could be the editor's own field). */
+        val canExpand get() = editor.info.packageName != FlorisApplication.getHack().packageName
+    }
 
     private var panel: Panel? = null
 
     /**
      * The "AI" button on the keyboard: reads the text for the panel (see [AiPanel]). False if the
-     * panel must not open here (then the person is told why, or nothing happens in Pysanka itself).
+     * panel must not open here (then the person is told why).
      */
     fun openPanel(editor: ImeEditor): Boolean {
-        // Not in Pysanka's own fields (the full editor would replace the field the text came from)
-        if (editor.info.packageName == FlorisApplication.getHack().packageName) return false
         if (FieldPrivacy.isPassword || FieldPrivacy.isPrivate) {
             toast(R.string.pysanka__ai__not_here)
             return false

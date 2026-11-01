@@ -43,7 +43,7 @@ fun List<OcrLine>.joinedText(): String =
 fun joinOcrLines(lines: List<String>): String {
     val sb = StringBuilder()
     for (line in lines) {
-        val l = line.trim()
+        val l = Lookalikes.fix(line.trim())
         if (l.isEmpty()) continue
         val n = sb.length
         val split = n >= 2 && sb[n - 1] in "-\u2010\u00AD\u00AC" && sb[n - 2].isLetter() && l[0].isLowerCase()

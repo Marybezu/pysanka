@@ -110,6 +110,7 @@ class AiPanelScreensTest {
                                     more = more,
                                     target = AiLanguage.EN,
                                     intoEmptyField = false,
+                                    canExpand = true,
                                     canRun = { true },
                                     modifier = Modifier.fillMaxWidth().height(300.dp),
                                     headerHeight = 40.dp,
