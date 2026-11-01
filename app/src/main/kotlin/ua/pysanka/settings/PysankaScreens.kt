@@ -197,6 +197,11 @@ fun PysankaPrivacyScreen() = FlorisScreen {
             summary = stringRes(R.string.pysanka__clipboard__skip_sensitive__summary),
         )
         SwitchPreference(
+            prefs.clipboard.cleanLinks,
+            title = stringRes(R.string.pysanka__links__clean),
+            summary = stringRes(R.string.pysanka__links__clean_summary),
+        )
+        SwitchPreference(
             prefs.pysankaOcr.blockScreenshots,
             title = stringRes(R.string.pysanka__privacy__block_screenshots),
             summary = stringRes(R.string.pysanka__privacy__block_screenshots_summary),

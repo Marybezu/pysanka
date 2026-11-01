@@ -9,7 +9,7 @@
 ## Що буде
 
 - 🔒 **Приватність.** Дозволу на інтернет немає, і збірка зупиняється, якщо він з'явиться. Нічого не потрапляє в хмарну копію чи на інший телефон.
-- 📋 **Зашифрований буфер** ✅ Історія тексту й зображень зашифрована (SQLCipher + AES-256, ключ в апаратному сховищі). «Не зберігати паролі» — на ваш вибір. Копія буфера під паролем та імпорт із FlorisBoard. Кольорові теги й автотеги (посилання, номери, коди). Нові скріншоти автоматично, з розпізнаним текстом (за бажанням). Далі: пошук, шаблони.
+- 📋 **Зашифрований буфер** ✅ Історія тексту й зображень зашифрована (SQLCipher + AES-256, ключ в апаратному сховищі). «Не зберігати паролі» — на ваш вибір. Копія буфера під паролем та імпорт із FlorisBoard. Кольорові теги й автотеги (посилання, номери, коди). Очищення посилань від стеження. Фото й скріншоти в історію одним дотиком, з розпізнаним текстом. Далі: пошук, шаблони.
 - 🔍 **Текст із фото й камери** ✅ розпізнається на телефоні.
 - 🤖 **Локальний ШІ (Gemma 4), за бажанням** ✅ стиль, граматика й пунктуація, підсумок, переклад, перевірка русизмів, виправлення розпізнаного тексту. Далі: інструменти для соцмереж.
 - 🎙️ **Диктування** на телефоні (Whisper), за бажанням.
@@ -36,7 +36,7 @@ A private keyboard for Android with no internet access. Typing, swipe, clipboard
 ## Privacy
 
 - No internet permission; the build fails if one appears. Nothing goes to a cloud backup or to another phone.
-- Encrypted clipboard history (SQLCipher + AES-256, hardware-backed key); "Don't keep passwords" is your choice; password-protected clipboard copy and import from FlorisBoard. Coloured and automatic tags. New screenshots automatically, with recognised text (optional). Planned: search, snippets.
+- Encrypted clipboard history (SQLCipher + AES-256, hardware-backed key); "Don't keep passwords" is your choice; password-protected clipboard copy and import from FlorisBoard. Coloured and automatic tags. Copied links are cleaned of tracking. Photos and screenshots into the history with one tap, with recognised text. Planned: search, snippets.
 - Optional on-device AI (Gemma 4): grammar, style, summaries, translation, Russianism check, fixing recognised text. Planned: social-media tools; on-device dictation (Whisper).
 - On-device text recognition from photos and the camera.
 

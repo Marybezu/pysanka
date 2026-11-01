@@ -140,12 +140,7 @@
     <string name="pysanka__ocr__insert">Insert</string>
     <string name="pysanka__ocr__copy">Copy</string>
     <string name="pysanka__ocr__to_history">Save to history</string>
-    <string name="pysanka__privacy__fact_ocr">Text from photos and the camera is read on the phone; Pysanka has no camera access and sees only the photo you pick or take (and new screenshots, if you turned that on)</string>
-    <string name="pysanka__screenshots__tag">Screenshots</string>
-    <string name="pysanka__screenshots__label">Screenshots into the history</string>
-    <string name="pysanka__screenshots__summary">Each new screenshot goes into the history, encrypted, tagged “Screenshots”, with the text read from it on the phone. Older screenshots stay out. Needs access to photos; on GrapheneOS you can allow only the Screenshots folder with Storage Scopes.</string>
-    <string name="pysanka__screenshots__no_access">No access to photos: tap to allow</string>
-    <string name="pysanka__screenshots__denied">Without access to photos screenshots cannot be added. You can allow it in the app\'s settings.</string>
+    <string name="pysanka__privacy__fact_ocr">Text from photos and the camera is read on the phone; Pysanka has no access to the camera or your photos and sees only the photo you pick or take</string>
     <string name="pysanka__privacy__block_screenshots">Block screenshots of Pysanka</string>
     <string name="pysanka__privacy__block_screenshots_summary">Pysanka\'s settings and the text-from-photo screen cannot be captured or shared and show blank in recent apps. The keyboard itself is not affected.</string>
     <string name="pysanka__settings__ai_ready">Model installed: style, grammar, summary, translation</string>
@@ -197,4 +192,8 @@
     <string name="pysanka__ai__how_to_use">Tap ✨ on the bar above the keyboard: it takes the selected text (or the whole field) and offers grammar, style, summary, translation and more. The AI never works in password fields or incognito.</string>
     <string name="pysanka__ai__delete">Delete the model</string>
     <string name="pysanka__ai__copied_instead">The answer could not be put back safely, so it was copied: paste it where you need it.</string>
+    <string name="pysanka__links__group">Links</string>
+    <string name="pysanka__links__clean">Clean copied links</string>
+    <string name="pysanka__links__clean_summary">Removes tracking from links you copy (utm_…, fbclid, YouTube and Spotify “si”, X\'s “s” and “t” and similar), so they don\'t tell who shared them, where and when. The rest of the link stays the same; works on the phone.</string>
+    <string name="pysanka__photo_history__added">Added to the clipboard history</string>
 </resources>

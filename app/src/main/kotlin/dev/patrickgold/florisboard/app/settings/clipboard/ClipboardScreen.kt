@@ -57,6 +57,15 @@ fun ClipboardScreen() = FlorisScreen {
             )
         }
 
+        // Pysanka: links without tracking
+        PreferenceGroup(title = stringRes(R.string.pysanka__links__group)) {
+            SwitchPreference(
+                prefs.clipboard.cleanLinks,
+                title = stringRes(R.string.pysanka__links__clean),
+                summary = stringRes(R.string.pysanka__links__clean_summary),
+            )
+        }
+
         PreferenceGroup(title = stringRes(R.string.pref__clipboard__group_clipboard_history__label)) {
             SwitchPreference(
                 prefs.clipboard.historyEnabled,
@@ -132,11 +141,6 @@ fun ClipboardScreen() = FlorisScreen {
                 summary = stringRes(R.string.pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary),
                 enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
             )
-        }
-
-        // Pysanka: new screenshots into the history (asks for access to photos)
-        PreferenceGroup(title = stringRes(R.string.pysanka__screenshots__tag)) {
-            ua.pysanka.clipboard.ScreenshotsSetting()
         }
 
         // Pysanka: the owner's tags for the history

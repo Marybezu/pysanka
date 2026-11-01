@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.clipboard
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -244,6 +245,17 @@ fun ClipboardInputLayout(
                     } else {
                         Icons.Default.ToggleOff
                     },
+                )
+            }
+            // Pysanka: a photo (a screenshot, say) into the history, picked with the system picker
+            SnyggIconButton(
+                elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
+                onClick = { ua.pysanka.ocr.openTextFromImage(ua.pysanka.ocr.TextFromImageActivity.SOURCE_HISTORY) },
+                modifier = sizeModifier,
+                enabled = !deviceLocked && historyEnabled && !isPopupSurfaceActive(),
+            ) {
+                SnyggIcon(
+                    imageVector = Icons.Default.AddPhotoAlternate,
                 )
             }
             SnyggIconButton(

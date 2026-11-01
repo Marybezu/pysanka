@@ -86,6 +86,8 @@ class TextFromImageActivity : ComponentActivity() {
         private const val EXTRA_SOURCE = "source"
         const val SOURCE_PHOTO = "photo"
         const val SOURCE_CAMERA = "camera"
+        /** A photo picked into the clipboard history (with its text kept for finding it later). */
+        const val SOURCE_HISTORY = "history"
 
         fun intent(context: Context, source: String) = Intent(context, TextFromImageActivity::class.java)
             .putExtra(EXTRA_SOURCE, source)
@@ -118,14 +120,13 @@ class TextFromImageActivity : ComponentActivity() {
         // The models take about 60 MB; freed when no screen uses them (a rotation holds them again at once)
         val recognizer = TextRecognizer.get(this)
         kotlinx.coroutines.CoroutineScope(Dispatchers.Default).launch { recognizer.letGo() }
-        // A photo from the camera never stays behind (not while the camera app may still write it)
-        if (isFinishing) CameraShot.clear(this)
     }
 }
 
 private sealed interface Stage {
     data object Choose : Stage
     data object Working : Stage
+    data object Waiting : Stage
     data class Result(val bitmap: Bitmap, val lines: List<OcrLine>) : Stage
     data object Nothing : Stage
     /** [reason]: the kind of error only (no content), shown so a failure can be reported. */
@@ -136,7 +137,8 @@ private sealed interface Stage {
 private fun TextFromImageScreen(source: String, close: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var stage by remember { mutableStateOf<Stage>(Stage.Choose) }
+    // From the camera: nothing to show while the camera app opens (not "closed without a photo")
+    var stage by remember { mutableStateOf<Stage>(if (source == TextFromImageActivity.SOURCE_CAMERA) Stage.Waiting else Stage.Choose) }
 
     fun recognize(load: suspend () -> Bitmap?) {
         stage = Stage.Working
@@ -158,29 +160,67 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
         }
     }
 
+    // Into the clipboard history: stored encrypted at once, then its text is read for finding it later
+    fun toHistory(uri: Uri) {
+        stage = Stage.Working
+        scope.launch {
+            val clipboardManager by context.clipboardManager()
+            val id = withContext(Dispatchers.IO) { runCatching { clipboardManager.addImage(context, uri) }.getOrNull() }
+            if (id == null) {
+                stage = Stage.Failed("not added")
+                return@launch
+            }
+            android.widget.Toast.makeText(context, R.string.pysanka__photo_history__added, android.widget.Toast.LENGTH_SHORT).show()
+            val text = runCatching {
+                withContext(Dispatchers.IO) { decode(context, uri) }?.let { b ->
+                    TextRecognizer.get(context).recognize(b).joinedText()
+                }
+            }.getOrNull()
+            if (!text.isNullOrBlank()) {
+                withContext(Dispatchers.IO) {
+                    runCatching { clipboardManager.setImageText(id, text.take(dev.patrickgold.florisboard.ime.clipboard.ClipboardManager.MAX_IMAGE_TEXT)) }
+                }
+            }
+            close()
+        }
+    }
+
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
-        if (uri == null) close() else recognize { decode(context, uri) }
+        when {
+            uri == null -> close()
+            source == TextFromImageActivity.SOURCE_HISTORY -> toHistory(uri)
+            else -> recognize { decode(context, uri) }
+        }
     }
     // The phone's camera app takes the picture into Pysanka's file; nothing goes to the gallery
     var shot by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { taken ->
         val uri = shot
         if (taken && uri != null) {
-            recognize { decode(context, uri).also { CameraShot.clear(context) } }
+            recognize { try { decode(context, uri) } finally { CameraShot.delete(context, uri) } }
         } else {
-            CameraShot.clear(context)
+            CameraShot.delete(context, uri)
             stage = Stage.Choose
         }
+        shot = null
     }
     fun openCamera() {
-        val uri = CameraShot.uri(context)
+        val uri = CameraShot.newShot(context)
         shot = uri
         try {
             takePicture.launch(uri)
         } catch (e: android.content.ActivityNotFoundException) {
             // No camera app: recent photos instead
-            CameraShot.clear(context)
+            CameraShot.delete(context, uri)
+            shot = null
             pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
+    }
+    // This screen's shot never stays behind once the screen really closes (not on a mere recreation,
+    // while the camera app may still be writing it)
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose {
+            if ((context as? android.app.Activity)?.isFinishing == true) CameraShot.delete(context, shot)
         }
     }
 
@@ -189,7 +229,7 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
     LaunchedEffect(Unit) {
         if (started) return@LaunchedEffect
         started = true
-        if (source == TextFromImageActivity.SOURCE_PHOTO) {
+        if (source != TextFromImageActivity.SOURCE_CAMERA) {
             pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         } else {
             openCamera()
@@ -214,6 +254,7 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
                 TextButton(onClick = close) { Text(stringRes(R.string.pysanka__ocr__close)) }
             }
         }
+        Stage.Waiting -> Box(Modifier.fillMaxSize())
         Stage.Working -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 CircularProgressIndicator()
@@ -337,15 +378,21 @@ private fun ResultView(bitmap: Bitmap, lines: List<OcrLine>, close: () -> Unit) 
 internal object CameraShot {
     private const val DIR = "capture"
 
-    private fun file(context: Context) = java.io.File(java.io.File(context.cacheDir, DIR).apply { mkdirs() }, "shot.jpg")
+    /** Not in the cache: the keyboard empties that when its process starts, maybe mid-shot. */
+    private fun dir(context: Context) = java.io.File(context.filesDir, DIR).apply { mkdirs() }
 
-    fun uri(context: Context): Uri {
-        clear(context)
-        return androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.provider.file", file(context))
+    /** A new file for one shot (its own name, so a screen closing late never deletes another's). */
+    fun newShot(context: Context): Uri {
+        // Shots left by a crash or a killed screen go now
+        val now = System.currentTimeMillis()
+        dir(context).listFiles()?.forEach { if (now - it.lastModified() > 10 * 60 * 1000L) it.delete() }
+        val f = java.io.File(dir(context), "shot-$now.jpg")
+        return androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.provider.file", f)
     }
 
-    fun clear(context: Context) {
-        java.io.File(context.cacheDir, DIR).listFiles()?.forEach { it.delete() }
+    fun delete(context: Context, uri: Uri?) {
+        val name = uri?.lastPathSegment ?: return
+        java.io.File(dir(context), name.substringAfterLast('/')).delete()
     }
 }
 

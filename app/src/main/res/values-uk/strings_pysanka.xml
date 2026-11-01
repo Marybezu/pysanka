@@ -139,12 +139,7 @@
     <string name="pysanka__ocr__insert">Вставити</string>
     <string name="pysanka__ocr__copy">Копіювати</string>
     <string name="pysanka__ocr__to_history">До історії</string>
-    <string name="pysanka__privacy__fact_ocr">Текст із фото й камери розпізнається на телефоні; доступу до камери Писанка не має і бачить лише фото, яке ви вибрали чи зняли (і нові скріншоти, якщо ви це ввімкнули)</string>
-    <string name="pysanka__screenshots__tag">Скріншоти</string>
-    <string name="pysanka__screenshots__label">Скріншоти в історію</string>
-    <string name="pysanka__screenshots__summary">Кожен новий скріншот потрапляє в історію зашифрованим, із тегом «Скріншоти» й розпізнаним на телефоні текстом. Старіші скріншоти не додаються. Потрібен доступ до фото; на GrapheneOS через Storage Scopes можна дозволити лише теку зі скріншотами.</string>
-    <string name="pysanka__screenshots__no_access">Немає доступу до фото: торкніться, щоб дозволити</string>
-    <string name="pysanka__screenshots__denied">Без доступу до фото скріншоти не додаються. Дозволити можна в налаштуваннях застосунку.</string>
+    <string name="pysanka__privacy__fact_ocr">Текст із фото й камери розпізнається на телефоні; доступу до камери й ваших фото Писанка не має і бачить лише фото, яке ви вибрали чи зняли</string>
     <string name="pysanka__privacy__block_screenshots">Заборонити знімки екрана Писанки</string>
     <string name="pysanka__privacy__block_screenshots_summary">Налаштування Писанки й екран «Текст із фото» не можна зняти чи показати через трансляцію екрана, а в недавніх застосунках вони порожні. На саму клавіатуру не впливає.</string>
     <string name="pysanka__settings__ai_ready">Модель встановлено: стиль, граматика, підсумок, переклад</string>
@@ -196,4 +191,8 @@
     <string name="pysanka__ai__how_to_use">Торкніться ✨ на панелі над клавіатурою: ШІ візьме виділений текст (або все поле) і запропонує граматику, стиль, підсумок, переклад тощо. У полях пароля й інкогніто ШІ не працює ніколи.</string>
     <string name="pysanka__ai__delete">Видалити модель</string>
     <string name="pysanka__ai__copied_instead">Відповідь не вдалося безпечно вставити, тож її скопійовано: вставте, куди треба.</string>
+    <string name="pysanka__links__group">Посилання</string>
+    <string name="pysanka__links__clean">Очищати скопійовані посилання</string>
+    <string name="pysanka__links__clean_summary">Прибирає стеження з посилань, які ви копіюєте (utm_…, fbclid, «si» YouTube і Spotify, «s» і «t» в X тощо), щоб вони не казали, хто, де й коли ними поділився. Решта посилання не змінюється; працює на телефоні.</string>
+    <string name="pysanka__photo_history__added">Додано в історію буфера</string>
 </resources>

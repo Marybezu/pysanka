@@ -63,6 +63,9 @@ class ClipboardManager(
         /** Pysanka: longest text accepted from an import (a longer row would break loading the history). */
         const val MAX_IMPORT_TEXT = 512 * 1024
 
+        /** Pysanka: longest recognised text kept with a picture (for finding it later). */
+        const val MAX_IMAGE_TEXT = 20_000
+
         /**
          * Taken from ClipboardDescription.java from the AOSP
          *
@@ -175,8 +178,6 @@ class ClipboardManager(
                         client?.close()
                     }
                 }
-                // Pysanka: new screenshots into the history, if the owner turned that on
-                ua.pysanka.clipboard.Screenshots.follow(context.applicationContext, this@ClipboardManager, ioScope)
                 withContext(Dispatchers.Main) {
                     clipHistoryDao?.getAllAsFlow()?.collect { items ->
                         updateHistory(items)
@@ -275,6 +276,25 @@ class ClipboardManager(
 
                 if (!syncBehavior.shouldSyncSet) {
                     return@launch
+                }
+
+                // Pysanka: a copied link loses its tracking parameters, in the system clipboard too
+                // (so it is clean wherever it is pasted). Not for passwords or marked-sensitive clips.
+                // Setting the clean text calls this listener again; that time nothing changes.
+                if (prefs.clipboard.cleanLinks.get() && !passwordField &&
+                    !ClipboardItem.isSensitive(systemPrimaryClip) && systemPrimaryClip.itemCount == 1
+                ) {
+                    val text = systemPrimaryClip.getItemAt(0).text?.toString()
+                    if (text != null && systemPrimaryClip.getItemAt(0).uri == null && text.length <= MAX_IMPORT_TEXT) {
+                        val clean = ua.pysanka.clipboard.LinkCleaner.clean(text)
+                        if (clean != text) {
+                            val label = systemPrimaryClip.description.label
+                            withContext(Dispatchers.Main) {
+                                runCatching { systemClipboardManager.setPrimaryClip(ClipData.newPlainText(label, clean)) }
+                            }
+                            return@launch
+                        }
+                    }
                 }
 
                 val isEqual = internalPrimaryClip?.isEqualTo(systemPrimaryClip) == true
@@ -510,19 +530,20 @@ class ClipboardManager(
         }
     }
 
-    // ------------------------------------------------------------ Pysanka: screenshots
+    // ------------------------------------------------------------ Pysanka: a photo into the history
 
     /** Whether the encrypted history is open (it stays shut until the phone is first unlocked). */
     fun isHistoryOpen(): Boolean = clipHistoryDao != null
 
     /**
-     * Pysanka: stores the screenshot at [uri] encrypted and adds it to the history with [tagId]
-     * (see [ua.pysanka.clipboard.Screenshots]). The system clipboard is not changed. Returns the
-     * new item's id, or null if it was not added. Call off the main thread.
+     * Pysanka: stores the picture at [uri] (one the person picked) encrypted and adds it to the
+     * history. The system clipboard is not changed. Returns the new item's id, or null if it was
+     * not added. Call off the main thread.
      */
-    fun addScreenshot(context: Context, uri: android.net.Uri, mime: String, tagId: Long?): Long? {
+    fun addImage(context: Context, uri: android.net.Uri): Long? {
         val dao = clipHistoryDao ?: return null
         if (!prefs.clipboard.historyEnabled.get()) return null
+        val mime = context.contentResolver.getType(uri)?.takeIf { it.startsWith("image/") } ?: "image/jpeg"
         val stored = context.contentResolver.openInputStream(uri)?.use {
             dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage.storeStream(appContext, it)
         } ?: return null
@@ -536,14 +557,14 @@ class ClipboardManager(
                 client.close()
             }
             // A plain name: the original one may tell the app and the time, and an app it is pasted into could read it
-            val name = "Screenshot." + (android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: "png")
+            val name = "Image." + (android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mime) ?: "jpg")
             itemUri = provider.registerImported(
                 dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileInfo(stored.id, name, stored.size, 0, listOf(mime)),
             )
             val item = ClipboardItem(
                 type = ItemType.IMAGE, text = null, uri = itemUri, creationTimestampMs = System.currentTimeMillis(),
                 isPinned = false, mimeTypes = listOf(mime), isSensitive = false,
-            ).let { if (tagId != null) it.withTagIds(listOf(tagId)) else it }
+            )
             return dao.insert(item)
         } catch (t: Throwable) {
             // Not in the history: its file (and its entry in the file list) goes too
