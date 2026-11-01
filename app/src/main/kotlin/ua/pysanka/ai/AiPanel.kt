@@ -310,9 +310,9 @@ internal fun AiPanelView(
                 }
                 PanelStage.Menu -> Column(Modifier.fillMaxSize()) {
                     Note(stringRes(note))
-                    val actions = if (more) AiAction.entries else MAIN
+                    val shown = if (more) AiAction.entries else MAIN
                     LazyVerticalGrid(columns = GridCells.Adaptive(88.dp), modifier = Modifier.fillMaxWidth().weight(1f)) {
-                        items(actions) { a ->
+                        items(shown) { a ->
                             Tile(icon(a), stringRes(a.label), enabled = canRun(a)) { actions.tile(a) }
                         }
                         item {
