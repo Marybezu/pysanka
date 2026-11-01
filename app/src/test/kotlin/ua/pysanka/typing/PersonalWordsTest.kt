@@ -127,11 +127,21 @@ class PersonalWordsTest : FunSpec({
         s.predict("добрий", 3, own) shouldBe emptyList()
     }
 
-    test("the word before lifts what usually follows it") {
+    test("the word before lifts what usually follows it (a pair used at least twice)") {
         val own = PersonalWords()
         s.suggest("при", 2, own = own, previous = "дуже").map { it.word } shouldBe listOf("привіт", "привести")
-        repeat(3) { own.learnPair("дуже", "привести", 1) }
+        own.learnPair("дуже", "привести", 1)
+        s.suggest("при", 2, own = own, previous = "дуже").map { it.word } shouldBe listOf("привіт", "привести")
+        repeat(2) { own.learnPair("дуже", "привести", 1) }
         s.suggest("при", 2, own = own, previous = "дуже").map { it.word } shouldBe listOf("привести", "привіт")
+    }
+
+    test("a pair never makes an auto-correction by itself") {
+        val own = PersonalWords()
+        repeat(5) { own.learnPair("дуже", "привести", 1) }
+        // «привесит» is one swap from «привести»; the pair alone must not turn it into a correction
+        val plain = s.suggest("привесит", 3).first().autoCorrect
+        s.suggest("привесит", 3, own = own, previous = "дуже").first().autoCorrect shouldBe plain
     }
 
     test("forgetting a word forgets its pairs") {
@@ -151,5 +161,7 @@ class PersonalWordsTest : FunSpec({
         PreviousWord.of("рядок\n") shouldBe null
         PreviousWord.of("") shouldBe null
         PreviousWord.of("x".repeat(100) + " ") shouldBe null
+        PreviousWord.of("Привіт мій", spaceComing = true) shouldBe "мій"
+        PreviousWord.of("Привіт мій") shouldBe null
     }
 })

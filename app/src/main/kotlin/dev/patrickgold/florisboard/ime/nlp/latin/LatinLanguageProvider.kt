@@ -19,6 +19,8 @@ package dev.patrickgold.florisboard.ime.nlp.latin
 import android.content.Context
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
+import dev.patrickgold.florisboard.editorInstance
+import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.nlp.SpellingProvider
@@ -70,9 +72,20 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
     }
 
+    private val editorInstance by context.editorInstance()
+    private val keyboardManager by context.keyboardManager()
+
     /** Pysanka: the learned words, unless learning is off (then they are not used either). */
     private fun own(subtype: Subtype): PersonalWords? =
         if (prefs.correction.pysankaLearnWords.get()) UserWords.get(appContext, subtype.primaryLocale.language) else null
+
+    /**
+     * Pysanka: whether the person's own words may be shown here: suggestions on, and not a
+     * password, incognito or "no learning" field (nor a number or phone keyboard).
+     */
+    private fun mayShowOwn(isPrivateSession: Boolean): Boolean =
+        prefs.suggestion.enabled.get() && keyboardManager.activeState.isComposingEnabled && !isPrivateSession &&
+            !ua.pysanka.privacy.FieldPrivacy.isPrivate && !ua.pysanka.privacy.FieldPrivacy.isPassword
 
     override val providerId = ProviderId
 
@@ -112,11 +125,13 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     ): List<SuggestionCandidate> {
         val word = content.composingText
         val dict = suggester(subtype) ?: return emptyList()
-        val own = withContext(Dispatchers.IO) { own(subtype) }
-        // Pysanka: before a word is begun, the words that usually follow the one before
+        val own = if (mayShowOwn(isPrivateSession)) withContext(Dispatchers.IO) { own(subtype) } else null
+        // Pysanka: before a word is begun, the words that usually follow the one before (also
+        // right after a tapped suggestion, whose space comes with the next word)
         if (word.isEmpty()) {
-            if (!content.selection.isCursorMode) return emptyList()
-            val previous = PreviousWord.of(content.textBeforeSelection) ?: return emptyList()
+            if (own == null || !content.selection.isCursorMode) return emptyList()
+            val previous = PreviousWord.of(content.textBeforeSelection, spaceComing = editorInstance.phantomSpace.isActive)
+                ?: return emptyList()
             return dict.predict(previous, maxCandidateCount, own).map {
                 NextWordCandidate(text = it, previous = previous, sourceProvider = this@LatinLanguageProvider)
             }

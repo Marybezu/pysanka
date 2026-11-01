@@ -585,7 +585,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         val candidate = pysankaAutoCommitCandidate()
         val midSentence = pysankaMidSentence(typed)
         val previous = pysankaPreviousWord(typed)
-        pysankaLearn(typed, candidate)
+        pysankaLearn(typed, candidate, previous = previous)
         candidate?.let { commitCandidate(it) }
         // Pysanka: the next Backspace takes an auto-correction back
         if (candidate != null && candidate.text.toString() != typed && typed.isNotEmpty()) {
@@ -769,15 +769,23 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     /** Pysanka: the word before the one being typed, in the same sentence (for word pairs). */
-    private fun pysankaPreviousWord(typed: String): String? =
-        ua.pysanka.typing.PreviousWord.of(editorInstance.activeContent.textBeforeSelection.dropLast(typed.length))
+    private fun pysankaPreviousWord(typed: String): String? = ua.pysanka.typing.PreviousWord.of(
+        editorInstance.activeContent.textBeforeSelection.dropLast(typed.length),
+        // A tapped suggestion's space comes only with the next word
+        spaceComing = typed.isEmpty() && editorInstance.phantomSpace.isActive,
+    )
 
     /**
      * Pysanka: a word is finished: learns what ended up in the field ([candidate]'s word, or
      * [typed] as it is), and that it followed the word before. [insisted]: the person chose the
      * word exactly as typed. [typed] is empty for an offered next word.
      */
-    private fun pysankaLearn(typed: String, candidate: SuggestionCandidate?, insisted: Boolean = false) {
+    private fun pysankaLearn(
+        typed: String,
+        candidate: SuggestionCandidate?,
+        insisted: Boolean = false,
+        previous: String? = pysankaPreviousWord(typed),
+    ) {
         if (!pysankaMayLearn()) return
         val word = when {
             candidate == null -> typed
@@ -788,7 +796,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         if (word.isEmpty()) return
         ua.pysanka.typing.UserWords.learn(
             appContext, subtypeManager.activeSubtype.primaryLocale.language, word, insisted,
-            pysankaMidSentence(typed), pysankaPreviousWord(typed),
+            pysankaMidSentence(typed), previous,
         )
     }
 
