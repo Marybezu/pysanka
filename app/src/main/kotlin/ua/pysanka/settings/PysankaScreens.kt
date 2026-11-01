@@ -37,7 +37,6 @@ import org.florisboard.lib.compose.stringRes
 fun PysankaTypingScreen() = FlorisScreen {
     title = stringRes(R.string.pysanka__settings__typing)
     previewFieldVisible = true
-    val navController = LocalNavController.current
 
     content {
         SwitchPreference(
@@ -84,18 +83,6 @@ fun PysankaTypingScreen() = FlorisScreen {
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
             )
         }
-        PreferenceGroup(title = stringRes(R.string.pysanka__settings__more)) {
-            Preference(
-                title = stringRes(R.string.pysanka__typing__more_typing),
-                summary = stringRes(R.string.pysanka__typing__more_typing_summary),
-                onClick = { navController.navigate(Routes.Settings.Typing) },
-            )
-            Preference(
-                title = stringRes(R.string.pysanka__typing__more_gestures),
-                summary = stringRes(R.string.pysanka__typing__more_gestures_summary),
-                onClick = { navController.navigate(Routes.Settings.Gestures) },
-            )
-        }
     }
 }
 
@@ -133,13 +120,6 @@ fun PysankaLookScreen() = FlorisScreen {
             max = 150,
             stepIncrement = 5,
         )
-        PreferenceGroup(title = stringRes(R.string.pysanka__settings__more)) {
-            Preference(
-                title = stringRes(R.string.pysanka__look__more_keyboard),
-                summary = stringRes(R.string.pysanka__look__more_keyboard_summary),
-                onClick = { navController.navigate(Routes.Settings.Keyboard) },
-            )
-        }
     }
 }
 
