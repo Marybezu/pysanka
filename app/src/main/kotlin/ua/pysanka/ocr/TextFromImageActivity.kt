@@ -252,8 +252,9 @@ private fun ResultView(bitmap: Bitmap, lines: List<OcrLine>, close: () -> Unit) 
     var selected by remember(lines) { mutableStateOf(words.indices.toSet()) }
     var dragAdds by remember { mutableStateOf(true) }
 
-    fun selectedText(): String = lines.indices.mapNotNull { li ->
-        words.withIndex().filter { it.value.first == li && it.index in selected }
+    // Pieces of one line (same group) with spaces, lines with line breaks
+    fun selectedText(): String = lines.map { it.group }.distinct().mapNotNull { g ->
+        words.withIndex().filter { lines[it.value.first].group == g && it.index in selected }
             .joinToString(" ") { it.value.second.text }.takeIf { it.isNotBlank() }
     }.joinToString("\n")
 

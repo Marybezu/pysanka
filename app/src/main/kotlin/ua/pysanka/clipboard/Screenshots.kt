@@ -31,6 +31,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.florisboard.lib.android.stringRes
 import ua.pysanka.ocr.TextRecognizer
+import ua.pysanka.ocr.joinedText
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -289,7 +290,7 @@ object Screenshots {
                 BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
             } ?: return null
             return try {
-                recognizer.recognize(bitmap).joinToString("\n") { it.text }
+                recognizer.recognize(bitmap).joinedText()
             } finally {
                 bitmap.recycle()
             }
@@ -315,7 +316,7 @@ object Screenshots {
                     )
                     if (part != null) {
                         try {
-                            recognizer.recognize(part).mapTo(lines) { it.text }
+                            recognizer.recognize(part).joinedText().takeIf { it.isNotBlank() }?.let { lines.add(it) }
                         } finally {
                             part.recycle()
                         }
