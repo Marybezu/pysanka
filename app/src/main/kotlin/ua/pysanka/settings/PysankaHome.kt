@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.Assignment
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.outlined.Info
@@ -30,6 +29,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -102,8 +103,10 @@ fun PysankaHome() {
         ) { navController.navigate(Routes.Settings.PysankaPrivacy) }
         val aiReady = remember { ua.pysanka.ai.ModelStore(context).modelFile() != null }
         WideTile(
-            Icons.Default.AutoAwesome, stringRes(R.string.pysanka__settings__ai),
+            ua.pysanka.ui.AiMark, stringRes(R.string.pysanka__settings__ai),
             stringRes(if (aiReady) R.string.pysanka__settings__ai_ready else R.string.pysanka__settings__ai_missing),
+            // The AI's own violet, as in Mandat
+            iconTint = if (MaterialTheme.colorScheme.surface.luminance() < 0.5f) ua.pysanka.ui.AiVioletDark else ua.pysanka.ui.AiVioletLight,
         ) { navController.navigate(Routes.Settings.PysankaAi) }
         LinkRow(Icons.Outlined.Tune, stringRes(R.string.pysanka__settings__more), stringRes(R.string.pysanka__settings__more_summary)) {
             navController.navigate(Routes.Settings.PysankaMore)
@@ -139,7 +142,7 @@ private fun TileRow(a: Tile, b: Tile) {
 @Composable
 private fun WideTile(
     icon: ImageVector, title: String, summary: String,
-    highlighted: Boolean = false, enabled: Boolean = true, onClick: () -> Unit,
+    highlighted: Boolean = false, enabled: Boolean = true, iconTint: Color? = null, onClick: () -> Unit,
 ) {
     Card(
         onClick = onClick,
@@ -158,7 +161,7 @@ private fun WideTile(
             Modifier.padding(14.dp).alpha(alpha),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(icon, contentDescription = null, tint = iconTint ?: MaterialTheme.colorScheme.primary)
             Column {
                 Text(title, style = MaterialTheme.typography.titleMedium)
                 Text(summary, style = MaterialTheme.typography.bodySmall, color = textColor)

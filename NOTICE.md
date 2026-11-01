@@ -18,6 +18,14 @@ those copies keep that licence.
 
 ## Third-party material
 
+- `app/src/main/assets/ime/dict/uk.json`, `en.json` — word lists for suggestions and swipe, made from
+  FrequencyWords by Hermit Dave (https://github.com/hermitdave/FrequencyWords; word counts from
+  OpenSubtitles 2018, http://opus.nlpl.eu/OpenSubtitles.php, http://www.opensubtitles.org/),
+  licensed CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0/). Changed: limited to the
+  most frequent words, rescaled to 1–255, Ukrainian words filtered as below and a few respelled
+  (2019 spelling). The lists are under CC BY-SA 4.0; how they are made: `scripts/dict/`.
+  The Ukrainian filter uses the uk_UA hunspell dictionary (dict_uk project, as in LibreOffice,
+  MPL 1.1) only while the lists are made; it is not part of Pysanka.
 
 - Pysanka is based on **FlorisBoard** by The FlorisBoard Contributors
   (https://github.com/florisboard/florisboard), Apache License 2.0. The full history of FlorisBoard

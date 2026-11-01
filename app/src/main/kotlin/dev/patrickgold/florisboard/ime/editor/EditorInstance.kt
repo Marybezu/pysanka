@@ -171,6 +171,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     }
 
     override fun handleFinishInput() {
+        ua.pysanka.typing.AutoCorrect.clear()
         // Pysanka: a copy made while no field is focused is not judged by the last field
         clipboardManager.setFieldPrivacy(incognito = false, passwordField = false)
         ua.pysanka.privacy.FieldPrivacy.isPrivate = false
@@ -410,6 +411,21 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         } else runBlocking {
             deleteAroundCursor(unit, OperationScope.BEFORE_CURSOR, n = 1)
         }
+    }
+
+    /**
+     * Pysanka: undoes an auto-correction right after it ([corrected] and the space after it go
+     * back to what was typed, [original]). False if the text before the cursor is not that any more.
+     */
+    fun pysankaUndoAutoCorrect(original: String, corrected: String): Boolean {
+        val content = activeContent
+        if (content.selection.isSelectionMode || !content.textBeforeSelection.endsWith("$corrected ")) return false
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        val deleted = runBlocking {
+            deleteAroundCursor(OperationUnit.CHARACTERS, OperationScope.BEFORE_CURSOR, n = corrected.length + 1)
+        }
+        return deleted && commitText(original)
     }
 
     /**

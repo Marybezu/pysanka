@@ -34,7 +34,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BusinessCenter
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCut
@@ -88,12 +87,12 @@ import org.florisboard.lib.snygg.ui.SnyggRow
 import org.florisboard.lib.snygg.ui.SnyggText
 
 /**
- * Pysanka: the AI panel in place of the keys (✨ on the bar above the keyboard). The actions as
+ * Pysanka: the AI panel in place of the keys (✦ on the bar above the keyboard). The actions as
  * tiles; the answer right in the panel, to put in the field, copy, do again or work on further;
  * "Expand" opens the full editor. The model works in [AiService] (the ":ai" process) while the
  * panel is open.
  *
- * The text is read once when ✨ is pressed (see [AiBridge.openPanel]) and kept only while the panel
+ * The text is read once when ✦ is pressed (see [AiBridge.openPanel]) and kept only while the panel
  * is open. Possible replies are written to the message on the clipboard, if there is one (never a
  * sensitive one, and not while the phone is locked).
  */
@@ -108,7 +107,7 @@ fun AiPanel(modifier: Modifier = Modifier) {
     }
 
     if (panel == null) {
-        // Opened again without ✨ (the keyboard was rebuilt): nothing to work on
+        // Opened again without ✦ (the keyboard was rebuilt): nothing to work on
         LaunchedEffect(Unit) { closePanel() }
         return
     }
@@ -288,7 +287,7 @@ internal fun AiPanelView(
             val size = Modifier.sizeIn(maxHeight = headerHeight).aspectRatio(1f)
             // Back to the tiles; on the tiles themselves only ✕ (back to the keys) is needed
             if (stage is PanelStage.Menu || stage is PanelStage.NoModel) {
-                SnyggIcon(imageVector = Icons.Default.AutoAwesome, modifier = size.padding(10.dp))
+                SnyggIcon(imageVector = ua.pysanka.ui.AiMark, modifier = size.padding(10.dp))
             } else {
                 SnyggIconButton(FlorisImeUi.ClipboardHeaderButton.elementName, onClick = { actions.back() }, modifier = size) {
                     SnyggIcon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringRes(R.string.pysanka__ai__back))
@@ -464,7 +463,7 @@ private fun Working(text: String, onStop: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        SnyggIcon(imageVector = Icons.Default.AutoAwesome, modifier = Modifier.size(32.dp).alpha(pulse))
+        SnyggIcon(imageVector = ua.pysanka.ui.AiMark, modifier = Modifier.size(32.dp).alpha(pulse))
         SnyggText(text = text)
         Chip(stringRes(R.string.pysanka__ai__stop), onClick = onStop)
     }
@@ -548,7 +547,7 @@ private class AiLink(
 
     override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
         service = binder?.let(::Messenger)
-        // The model starts loading only if the panel stays open a moment (✨ then ✕ costs nothing)
+        // The model starts loading only if the panel stays open a moment (✦ then ✕ costs nothing)
         main.postDelayed(warm, WARM_DELAY_MS)
         waiting?.let(::deliver)
         waiting = null
