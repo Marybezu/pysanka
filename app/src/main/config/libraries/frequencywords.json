@@ -1,0 +1,15 @@
+{
+  "uniqueId": "frequencywords",
+  "name": "Word lists for suggestions and swipe (Ukrainian, English)",
+  "description": "Made from FrequencyWords by Hermit Dave (word counts from OpenSubtitles 2018, http://www.opensubtitles.org/): limited to the most frequent words, rescaled, Ukrainian words checked against the dict_uk hunspell dictionary. Licensed CC BY-SA 4.0.",
+  "developers": [
+    {
+      "name": "Hermit Dave",
+      "organisationUrl": "https://github.com/hermitdave/FrequencyWords"
+    }
+  ],
+  "website": "https://github.com/hermitdave/FrequencyWords",
+  "licenses": [
+    "cc-by-sa-4.0"
+  ]
+}
