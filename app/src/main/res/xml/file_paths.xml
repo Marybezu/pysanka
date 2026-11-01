@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
-    <!-- Nothing is shared through this provider at the moment; it stays for future use -->
+    <!-- Pysanka: the phone's camera app writes one photo here for "text from the camera"; deleted once read -->
+    <cache-path
+        name="capture"
+        path="capture/"/>
+    <!-- Nothing else is shared through this provider at the moment -->
     <cache-path
         name="shared"
         path="shared/"/>

@@ -126,7 +126,7 @@
     <string name="pysanka__ocr__from_camera">Текст із камери</string>
     <string name="pysanka__ocr__from_camera__tooltip">Навести камеру на текст і виділити його</string>
     <string name="pysanka__ocr__choose_title">Текст із камери</string>
-    <string name="pysanka__ocr__choose_hint">Живу камеру вимкнено (Налаштування → Приватність). Можна вибрати свіже фото або сфотографувати камерою телефона й потім вибрати знімок.</string>
+    <string name="pysanka__ocr__choose_hint">Камеру телефона закрито без знімка. Можна спробувати ще раз або вибрати свіже фото.</string>
     <string name="pysanka__ocr__recent_photos">Останні фото</string>
     <string name="pysanka__ocr__take_photo">Сфотографувати</string>
     <string name="pysanka__ocr__close">Закрити</string>
@@ -139,10 +139,7 @@
     <string name="pysanka__ocr__insert">Вставити</string>
     <string name="pysanka__ocr__copy">Копіювати</string>
     <string name="pysanka__ocr__to_history">До історії</string>
-    <string name="pysanka__ocr__live_hint">Наведіть на текст і натисніть кнопку</string>
-    <string name="pysanka__ocr__live_camera">Жива камера для тексту</string>
-    <string name="pysanka__ocr__live_camera_summary">Наведіть камеру й одразу вибирайте текст. Потрібен дозвіл на камеру; без нього працюють останні фото й камера телефона.</string>
-    <string name="pysanka__privacy__fact_ocr">Текст із фото й камери розпізнається на телефоні; з галереї Писанка бачить лише фото, яке ви вибрали (і нові скріншоти, якщо ви це ввімкнули)</string>
+    <string name="pysanka__privacy__fact_ocr">Текст із фото й камери розпізнається на телефоні; доступу до камери Писанка не має і бачить лише фото, яке ви вибрали чи зняли (і нові скріншоти, якщо ви це ввімкнули)</string>
     <string name="pysanka__screenshots__tag">Скріншоти</string>
     <string name="pysanka__screenshots__label">Скріншоти в історію</string>
     <string name="pysanka__screenshots__summary">Кожен новий скріншот потрапляє в історію зашифрованим, із тегом «Скріншоти» й розпізнаним на телефоні текстом. Старіші скріншоти не додаються. Потрібен доступ до фото; на GrapheneOS через Storage Scopes можна дозволити лише теку зі скріншотами.</string>

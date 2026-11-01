@@ -163,11 +163,6 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     // Pysanka: text from photos and the camera
     val pysankaOcr = PysankaOcr()
     inner class PysankaOcr {
-        /** Live camera inside Pysanka (needs the camera permission); off = recent photos or the system camera. */
-        val liveCamera = boolean(
-            key = "pysanka__ocr__live_camera",
-            default = false,
-        )
         /** Pysanka's own screens (settings, text from photo) hidden from screenshots and screen sharing. */
         val blockScreenshots = boolean(
             key = "pysanka__privacy__block_screenshots",

@@ -7,7 +7,7 @@ AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)
 "$AAPT" dump permissions "$APK" > permissions.txt
 cat permissions.txt
 grep -q '^package:' permissions.txt || { echo "::error::Could not read permissions"; exit 1; }
-ALLOWED=" android.permission.VIBRATE android.permission.POST_NOTIFICATIONS android.permission.CAMERA \
+ALLOWED=" android.permission.VIBRATE android.permission.POST_NOTIFICATIONS \
 android.permission.READ_MEDIA_IMAGES android.permission.READ_EXTERNAL_STORAGE \
 ua.pysanka.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION "
 for p in $(grep -oE "name='[^']+'" permissions.txt | sed "s/name='//;s/'//"); do

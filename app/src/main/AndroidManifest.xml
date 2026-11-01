@@ -6,11 +6,6 @@
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove"/>
 
-    <!-- Pysanka: only for "Live camera" in text recognition, asked when it is first used; without it
-         recent photos and the system camera app work with no permission at all -->
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-feature android:name="android.hardware.camera" android:required="false"/>
-
     <!-- Pysanka: only for "Screenshots into the history" (off by default), asked when it is turned on.
          On GrapheneOS, Storage Scopes can limit it to the Screenshots folder. -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>

@@ -1,11 +1,9 @@
 package ua.pysanka.ocr
 
 import ua.pysanka.privacy.followScreenshotBlock
-import android.Manifest
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -16,13 +14,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.ImageProxy
-import androidx.camera.core.Preview
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -39,7 +30,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
@@ -66,14 +56,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
 import androidx.exifinterface.media.ExifInterface
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.AppTheme
-import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.clipboardManager
 import kotlinx.coroutines.Dispatchers
@@ -88,9 +74,9 @@ import kotlin.math.min
  *
  * - From a photo: the system photo picker (opens on recent photos); the app gets only that photo,
  *   no permission is needed.
- * - From the camera: with "Live camera" on (and the camera permission given), the camera shows
- *   here and a tap takes the frame; otherwise the choice is recent photos or the system camera app,
- *   which hands over one picture and needs no permission either.
+ * - From the camera: the phone's own camera app takes one picture for Pysanka (Pysanka has no
+ *   camera permission at all). The picture is not saved in the gallery: it comes back into a file
+ *   in Pysanka's cache, is read and deleted at once.
  * - The recognised words are highlighted; tap or swipe over them, then insert into the field the
  *   keyboard was in, copy, or keep in the clipboard history. Nothing is stored otherwise, and the
  *   screen cannot be captured in screenshots.
@@ -132,12 +118,13 @@ class TextFromImageActivity : ComponentActivity() {
         // The models take about 60 MB; freed when no screen uses them (a rotation holds them again at once)
         val recognizer = TextRecognizer.get(this)
         kotlinx.coroutines.CoroutineScope(Dispatchers.Default).launch { recognizer.letGo() }
+        // A photo from the camera never stays behind (not while the camera app may still write it)
+        if (isFinishing) CameraShot.clear(this)
     }
 }
 
 private sealed interface Stage {
     data object Choose : Stage
-    data object LiveCamera : Stage
     data object Working : Stage
     data class Result(val bitmap: Bitmap, val lines: List<OcrLine>) : Stage
     data object Nothing : Stage
@@ -149,8 +136,6 @@ private sealed interface Stage {
 private fun TextFromImageScreen(source: String, close: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val prefs by FlorisPreferenceStore
-    val liveCameraOn = prefs.pysankaOcr.liveCamera.get()
     var stage by remember { mutableStateOf<Stage>(Stage.Choose) }
 
     fun recognize(load: suspend () -> Bitmap?) {
@@ -176,14 +161,27 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
         if (uri == null) close() else recognize { decode(context, uri) }
     }
-    // Without the camera permission Android does not allow "take a picture for me" (the app declares
-    // the permission for the live camera). So the phone's own camera app opens; the photo goes to the
-    // gallery as usual, and on return the photo picker opens with that newest photo first.
-    val openCameraApp = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-        pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    // The phone's camera app takes the picture into Pysanka's file; nothing goes to the gallery
+    var shot by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<Uri?>(null) }
+    val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { taken ->
+        val uri = shot
+        if (taken && uri != null) {
+            recognize { decode(context, uri).also { CameraShot.clear(context) } }
+        } else {
+            CameraShot.clear(context)
+            stage = Stage.Choose
+        }
     }
-    val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        stage = if (granted) Stage.LiveCamera else Stage.Choose
+    fun openCamera() {
+        val uri = CameraShot.uri(context)
+        shot = uri
+        try {
+            takePicture.launch(uri)
+        } catch (e: android.content.ActivityNotFoundException) {
+            // No camera app: recent photos instead
+            CameraShot.clear(context)
+            pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        }
     }
 
     // Opened once, also if the screen is turned (the activity keeps itself across rotation)
@@ -191,12 +189,10 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
     LaunchedEffect(Unit) {
         if (started) return@LaunchedEffect
         started = true
-        when {
-            source == TextFromImageActivity.SOURCE_PHOTO ->
-                pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-            liveCameraOn && hasCamera(context) -> stage = Stage.LiveCamera
-            liveCameraOn -> askCamera.launch(Manifest.permission.CAMERA)
-            else -> stage = Stage.Choose
+        if (source == TextFromImageActivity.SOURCE_PHOTO) {
+            pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        } else {
+            openCamera()
         }
     }
 
@@ -212,25 +208,12 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
                 Button(onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.fillMaxWidth()) {
                     Text(stringRes(R.string.pysanka__ocr__recent_photos))
                 }
-                val hasCameraApp = remember {
-                    Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA).resolveActivity(context.packageManager) != null
-                }
-                if (hasCameraApp) FilledTonalButton(
-                    onClick = {
-                        runCatching { openCameraApp.launch(Intent(android.provider.MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)) }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
+                FilledTonalButton(onClick = { openCamera() }, modifier = Modifier.fillMaxWidth()) {
                     Text(stringRes(R.string.pysanka__ocr__take_photo))
                 }
                 TextButton(onClick = close) { Text(stringRes(R.string.pysanka__ocr__close)) }
             }
         }
-        Stage.LiveCamera -> LiveCamera(
-            onCaptured = { bitmap -> recognize { bitmap } },
-            onFailed = { stage = Stage.Choose },
-            close = close,
-        )
         Stage.Working -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 CircularProgressIndicator()
@@ -347,103 +330,24 @@ private fun ResultView(bitmap: Bitmap, lines: List<OcrLine>, close: () -> Unit) 
     }
 }
 
-@Composable
-private fun LiveCamera(onCaptured: (Bitmap) -> Unit, onFailed: () -> Unit, close: () -> Unit) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    // About 2400 px on the long side is plenty for text and keeps memory and time low
-    val capture = remember {
-        ImageCapture.Builder()
-            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-            .setResolutionSelector(
-                androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
-                    .setResolutionStrategy(
-                        androidx.camera.core.resolutionselector.ResolutionStrategy(
-                            android.util.Size(2400, 1800),
-                            androidx.camera.core.resolutionselector.ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER_THEN_HIGHER,
-                        ),
-                    )
-                    .build(),
-            )
-            .build()
-    }
-    var providerRef by remember { mutableStateOf<ProcessCameraProvider?>(null) }
-    var busy by remember { mutableStateOf(false) }
-    val background = remember { java.util.concurrent.Executors.newSingleThreadExecutor() }
-    // The camera turns off as soon as this view goes (after the shot, or on close)
-    androidx.compose.runtime.DisposableEffect(Unit) {
-        onDispose {
-            runCatching { providerRef?.unbindAll() }
-            background.shutdown()
-        }
-    }
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
-        AndroidView(
-            modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                val view = PreviewView(ctx)
-                val future = ProcessCameraProvider.getInstance(ctx)
-                future.addListener({
-                    try {
-                        val provider = future.get()
-                        providerRef = provider
-                        val preview = Preview.Builder().build().also { it.setSurfaceProvider(view.surfaceProvider) }
-                        provider.unbindAll()
-                        provider.bindToLifecycle(lifecycleOwner, CameraSelector.DEFAULT_BACK_CAMERA, preview, capture)
-                    } catch (e: Exception) {
-                        onFailed()
-                    }
-                }, ContextCompat.getMainExecutor(ctx))
-                view
-            },
-        )
-        Text(
-            stringRes(R.string.pysanka__ocr__live_hint),
-            color = Color.White,
-            modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(16.dp),
-        )
-        Row(
-            Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(24.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TextButton(onClick = close) { Text(stringRes(R.string.pysanka__ocr__close), color = Color.White) }
-            Box(
-                Modifier
-                    .size(72.dp)
-                    .background(Color.White, CircleShape)
-                    .pointerInput(Unit) {
-                        detectTapGestures {
-                            if (busy) return@detectTapGestures
-                            busy = true
-                            // Converted on a background thread; the result comes back on the main one
-                            capture.takePicture(background, object : ImageCapture.OnImageCapturedCallback() {
-                                override fun onCaptureSuccess(image: ImageProxy) {
-                                    val bitmap = runCatching {
-                                        val b = image.toBitmap()
-                                        val rot = image.imageInfo.rotationDegrees
-                                        shrink(if (rot == 0) b else Bitmap.createBitmap(b, 0, 0, b.width, b.height, Matrix().apply { postRotate(rot.toFloat()) }, true))
-                                    }.getOrNull()
-                                    image.close()
-                                    ContextCompat.getMainExecutor(context).execute {
-                                        runCatching { providerRef?.unbindAll() }
-                                        if (bitmap != null) onCaptured(bitmap) else { busy = false; onFailed() }
-                                    }
-                                }
+/**
+ * Where the system camera app puts the photo: a file in Pysanka's cache, shared with that app only
+ * for this one shot. It is deleted as soon as the photo is read (and whenever the screen closes).
+ */
+internal object CameraShot {
+    private const val DIR = "capture"
 
-                                override fun onError(exception: ImageCaptureException) {
-                                    ContextCompat.getMainExecutor(context).execute { busy = false; onFailed() }
-                                }
-                            })
-                        }
-                    },
-            )
-        }
+    private fun file(context: Context) = java.io.File(java.io.File(context.cacheDir, DIR).apply { mkdirs() }, "shot.jpg")
+
+    fun uri(context: Context): Uri {
+        clear(context)
+        return androidx.core.content.FileProvider.getUriForFile(context, "${context.packageName}.provider.file", file(context))
+    }
+
+    fun clear(context: Context) {
+        java.io.File(context.cacheDir, DIR).listFiles()?.forEach { it.delete() }
     }
 }
-
-private fun hasCamera(context: Context) =
-    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
 
 /**
  * Reads a picture upright and not larger than needed. A phone photo can be 50 MP (about 200 MB as

@@ -217,9 +217,6 @@ dependencies {
     // Pysanka: runs the text recognition models on the phone
     implementation(libs.onnxruntime.android)
     implementation(libs.litertlm.android)
-    implementation(libs.androidx.camera.camera2)
-    implementation(libs.androidx.camera.lifecycle)
-    implementation(libs.androidx.camera.view)
     implementation(libs.androidx.window.core)
     implementation(libs.cache4k)
     implementation(libs.k3lp.core)

@@ -201,11 +201,6 @@ fun PysankaPrivacyScreen() = FlorisScreen {
             title = stringRes(R.string.pysanka__privacy__block_screenshots),
             summary = stringRes(R.string.pysanka__privacy__block_screenshots_summary),
         )
-        SwitchPreference(
-            prefs.pysankaOcr.liveCamera,
-            title = stringRes(R.string.pysanka__ocr__live_camera),
-            summary = stringRes(R.string.pysanka__ocr__live_camera_summary),
-        )
         ListPreference(
             prefs.suggestion.incognitoMode,
             icon = androidx.compose.ui.graphics.vector.ImageVector.vectorResource(id = R.drawable.ic_incognito),

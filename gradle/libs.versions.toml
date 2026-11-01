@@ -20,8 +20,6 @@ bouncycastle = "1.79"
 onnxruntime-android = "1.22.0"
 # Pysanka: Gemma on the phone for the AI editor (Apache 2.0; same as Tarilka)
 litertlm-android = "0.18.1"
-# Pysanka: live camera for text recognition (optional)
-androidx-camera = "1.4.2"
 androidx-window = "1.5.1"
 cache4k = "0.14.0"
 compose-multiplatform = "1.12.1"
@@ -75,9 +73,6 @@ sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "s
 bouncycastle-bcprov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
 onnxruntime-android = { module = "com.microsoft.onnxruntime:onnxruntime-android", version.ref = "onnxruntime-android" }
 litertlm-android = { module = "com.google.ai.edge.litertlm:litertlm-android", version.ref = "litertlm-android" }
-androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "androidx-camera" }
-androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "androidx-camera" }
-androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "androidx-camera" }
 androidx-window-core = { module = "androidx.window:window-core", version.ref = "androidx-window" }
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
