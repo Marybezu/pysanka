@@ -100,7 +100,6 @@ class TextFromImageActivity : ComponentActivity() {
         private const val EXTRA_SOURCE = "source"
         const val SOURCE_PHOTO = "photo"
         const val SOURCE_CAMERA = "camera"
-        private const val MAX_SIDE = 2400
 
         fun intent(context: Context, source: String) = Intent(context, TextFromImageActivity::class.java)
             .putExtra(EXTRA_SOURCE, source)
@@ -113,6 +112,8 @@ class TextFromImageActivity : ComponentActivity() {
         TextRecognizer.get(this).hold()
         // Blocked from screenshots only if the owner chose so (Privacy)
         followScreenshotBlock()
+        // Never a picture of this screen in the recent apps (it is left out of them anyway)
+        if (android.os.Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(false)
         val source = intent.getStringExtra(EXTRA_SOURCE) ?: SOURCE_PHOTO
         setContent {
             // The app's texts (stringRes) are read through this; without it the screen fails at once
@@ -140,7 +141,8 @@ private sealed interface Stage {
     data object Working : Stage
     data class Result(val bitmap: Bitmap, val lines: List<OcrLine>) : Stage
     data object Nothing : Stage
-    data object Failed : Stage
+    /** [reason]: the kind of error only (no content), shown so a failure can be reported. */
+    data class Failed(val reason: String? = null) : Stage
 }
 
 @Composable
@@ -157,13 +159,16 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
             stage = try {
                 val bitmap = withContext(Dispatchers.IO) { load() }
                 if (bitmap == null) {
-                    Stage.Failed
+                    Stage.Failed("no picture")
                 } else {
                     val lines = TextRecognizer.get(context).recognize(bitmap)
                     if (lines.isEmpty()) Stage.Nothing else Stage.Result(bitmap, lines)
                 }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Throwable) {
-                Stage.Failed
+                android.util.Log.w("Pysanka", "Text from image failed: ${e.javaClass.simpleName}")
+                Stage.Failed(e.javaClass.simpleName)
             }
         }
     }
@@ -232,12 +237,14 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
                 Text(stringRes(R.string.pysanka__ocr__working))
             }
         }
-        Stage.Nothing, Stage.Failed -> Column(
+        Stage.Nothing, is Stage.Failed -> Column(
             Modifier.fillMaxSize().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(stringRes(if (s == Stage.Nothing) R.string.pysanka__ocr__nothing else R.string.pysanka__ocr__failed))
+            // Only the kind of error (e.g. OutOfMemoryError), so it can be reported
+            (s as? Stage.Failed)?.reason?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             OutlinedButton(onClick = close) { Text(stringRes(R.string.pysanka__ocr__close)) }
         }
         is Stage.Result -> ResultView(s.bitmap, s.lines, close)
@@ -442,11 +449,14 @@ private fun decode(context: Context, uri: Uri): Bitmap? {
         // Upright by itself (it applies the photo's rotation); software pixels, so they can be read
         return android.graphics.ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
             decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+            decoder.setTargetColorSpace(android.graphics.ColorSpace.get(android.graphics.ColorSpace.Named.SRGB))
             val w = info.size.width
             val h = info.size.height
             val s = MAX_PICTURE.toFloat() / max(w, h)
             if (s < 1f) decoder.setTargetSize(max(1, (w * s).toInt()), max(1, (h * s).toInt()))
-        }.let { if (it.config == Bitmap.Config.ARGB_8888) it else it.copy(Bitmap.Config.ARGB_8888, false) }
+        }.let { b ->
+            if (b.config == Bitmap.Config.ARGB_8888) b else b.copy(Bitmap.Config.ARGB_8888, false).also { b.recycle() }
+        }
     }
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     cr.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return null

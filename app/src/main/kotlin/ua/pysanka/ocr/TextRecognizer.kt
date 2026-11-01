@@ -72,7 +72,9 @@ class TextRecognizer private constructor(private val context: Context) {
         private const val MIN_TILT = 0.035f // about 2°
         private const val MAX_TILT = 0.6f // about 35°
         /** Letters only Cyrillic has (no Latin look-alike): a line with them is not read again as Latin. */
-        private const val CYRILLIC_ONLY = "бвгґдєжзийїклмнптфцчшщьюяыэъБГҐДЄЖЗИЙЇЛПФЦЧШЩЬЮЯЫЭЪ"
+        private const val CYRILLIC_ONLY = "бгґдєжзйїлфцчшщьюяыэъБГҐДЄЖЗЙЇЛФЦЧШЩЬЮЯЫЭЪ"
+        /** A region is a tilted line only if it is clearly long (spread along ≥ 3 × across). */
+        private const val MIN_ELONGATION = 9.0 // ratio of variances
 
         @Volatile
         private var instance: TextRecognizer? = null
@@ -175,29 +177,8 @@ class TextRecognizer private constructor(private val context: Context) {
         val nh = max(32, (h * scale / 32f).roundToInt() * 32)
         val scaled = Bitmap.createScaledBitmap(src, nw, nh, true)
         val plane = nw * nh
-        val prob: FloatArray = run {
-            val px = IntArray(plane)
-            scaled.getPixels(px, 0, nw, 0, 0, nw, nh)
-            if (scaled !== src) scaled.recycle()
-            // Channels in BGR order, as the model was trained (Paddle decodes images as BGR)
-            val input = FloatBuffer.allocate(3 * plane)
-            for (i in 0 until plane) {
-                val c = px[i]
-                val b = (c and 0xFF) / 255f
-                val g = ((c shr 8) and 0xFF) / 255f
-                val r = ((c shr 16) and 0xFF) / 255f
-                input.put(i, (b - MEAN[0]) / STD[0])
-                input.put(plane + i, (g - MEAN[1]) / STD[1])
-                input.put(2 * plane + i, (r - MEAN[2]) / STD[2])
-            }
-            val session = det!!
-            OnnxTensor.createTensor(env, input, longArrayOf(1, 3, nh.toLong(), nw.toLong())).use { t ->
-                session.run(mapOf(session.inputNames.first() to t)).use { out ->
-                    val fb = (out[0] as OnnxTensor).floatBuffer
-                    FloatArray(fb.remaining()).also { fb.get(it) }
-                }
-            }
-        }
+        val prob = probabilities(scaled, nw, nh)
+        if (scaled !== src) scaled.recycle()
         val sx = w.toFloat() / nw
         val sy = h.toFloat() / nh
         // Group pixels above the threshold into 4-connected regions
@@ -238,7 +219,12 @@ class TextRecognizer private constructor(private val context: Context) {
             val cyy = myy / count - my * my
             val cxy = mxy / count - mx * my
             var angle = (0.5 * atan2(2 * cxy, cxx - cyy)).toFloat()
-            if (abs(angle) < MIN_TILT || abs(angle) > MAX_TILT) angle = 0f
+            // Spread along the long and the short axis: a letter, a number or a short word is about
+            // as wide as high, and its "tilt" would be noise
+            val half = (cxx + cyy) / 2
+            val diff = kotlin.math.sqrt(((cxx - cyy) / 2) * ((cxx - cyy) / 2) + cxy * cxy)
+            val elongated = half - diff <= 0.0 || (half + diff) / (half - diff) >= MIN_ELONGATION
+            if (!elongated || abs(angle) < MIN_TILT || abs(angle) > MAX_TILT) angle = 0f
             // Extent along and across the text: a second look at this region's pixels
             val c = cos(angle)
             val s = sin(angle)
@@ -270,6 +256,35 @@ class TextRecognizer private constructor(private val context: Context) {
         return boxes
     }
 
+    /**
+     * The model's text probability for each pixel. In its own function, so the pixel copy and the
+     * model input (together about 50 MB at 2048 px) are gone before the regions are worked out.
+     */
+    private fun probabilities(scaled: Bitmap, nw: Int, nh: Int): FloatArray {
+        val plane = nw * nh
+        val px = IntArray(plane)
+        scaled.getPixels(px, 0, nw, 0, 0, nw, nh)
+        // Direct memory in the native byte order: ONNX Runtime uses it as is, without a copy.
+        // Channels in BGR order, as the model was trained (Paddle decodes images as BGR)
+        val input = java.nio.ByteBuffer.allocateDirect(4 * 3 * plane).order(java.nio.ByteOrder.nativeOrder()).asFloatBuffer()
+        for (i in 0 until plane) {
+            val c = px[i]
+            val b = (c and 0xFF) / 255f
+            val g = ((c shr 8) and 0xFF) / 255f
+            val r = ((c shr 16) and 0xFF) / 255f
+            input.put(i, (b - MEAN[0]) / STD[0])
+            input.put(plane + i, (g - MEAN[1]) / STD[1])
+            input.put(2 * plane + i, (r - MEAN[2]) / STD[2])
+        }
+        val session = det!!
+        return OnnxTensor.createTensor(env, input, longArrayOf(1, 3, nh.toLong(), nw.toLong())).use { t ->
+            session.run(mapOf(session.inputNames.first() to t)).use { out ->
+                val fb = (out[0] as OnnxTensor).floatBuffer
+                FloatArray(fb.remaining()).also { fb.get(it) }
+            }
+        }
+    }
+
     private fun push(p: Int, prob: FloatArray, labels: IntArray, label: Int, stack: IntArray, top: Int): Int? {
         if (prob[p] <= THRESHOLD || labels[p] != 0) return null
         labels[p] = label
@@ -285,11 +300,13 @@ class TextRecognizer private constructor(private val context: Context) {
         // Cut the region out straightened and scaled to the model's height
         val k = REC_HEIGHT / box.height
         val rw = min(MAX_REC_WIDTH, max(16, (box.length * k).roundToInt()))
+        // A very long line is squeezed sideways to fit, never cut off
+        val kx = min(k, rw / box.length)
         val crop = Bitmap.createBitmap(rw, REC_HEIGHT, Bitmap.Config.ARGB_8888)
         val matrix = Matrix().apply {
             postTranslate(-box.cx, -box.cy)
             postRotate(-Math.toDegrees(box.angle.toDouble()).toFloat())
-            postScale(k, k)
+            postScale(kx, k)
             postTranslate(rw / 2f, REC_HEIGHT / 2f)
         }
         Canvas(crop).apply {
@@ -317,7 +334,9 @@ class TextRecognizer private constructor(private val context: Context) {
             }
             if (best == null || reading.evidence > best.evidence) best = reading
             // Letters only Cyrillic has, read surely: the Latin model would only see part of it
-            if (reading.mean >= 0.85f && reading.text.count { it in CYRILLIC_ONLY } >= 2) break
+            val letters = reading.text.count { it.isLetter() }
+            val cyr = reading.text.count { it in CYRILLIC_ONLY }
+            if (reading.mean >= 0.85f && cyr >= 2 && cyr * 100 >= letters * 15) break
         }
         val r = best ?: return null
         val text = r.text.trim()
@@ -432,12 +451,53 @@ class TextRecognizer private constructor(private val context: Context) {
             }
             if (best != null) best.add(r) else blocks.add(mutableListOf(r))
         }
-        // 3. Blocks top to bottom (as they start), then left to right
-        val ordered = blocks.sortedWith(compareBy({ it.first().top }, { it.first().left }))
+        // 3. Tables (a receipt, a price list, "name: value"): a narrow block beside a wide one whose
+        //    lines line up with it is not a column but the other half of its lines
+        fun aligned(a: Row, b: Row): Boolean {
+            val h = min(a.bottom - a.top, b.bottom - b.top)
+            return min(a.bottom, b.bottom) - max(a.top, b.top) > h / 2
+        }
+        var merged = true
+        while (merged) {
+            merged = false
+            loop@ for (a in blocks) for (b in blocks) {
+                if (a === b) continue
+                val aw = a.maxOf { it.right } - a.minOf { it.left }
+                val bw = b.maxOf { it.right } - b.minOf { it.left }
+                val beside = b.minOf { it.left } >= a.maxOf { it.right } - min(aw, bw) / 4
+                val narrow = bw < 0.6f * aw || aw < 0.6f * bw
+                val matches = b.count { rb -> a.any { aligned(it, rb) } }
+                if (beside && narrow && matches * 10 >= b.size * 6 && matches * 10 >= minOf(a.size, b.size) * 6) {
+                    for (rb in b) {
+                        val ra = a.firstOrNull { aligned(it, rb) }
+                        if (ra != null) ra.pieces.addAll(rb.pieces) else a.add(rb)
+                    }
+                    a.sortBy { it.top }
+                    blocks.remove(b)
+                    merged = true
+                    break@loop
+                }
+            }
+        }
+        // 4. Blocks top to bottom (as they start; starts within half a line count as level), then left to right
+        val ordered = blocks.sortedBy { it.first().top }.toMutableList()
+        var swapped = true
+        while (swapped) {
+            swapped = false
+            for (i in 0 until ordered.size - 1) {
+                val x = ordered[i].first()
+                val y = ordered[i + 1].first()
+                val level = abs(x.top - y.top) < min(x.bottom - x.top, y.bottom - y.top) / 2
+                if (level && y.left < x.left) {
+                    ordered[i] = ordered[i + 1].also { ordered[i + 1] = ordered[i] }
+                    swapped = true
+                }
+            }
+        }
         val out = ArrayList<OcrLine>()
         var group = 0
         for (b in ordered) for (r in b) {
-            for (p in r.pieces) out.add(p.copy(group = group))
+            for (p in r.pieces.sortedBy { it.box.left }) out.add(p.copy(group = group))
             group++
         }
         return out
