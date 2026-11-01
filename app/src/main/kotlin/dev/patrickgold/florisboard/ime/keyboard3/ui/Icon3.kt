@@ -175,6 +175,7 @@ fun staticIcon3(value: K3Descriptor, context: Context): ImageVector? {
         ImeIcons.Voice -> Icons.Default.KeyboardVoice
         ImeIcons.PysankaTextFromPhoto -> Icons.Default.DocumentScanner
         ImeIcons.PysankaTextFromCamera -> Icons.Default.PhotoCamera
+        ImeIcons.PysankaAi -> Icons.Default.AutoAwesome
         else -> null
     }
 }

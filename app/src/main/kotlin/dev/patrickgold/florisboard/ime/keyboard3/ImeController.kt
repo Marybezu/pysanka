@@ -290,11 +290,15 @@ class ImeController(
                 passwordField = keyVariation == KeyVariation.PASSWORD,
             )
             ua.pysanka.privacy.FieldPrivacy.isPrivate = state.flags.isIncognitoMode || info.imeOptions.flagNoPersonalizedLearning
+            ua.pysanka.privacy.FieldPrivacy.isPassword = keyVariation == KeyVariation.PASSWORD
             resetContent(initialSelection, initialSurrounding)
             expectedContentQueue.clear()
             // Pysanka: text picked from a photo goes only into the field it was picked for
             ua.pysanka.ocr.PendingInsert.takeFor(info.packageName, info.base.fieldId, keyVariation == KeyVariation.PASSWORD)
                 ?.let { state.editor.pysankaInsertText(it) }
+            // Pysanka: text from the AI editor goes only into the field it was taken from
+            ua.pysanka.ai.AiBridge.takeFor(info.packageName, info.base.fieldId, keyVariation == KeyVariation.PASSWORD)
+                ?.let { state.editor.pysankaApplyAi(it) }
         }
 
         fun handleUpdateSelection(newSelection: K3TextRange) {
@@ -383,6 +387,7 @@ class ImeController(
                 ImeActions.Undo -> state.editor.performUndo()
                 ImeActions.Redo -> state.editor.performRedo()
                 ImeActions.Settings -> FlorisImeService.launchSettings()
+                ImeActions.PysankaAi -> ua.pysanka.ai.AiBridge.openFromKeyboard(state.editor)
                 ImeActions.PysankaTextFromPhoto, ImeActions.PysankaTextFromCamera -> {
                     ua.pysanka.ocr.PendingInsert.opened(state.editor.info.packageName, state.editor.info.base.fieldId)
                     ua.pysanka.ocr.openTextFromImage(

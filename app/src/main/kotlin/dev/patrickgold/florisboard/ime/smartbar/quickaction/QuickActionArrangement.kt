@@ -86,7 +86,8 @@ data class QuickActionArrangement(
         val Default = QuickActionArrangement(
             stickyAction = QuickAction.InsertK3Descriptor(ImeActions.ExternalVoiceInput),
             dynamicActions = listOf(
-                // Pysanka: text from a photo / the camera come first
+                // Pysanka: the AI editor and text from a photo / the camera come first
+                QuickAction.InsertK3Descriptor(ImeActions.PysankaAi),
                 QuickAction.InsertK3Descriptor(ImeActions.PysankaTextFromPhoto),
                 QuickAction.InsertK3Descriptor(ImeActions.PysankaTextFromCamera),
                 QuickAction.InsertK3Descriptor(ImeActions.ToggleFloatingWindow),
@@ -122,7 +123,11 @@ data class QuickActionArrangement(
         }
 
         override fun deserialize(value: String): QuickActionArrangement {
-            return QuickActionJsonConfig.decodeFromString(value)
+            val a = QuickActionJsonConfig.decodeFromString<QuickActionArrangement>(value)
+            // Pysanka: a saved arrangement from before the AI button gets it first (once it is
+            // anywhere, also hidden, the owner's choice stays)
+            val ai = QuickAction.InsertK3Descriptor(ImeActions.PysankaAi)
+            return if (ai in a) a else a.copy(dynamicActions = listOf(ai) + a.dynamicActions)
         }
     }
 }

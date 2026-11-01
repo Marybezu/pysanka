@@ -152,6 +152,18 @@
         </provider>
 
         <!-- Pysanka: text from a photo or the camera; its own task, not in recent apps -->
+        <!-- Pysanka: the AI editor, in its own process so the model (about 2.6 GB) never weighs on the keyboard -->
+        <activity
+            android:name="ua.pysanka.ai.AiEditorActivity"
+            android:exported="false"
+            android:process=":ai"
+            android:excludeFromRecents="true"
+            android:taskAffinity="ua.pysanka.ai"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:theme="@style/FlorisAppTheme"
+            android:label="@string/pysanka__ai__title" />
+
         <activity
             android:name="ua.pysanka.ocr.TextFromImageActivity"
             android:exported="false"

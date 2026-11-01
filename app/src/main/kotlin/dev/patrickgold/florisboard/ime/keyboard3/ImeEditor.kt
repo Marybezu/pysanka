@@ -94,6 +94,68 @@ open class ImeEditor(
         return ok
     }
 
+    /**
+     * Pysanka: the text the AI editor works on: the selection, or else the whole field (up to
+     * [limit] + 1 characters, so a longer text can be told apart). Null if the field cannot be read.
+     */
+    fun pysankaTextForAi(limit: Int): ua.pysanka.ai.AiBridge.Taken? {
+        val ic = ic.get() ?: return null
+        val selected = ic.getSelectedText(0)?.toString()
+        if (!selected.isNullOrEmpty()) return ua.pysanka.ai.AiBridge.Taken(ua.pysanka.ai.AiBridge.Mode.SELECTION, selected)
+        val request = android.view.inputmethod.ExtractedTextRequest().apply {
+            hintMaxChars = limit + 1
+            hintMaxLines = Int.MAX_VALUE
+        }
+        val et = ic.getExtractedText(request, 0)
+        val all = if (et?.text != null && et.startOffset == 0) {
+            et.text.toString()
+        } else {
+            // Some apps do not give the extracted text: before and after the cursor instead
+            (ic.getTextBeforeCursor(limit + 1, 0)?.toString() ?: "") + (ic.getTextAfterCursor(limit + 1, 0)?.toString() ?: "")
+        }
+        return ua.pysanka.ai.AiBridge.Taken(
+            if (all.isBlank()) ua.pysanka.ai.AiBridge.Mode.INSERT else ua.pysanka.ai.AiBridge.Mode.ALL, all,
+        )
+    }
+
+    /**
+     * Pysanka: puts the AI editor's text back. It replaces the original only if the field still
+     * holds exactly it (the selection, or the whole text); otherwise nothing is overwritten and the
+     * text goes in at the end of the current selection.
+     */
+    fun pysankaApplyAi(result: ua.pysanka.ai.AiBridge.Result): Boolean {
+        val ic = ic.get() ?: return false
+        ic.beginBatchEdit()
+        try {
+            ic.finishComposingText()
+            val request = android.view.inputmethod.ExtractedTextRequest().apply {
+                hintMaxChars = result.original.length + 1
+                hintMaxLines = Int.MAX_VALUE
+            }
+            val replaced = when (result.mode) {
+                ua.pysanka.ai.AiBridge.Mode.SELECTION -> ic.getSelectedText(0)?.toString() == result.original
+                ua.pysanka.ai.AiBridge.Mode.ALL -> {
+                    val et = ic.getExtractedText(request, 0)
+                    val same = et?.text?.toString() == result.original && et.startOffset == 0
+                    if (same) ic.setSelection(0, result.original.length)
+                    same
+                }
+                ua.pysanka.ai.AiBridge.Mode.INSERT -> false
+            }
+            if (!replaced) {
+                // Never overwrite something else: collapse the selection to its end first
+                val et = ic.getExtractedText(android.view.inputmethod.ExtractedTextRequest(), 0)
+                if (et != null && et.selectionEnd >= 0 && et.selectionStart != et.selectionEnd) {
+                    val end = et.startOffset + maxOf(et.selectionStart, et.selectionEnd)
+                    ic.setSelection(end, end)
+                }
+            }
+            return ic.commitText(result.text, 1)
+        } finally {
+            ic.endBatchEdit()
+        }
+    }
+
     fun deleteSurroundingText(charsBefore: Int, charsAfter: Int) {
         val ic = ic.get() ?: return
         ic.deleteSurroundingText(charsBefore, charsAfter)

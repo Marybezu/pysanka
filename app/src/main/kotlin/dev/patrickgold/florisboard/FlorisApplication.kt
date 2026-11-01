@@ -91,6 +91,13 @@ class FlorisApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         FlorisApplicationReference = WeakReference(this)
+        // Pysanka: the AI editor's own process (":ai") holds only the model and its screen. It must
+        // not open the clipboard database, watch screenshots, clear the cache or load settings,
+        // which belong to the keyboard's process.
+        if (ua.pysanka.ai.AiProcess.isAiProcess(this)) {
+            CrashUtility.install(this)
+            return
+        }
 
         try {
             Flog.install(
@@ -129,6 +136,7 @@ class FlorisApplication : Application() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        if (!::themeController.isInitialized) return // Pysanka: the AI process has none
         themeController.activeSystemThemeMode.value = newConfig.determineSystemThemeMode()
     }
 
