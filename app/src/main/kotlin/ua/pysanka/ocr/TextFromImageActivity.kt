@@ -1,5 +1,6 @@
 package ua.pysanka.ocr
 
+import ua.pysanka.privacy.followScreenshotBlock
 import android.Manifest
 import android.content.ClipData
 import android.content.Context
@@ -111,7 +112,7 @@ class TextFromImageActivity : ComponentActivity() {
         // Paired with letGo in every onDestroy, so the count is right however the screen ends
         TextRecognizer.get(this).hold()
         // Blocked from screenshots only if the owner chose so (Privacy)
-        ua.pysanka.privacy.followScreenshotBlock()
+        followScreenshotBlock()
         val source = intent.getStringExtra(EXTRA_SOURCE) ?: SOURCE_PHOTO
         setContent {
             // The app's texts (stringRes) are read through this; without it the screen fails at once
