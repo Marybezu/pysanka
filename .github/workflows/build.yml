@@ -35,6 +35,9 @@ jobs:
             echo "::error::v$V is already released; raise version.txt first."; exit 1
           fi
 
+      - name: Check strings (unescaped apostrophes)
+        run: bash .github/check-strings.sh
+
       - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
