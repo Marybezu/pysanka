@@ -13,7 +13,7 @@ import java.util.TreeMap
  *
  * - Every finished word counts once. A word the word list knows is offered a little higher the
  *   more it is used.
- * - A word the list does not know becomes "known" ([KNOWN] uses) after it is typed twice, or at
+ * - A word the list does not know becomes "known" ([KNOWN] uses) after it is typed three times, or at
  *   once when the person insists on it (taps it as typed, or takes its auto-correction back).
  *   A known word is offered and never auto-corrected.
  * - At most [max] words; the least used and longest unused go first.
@@ -26,12 +26,12 @@ import java.util.TreeMap
 class PersonalWords(private val max: Int = MAX_WORDS, private val maxPairs: Int = MAX_PAIRS) {
     companion object {
         /** Uses after which a word that is not in the word list is offered. */
-        const val KNOWN = 2
+        const val KNOWN = 3
 
         const val MAX_WORDS = 3000
 
         /** Uses after which the second word of a pair is offered after the first. */
-        const val PAIR_KNOWN = 2
+        const val PAIR_KNOWN = 3
 
         const val MAX_PAIRS = 6000
 

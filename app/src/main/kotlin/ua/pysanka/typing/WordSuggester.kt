@@ -14,7 +14,7 @@ package ua.pysanka.typing
  * - Apostrophes: ', ’ and ʼ count as the same; the one typed is kept.
  * - The person's own words ([PersonalWords], when given): a list word used often is offered
  *   higher; a word of their own is offered once known and never corrected. Auto-correction goes
- *   only into a list word (a learned word may itself be a typo typed twice).
+ *   only into a list word (a learned word may itself be a typo typed again).
  * - The word before ([PersonalWords] pairs): a word that often followed it is offered higher, and
  *   before anything is typed the usual next words are offered ([predict]).
  *
@@ -134,7 +134,7 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
             best.key.length in (lower.length - 1)..(lower.length + 1) &&
             isOneEditAway(lower, best.key) && best.value >= second * AUTO_MARGIN
         val autoWord = best?.key
-        // What usually comes after the previous word (a pair used at least twice) ranks higher
+        // What usually comes after the previous word (a pair used [PersonalWords.PAIR_KNOWN] times) ranks higher
         val order = if (own != null && previous != null) {
             val prev = norm(previous)
             scored.mapValues { (key, v) ->
