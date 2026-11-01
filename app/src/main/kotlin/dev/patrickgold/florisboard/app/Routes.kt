@@ -17,17 +17,12 @@
 package dev.patrickgold.florisboard.app
 
 import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideOut
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavGraphBuilder
@@ -272,12 +267,12 @@ object Routes {
             exitTransition = {
                 slideOut { IntOffset(-it.width, 0) } + fadeOut()
             },
-            popEnterTransition = { EnterTransition.None },
+            // Pysanka: back slides the screen away to the right (it shrank into a card before)
+            popEnterTransition = {
+                slideIn { IntOffset(-it.width / 4, 0) } + fadeIn()
+            },
             popExitTransition = {
-                scaleOut(
-                    targetScale = 0.85F,
-                    transformOrigin = TransformOrigin(pivotFractionX = 0.8f, pivotFractionY = 0.5f)
-                ) + fadeOut(spring(stiffness = Spring.StiffnessMedium))
+                slideOut { IntOffset(it.width, 0) } + fadeOut()
             },
         ) {
             composable<Setup.Screen> { SetupScreen() }
