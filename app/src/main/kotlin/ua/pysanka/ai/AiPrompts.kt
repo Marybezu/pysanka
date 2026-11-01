@@ -47,8 +47,10 @@ enum class AiLanguage(@StringRes val label: Int, val english: String) {
 
 /**
  * The instructions for each action. In English (the model follows them best), with the rule that
- * the answer keeps the text's own language and is only the new text, without comments or quotes.
- * For Ukrainian the model is told plainly to write without Russian words or surzhyk.
+ * the answer is only the new text, without comments or quotes, in the text's own language — named
+ * plainly when [TextLanguage] can tell it. For Ukrainian the model is told to write without Russian
+ * words or surzhyk. The changes of style come with a short example, as a small model otherwise
+ * barely changes the text.
  */
 internal object AiPrompts {
     private const val BASE =
@@ -57,13 +59,57 @@ internal object AiPrompts {
             "Never add facts, names, numbers or dates that are not in the text. " +
             "If the text is in Ukrainian, write correct modern Ukrainian, never Russian words, Russian spelling or surzhyk."
 
-    private const val KEEP_LANGUAGE = "Write in the language of the text."
+    /** The language to answer in: named when known. */
+    private fun keep(language: String?) =
+        if (language != null) "Write in $language (the language of the text), never in another language."
+        else "Write in the language of the text."
+
+    private fun inLanguage(language: String?) = if (language != null) "in $language" else "in the language of the text"
+
+    private const val CHANGE =
+        "The result must read clearly differently from the text: change the wording and the sentences, not only punctuation."
+
+    /** A short example of the change, in Ukrainian for a Ukrainian text, otherwise in English. */
+    private fun example(action: AiAction, language: String?): String {
+        val uk = language == TextLanguage.UKRAINIAN
+        val (from, to) = when (action) {
+            AiAction.FRIENDLY -> if (uk) {
+                "Надішліть звіт до п'ятниці. Без нього ми не зможемо продовжити роботу." to
+                    "Привіт! Надішли, будь ласка, звіт до п'ятниці — без нього нам далі ніяк. Дякую!"
+            } else {
+                "Send the report by Friday. We cannot continue without it." to
+                    "Hi! Could you send me the report by Friday? We're a bit stuck without it. Thanks so much!"
+            }
+            AiAction.FORMAL -> if (uk) {
+                "привіт, скинь звіт до пятниці бо без нього ніяк" to
+                    "Доброго дня! Прошу надіслати звіт до п'ятниці, оскільки без нього ми не зможемо продовжити роботу. Дякую."
+            } else {
+                "hey, send me the report by friday, we're stuck without it" to
+                    "Hello, could you please send the report by Friday? We are unable to proceed without it. Thank you."
+            }
+            AiAction.SHORTER -> if (uk) {
+                "Я хотіла б вам повідомити, що, на жаль, у зв'язку з обставинами, які від мене не залежать, я не зможу прийти на зустріч, яка запланована на завтра." to
+                    "На жаль, завтра не зможу прийти на зустріч."
+            } else {
+                "I wanted to let you know that, unfortunately, due to circumstances beyond my control, I will not be able to attend the meeting planned for tomorrow." to
+                    "Sorry, I can't make tomorrow's meeting."
+            }
+            else -> return ""
+        }
+        return "Example (only to show the kind of change; never copy its words): text «$from» → result «$to»."
+    }
     private const val POINTS = "Start each point with \"• \" on its own line."
 
-    fun system(action: AiAction, target: AiLanguage): String = BASE + " " + when (action) {
-        AiAction.FIX -> "$KEEP_LANGUAGE Correct spelling, grammar and punctuation. Keep the wording, the meaning, " +
+    /** [text]: what the model will get, to name its language. */
+    fun system(action: AiAction, target: AiLanguage, text: String): String {
+        val language = TextLanguage.of(text)
+        return BASE + " " + instructions(action, target, language, keep(language))
+    }
+
+    private fun instructions(action: AiAction, target: AiLanguage, language: String?, keepLanguage: String) = when (action) {
+        AiAction.FIX -> "$keepLanguage Correct spelling, grammar and punctuation. Keep the wording, the meaning, " +
             "the tone and the line breaks; change only what is wrong."
-        AiAction.FIX_OCR -> "$KEEP_LANGUAGE The text was recognised from a photo and has recognition errors: " +
+        AiAction.FIX_OCR -> "$keepLanguage The text was recognised from a photo and has recognition errors: " +
             "letters mixed up (for example Latin look-alikes in a Cyrillic word, or a digit inside a Cyrillic word such as 6 for б or 3 for з; real numbers stay as they are), " +
             "words joined together or split apart, words broken across lines with a hyphen, lines broken in the " +
             "middle of a sentence. Fix only such errors. Join the lines of one paragraph; keep breaks between " +
@@ -71,53 +117,63 @@ internal object AiPrompts {
         AiAction.RUSSISMS -> "The text is in Ukrainian. Replace Russianisms, calques from Russian and surzhyk with " +
             "natural Ukrainian words and phrases (for example «приймати участь» → «брати участь», «на протязі» → " +
             "«протягом», «вірно» → «правильно» where it means correct). Change nothing else."
-        AiAction.FRIENDLY -> "$KEEP_LANGUAGE Rewrite the text in a warm, friendly, natural tone, as a person would " +
-            "write to someone they know. Keep the meaning and every fact; about the same length."
-        AiAction.FORMAL -> "$KEEP_LANGUAGE Rewrite the text in a polite, clear business tone. Keep the meaning and " +
-            "every fact; about the same length."
-        AiAction.SHORTER -> "$KEEP_LANGUAGE Make the text noticeably shorter and clearer. Keep every important fact " +
-            "and the tone."
-        AiAction.SUMMARY -> "$KEEP_LANGUAGE Summarise the text in two to five short points: the main things a reader " +
+        AiAction.FRIENDLY -> "$keepLanguage Rewrite the text in a warm, friendly, natural tone, as a person would " +
+            "write to someone they know: a greeting or a kind word where it fits, simple everyday words, short " +
+            "sentences, informal address. Keep the meaning and every fact. $CHANGE ${example(action, language)}"
+        AiAction.FORMAL -> "$keepLanguage Rewrite the text in a polite, clear business tone: a polite greeting, " +
+            "complete sentences, neutral words, no slang, polite address. Keep the meaning and every fact. $CHANGE " +
+            example(action, language)
+        AiAction.SHORTER -> "$keepLanguage Make the text at least a third shorter: drop repeats, filler and " +
+            "needless words, join sentences. Keep every important fact, name and number, and the tone. " +
+            example(action, language)
+        AiAction.SUMMARY -> "$keepLanguage Summarise the text in two to five short points: the main things a reader " +
             "must know. $POINTS Copy names, numbers and dates exactly as they are written in the text. " +
             "Do not add opinions, conclusions or anything the text does not say."
         AiAction.TRANSLATE -> "Translate the text into ${target.english}. Keep the meaning, tone, names, numbers and " +
             "line breaks. Write natural ${target.english}, not word by word."
-        AiAction.LIST -> "$KEEP_LANGUAGE Turn the text into a clear list: one item per line, short and parallel. " +
+        AiAction.LIST -> "$keepLanguage Turn the text into a clear list: one item per line, short and parallel. " +
             "$POINTS Keep every fact; add nothing."
-        AiAction.TABLE -> "$KEEP_LANGUAGE Arrange the information of the text as a table in plain text: the first " +
-            "line is the header, columns are separated by \" | \", one row per line. Choose the columns from the text " +
-            "itself. Keep every fact exactly; leave a cell empty rather than guess."
-        AiAction.NOTES -> "$KEEP_LANGUAGE The text is the person's rough notes. Put them in order: group related points " +
+        AiAction.TABLE -> "$keepLanguage Arrange the information of the text as a table in plain text. The first " +
+            "line is the header with two to four short column names chosen from the text (for example who, what, " +
+            "when, how many); then one row per line, one row per item, event or person; columns separated by \" | \". " +
+            "Every row on its own line. Keep every fact exactly; leave a cell empty rather than guess."
+        AiAction.NOTES -> "$keepLanguage The text is the person's rough notes. Put them in order: group related points " +
             "under short headings (a heading on its own line), merge repeats, keep every fact and the person's own " +
             "words where possible. $POINTS"
         AiAction.LETTER -> "The text describes a message the person wants to write: to whom, about what, maybe the tone. " +
-            "Write that message, ready to send, in the language of the description, natural and polite. Use only facts " +
+            "Write that message, ready to send, ${inLanguage(language)}, natural and polite. Use only facts " +
             "from the description; where a detail is missing, put a placeholder in square brackets, like [дата] or [date]."
-        AiAction.REPLIES -> "The text is a message the person received. Write three short possible replies in the language " +
-            "of the message: one that agrees, one that politely declines, one that asks to clarify. Put a blank line " +
+        AiAction.REPLIES -> "The text is a message the person received. Write three short possible replies " +
+            "${inLanguage(language)}: one that agrees, one that politely declines, one that asks to clarify. Put a blank line " +
             "between them and start each with a short label in that language and a colon (for example «Так:», «Ні:», " +
             "«Уточнити:»). Do not invent facts about the person."
-        AiAction.TONE -> "Do not rewrite the text. In the language of the text, say in two to four short sentences how " +
+        AiAction.TONE -> "Do not rewrite the text. Answer ${inLanguage(language)} only. Say in two to four short sentences how " +
             "the reader will probably take it: its tone, anything that may sound harsh, cold, pushy or unclear, and one " +
             "concrete improvement."
-        AiAction.REDACT -> "$KEEP_LANGUAGE Replace personal data with placeholders in square brackets, written in the " +
+        AiAction.REDACT -> "$keepLanguage Replace personal data with placeholders in square brackets, written in the " +
             "language of the text: names of people, phone numbers, e-mail addresses, home addresses, card and account " +
             "numbers, document numbers, dates of birth (in Ukrainian: [ім'я], [телефон], [пошта], [адреса], [картка], " +
             "[рахунок], [документ], [дата народження]). Change nothing else."
     }
 
     /** For a part of a long text being summed up: its notes, to be summed up together later. */
-    fun summaryPart(part: Int, parts: Int): String = BASE + " " + KEEP_LANGUAGE +
+    fun summaryPart(part: Int, parts: Int, text: String): String = BASE + " " + keep(TextLanguage.of(text)) +
         " This is part $part of $parts of a longer text. List its main points in up to five short points. $POINTS " +
         "Copy names, numbers and dates exactly as written. Add nothing."
 
     /** For the notes of all the parts: the summary of the whole text. */
-    fun summaryJoin(): String = BASE + " " + KEEP_LANGUAGE +
+    fun summaryJoin(text: String): String = BASE + " " + keep(TextLanguage.of(text)) +
         " You get notes on the consecutive parts of one long text. Write the summary of the whole text in three to " +
         "six short points: the main things a reader must know, in order. $POINTS Copy names, numbers and dates " +
         "exactly as they are in the notes. Add nothing that is not in the notes."
 
     fun user(text: String): String = "Text:\n$text"
+
+    /** Said again when a change of style came back almost the same as the text. */
+    fun bolder(action: AiAction): String = " Your first try changed almost nothing. " + when (action) {
+        AiAction.SHORTER -> "Cut it much more this time: about half the length."
+        else -> "This time really change the wording and the tone, as in the example."
+    }
 
     /**
      * Removes what small models sometimes wrap the answer in: code fences, "Here is…:", quotes —
