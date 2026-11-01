@@ -4,21 +4,23 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
 class TextLanguageTest : FunSpec({
-    test("the language of a text") {
+    test("Ukrainian, Polish, German, Spanish and English are named") {
         TextLanguage.of("На сторінці нашого омбудсмена сьогодні п'ять відео.") shouldBe "Ukrainian"
         TextLanguage.of("Привіт, як справи") shouldBe "Ukrainian"
-        TextLanguage.of("Это текст на другом языке, ещё один.") shouldBe null
+        TextLanguage.of("Дякую, Олено, побачимося в п'ятницю о 10") shouldBe "Ukrainian"
         TextLanguage.of("Send the report by Friday, please.") shouldBe "English"
         TextLanguage.of("Dzień dobry, proszę o raport.") shouldBe "Polish"
-        TextLanguage.of("Schöne Grüße aus Berlin") shouldBe "German"
-        TextLanguage.of("12345") shouldBe null
+        TextLanguage.of("Schöne Grüße aus Berlin, wir sehen uns morgen") shouldBe "German"
+        TextLanguage.of("¿Nos vemos mañana?") shouldBe "Spanish"
     }
 
-    test("a change of style that changed almost nothing") {
-        val text = "Вахтанг Кіпіані. На сторінці нашого омбудсмена сьогодні п'ять відео."
-        TextChanges.tooLittle(AiAction.FRIENDLY, text, "Вахтанг Кіпіані: на сторінці нашого омбудсмена сьогодні п'ять відео!") shouldBe true
-        TextChanges.tooLittle(AiAction.FRIENDLY, text, "Привіт! Уяви, у нашого омбудсмена сьогодні аж п'ять нових відео.") shouldBe false
-        TextChanges.tooLittle(AiAction.SHORTER, text, text.dropLast(3)) shouldBe true
-        TextChanges.tooLittle(AiAction.SHORTER, text, "Омбудсмен сьогодні виклав п'ять відео.") shouldBe false
+    test("anything not unmistakable is left to the model") {
+        TextLanguage.of("Привет, как дела") shouldBe null
+        TextLanguage.of("Это текст на другом языке, ещё один.") shouldBe null
+        TextLanguage.of("Ciao, è tardi") shouldBe null
+        TextLanguage.of("Görüşürüz yarın") shouldBe null
+        TextLanguage.of("Het is in orde, we komen morgen") shouldBe null
+        TextLanguage.of("Дякую, Steve, see you at the meeting") shouldBe null
+        TextLanguage.of("12345") shouldBe null
     }
 })

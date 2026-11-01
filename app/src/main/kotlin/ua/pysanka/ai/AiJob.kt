@@ -75,6 +75,8 @@ object AiJob {
         val warm = AiEngine.loaded
         var removed = 0
         var unconfirmed = false
+        // A part asked again takes longer than the speed of this phone says
+        var retried = false
         val result = when (action.kind) {
             AiAction.Kind.WHOLE, AiAction.Kind.ADVICE -> {
                 onPart(1, 1)
@@ -86,7 +88,7 @@ object AiJob {
                     for ((i, p) in parts.withIndex()) {
                         onPart(i + 1, parts.size)
                         // Whitespace alone (a part between two breaks) is kept as it is
-                        if (p.text.isBlank()) append(p.text) else append(rewrite(context, run, action, target, p.text))
+                        if (p.text.isBlank()) append(p.text) else append(rewrite(context, run, action, target, p.text) { retried = true })
                         append(p.after)
                     }
                 }
@@ -100,7 +102,7 @@ object AiJob {
             }
         }.let { if (action == AiAction.REDACT) Redact.apply(it) else it }
         val seconds = ((System.currentTimeMillis() - started) / 1000).toInt()
-        if (warm) Speed.learn(context, action, text.length, seconds)
+        if (warm && !retried) Speed.learn(context, action, text.length, seconds)
         return Output(result.trim(), removed, unconfirmed, seconds, AiEngine.backend)
     }
 
@@ -136,10 +138,18 @@ object AiJob {
      * One part rewritten. A change of style that came back almost the same as the text is asked
      * for once more, more boldly (a small model is often too careful).
      */
-    private suspend fun rewrite(context: Context, run: Long, action: AiAction, target: AiLanguage, text: String): String {
+    private suspend fun rewrite(
+        context: Context,
+        run: Long,
+        action: AiAction,
+        target: AiLanguage,
+        text: String,
+        onRetry: () -> Unit,
+    ): String {
         val system = AiPrompts.system(action, target, text)
         val first = ask(context, run, system, text, action.temperature, text)
         if (action !in STYLES || !TextChanges.tooLittle(action, text, first)) return first
+        onRetry()
         val second = ask(context, run, system + AiPrompts.bolder(action), text, minOf(1.0, action.temperature + 0.3), text)
         return second.ifBlank { first }
     }

@@ -70,7 +70,7 @@
     <string name="pysanka__settings__sound">Звук і вібрація</string>
     <string name="pysanka__settings__clipboard">Буфер</string>
     <string name="pysanka__settings__clipboard_summary">Історія ввімкнена · теги: {tags} · резервна копія</string>
-    <string name="pysanka__settings__clipboard_open">Історія буфера, теги й копія</string>
+    <string name="pysanka__settings__clipboard_open">Історія буфера, теги й резервна копія</string>
     <string name="pysanka__settings__ai_open">Модель і налаштування ШІ</string>
     <string name="pysanka__settings__clipboard_summary_off">Історію вимкнено</string>
     <string name="pysanka__settings__emoji">Емодзі</string>

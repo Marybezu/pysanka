@@ -71,7 +71,7 @@
     <string name="pysanka__settings__sound">Sound and vibration</string>
     <string name="pysanka__settings__clipboard">Clipboard</string>
     <string name="pysanka__settings__clipboard_summary">History on · tags: {tags} · backup</string>
-    <string name="pysanka__settings__clipboard_open">Clipboard history, tags and copy</string>
+    <string name="pysanka__settings__clipboard_open">Clipboard history, tags and backup copy</string>
     <string name="pysanka__settings__ai_open">Model and AI settings</string>
     <string name="pysanka__settings__clipboard_summary_off">History off</string>
     <string name="pysanka__settings__emoji">Emoji</string>

@@ -170,9 +170,10 @@ internal object AiPrompts {
     fun user(text: String): String = "Text:\n$text"
 
     /** Said again when a change of style came back almost the same as the text. */
-    fun bolder(action: AiAction): String = " Your first try changed almost nothing. " + when (action) {
-        AiAction.SHORTER -> "Cut it much more this time: about half the length."
-        else -> "This time really change the wording and the tone, as in the example."
+    fun bolder(action: AiAction): String = " Be bold: a careful answer that keeps the text almost as it is " +
+        "is wrong. " + when (action) {
+        AiAction.SHORTER -> "Make it about half as long, keeping every important fact."
+        else -> "Change the wording and the tone clearly, as in the example, keeping every fact."
     }
 
     /**

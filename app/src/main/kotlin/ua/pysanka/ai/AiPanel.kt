@@ -310,8 +310,9 @@ internal fun AiPanelView(
                 PanelStage.Menu -> Column(Modifier.fillMaxSize()) {
                     Note(stringRes(note))
                     val shown = if (more) AiAction.entries else MAIN
-                    // Three across: with four, longer words broke in the middle («Граматик-а»), above all with large text
-                    LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    // At least 112 dp a tile (three across on a phone): narrower, longer words broke in the
+                    // middle («Граматик-а»), above all with large text
+                    LazyVerticalGrid(columns = GridCells.Adaptive(112.dp), modifier = Modifier.fillMaxWidth().weight(1f)) {
                         items(shown) { a ->
                             Tile(icon(a), stringRes(a.label), enabled = canRun(a)) { actions.tile(a) }
                         }

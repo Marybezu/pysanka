@@ -2,9 +2,13 @@ package ua.pysanka.ai
 
 /**
  * Pysanka: whether a change of style changed enough: most words the same and in the same order
- * means "almost nothing"; for [AiAction.SHORTER], less than a tenth shorter also does.
+ * means "almost nothing"; for [AiAction.SHORTER], less than a tenth shorter also does. A short
+ * text is never judged: it may well need no change («Дякую.» is already polite and short).
  */
 object TextChanges {
+    /** Texts with fewer words are left as the model answered. */
+    private const val MIN_WORDS = 8
+
     /** Above this share of words kept in order, the text counts as unchanged. */
     private const val SAME = 0.85
 
@@ -12,6 +16,7 @@ object TextChanges {
     private const val MAX_WORDS = 400
 
     fun tooLittle(action: AiAction, before: String, after: String): Boolean {
+        if (words(before).size < MIN_WORDS) return false
         if (action == AiAction.SHORTER && after.trim().length > before.trim().length * 0.9) return true
         return sameShare(before, after) > SAME
     }

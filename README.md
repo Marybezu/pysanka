@@ -10,7 +10,7 @@
 
 - 🔒 **Приватність.** Дозволу на інтернет немає, і збірка зупиняється, якщо він з'явиться. Нічого не потрапляє в хмарну копію чи на інший телефон.
 - 📋 **Зашифрований буфер** ✅ Історія тексту й зображень зашифрована (SQLCipher + AES-256, ключ в апаратному сховищі). «Не зберігати паролі» — на ваш вибір. Копія буфера під паролем та імпорт із FlorisBoard. Кольорові теги й автотеги (посилання, номери, коди). Очищення посилань від стеження. Фото й скріншоти в історію одним дотиком, з розпізнаним текстом. Далі: пошук, шаблони.
-- ✍️ **Підказки й виправлення описок** ✅ українською й англійською; клавіатура вчиться ваших слів (зашифровано, ніколи з полів пароля чи інкогніто). Далі: передбачення наступного слова.
+- ✍️ **Підказки й виправлення описок** ✅ українською й англійською; клавіатура вчиться ваших слів (зашифровано, ніколи з полів пароля чи інкогніто). Після пробілу — слова, що у вас зазвичай ідуть далі.
 - 🔍 **Текст із фото й камери** ✅ розпізнається на телефоні.
 - 🤖 **Локальний ШІ (Gemma 4), за бажанням** ✅ ШІ-помічник просто в клавіатурі (✦ — дії плитками, відповідь замість клавіш): стиль, граматика й пунктуація, підсумок довгих текстів (з перевіркою чисел і назв), переклад, русизми, список, таблиця, нотатки, лист за описом, варіанти відповіді, приховати особисте; «Поділитися → Писанка ШІ» з будь-якого застосунку. Далі: інструменти для соцмереж.
 - 🎙️ **Диктування** на телефоні (Whisper), за бажанням.
@@ -38,7 +38,7 @@ A private keyboard for Android with no internet access. Typing, swipe, clipboard
 
 - No internet permission; the build fails if one appears. Nothing goes to a cloud backup or to another phone.
 - Encrypted clipboard history (SQLCipher + AES-256, hardware-backed key); "Don't keep passwords" is your choice; password-protected clipboard copy and import from FlorisBoard. Coloured and automatic tags. Copied links are cleaned of tracking. Photos and screenshots into the history with one tap, with recognised text. Planned: search, snippets.
-- Word suggestions and careful typo correction in Ukrainian and English; the keyboard learns your words, kept encrypted and never from password or incognito fields.
+- Word suggestions and careful typo correction in Ukrainian and English; the keyboard learns your words and what usually comes next, kept encrypted and never from password or incognito fields.
 - Optional on-device AI (Gemma 4), as a panel right in the keyboard (✦: actions as tiles, the answer in place of the keys): grammar, style, summaries of long texts (numbers and names checked), translation, Russianisms, list, table, notes, letters, reply options, hiding personal data; "Share → Pysanka AI" from any app. Planned: social-media tools; on-device dictation (Whisper).
 - On-device text recognition from photos and the camera.
 
