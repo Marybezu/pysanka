@@ -75,6 +75,8 @@ object ImeActions {
     // Pysanka: text from a photo / from the camera
     val PysankaTextFromPhoto = flAction("pysanka_text_from_photo")
     val PysankaTextFromCamera = flAction("pysanka_text_from_camera")
+    // Pysanka: the AI editor (on the phone)
+    val PysankaAi = flAction("pysanka_ai")
 
     val NoopDragMarker = flAction("noop_drag_marker")
     val NoopSpacer = flAction("noop_spacer")
@@ -115,6 +117,7 @@ object ImeActions {
         ExternalVoiceInput,
         PysankaTextFromPhoto,
         PysankaTextFromCamera,
+        PysankaAi,
     )
 
     val Repeatable = listOf(

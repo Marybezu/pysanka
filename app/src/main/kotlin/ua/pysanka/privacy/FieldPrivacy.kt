@@ -8,4 +8,8 @@ package ua.pysanka.privacy
 object FieldPrivacy {
     @Volatile
     var isPrivate: Boolean = false
+
+    /** A password field (nothing from it goes anywhere, the AI included). */
+    @Volatile
+    var isPassword: Boolean = false
 }

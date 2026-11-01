@@ -94,6 +94,98 @@ open class ImeEditor(
         return ok
     }
 
+    /**
+     * Pysanka: the text the AI editor works on: the selection, or else the whole field (up to
+     * [limit] + 1 characters, so a longer text can be told apart), with where the selection was
+     * (absolute offsets, -1 if the app does not say). Null if the field cannot be read.
+     */
+    fun pysankaTextForAi(limit: Int): ua.pysanka.ai.AiBridge.Taken? {
+        val ic = ic.get() ?: return null
+        val et = ic.getExtractedText(android.view.inputmethod.ExtractedTextRequest().apply {
+            hintMaxChars = limit + 1
+            hintMaxLines = Int.MAX_VALUE
+        }, 0)
+        val start = if (et != null && et.selectionStart >= 0) et.startOffset + minOf(et.selectionStart, et.selectionEnd) else -1
+        val end = if (et != null && et.selectionEnd >= 0) et.startOffset + maxOf(et.selectionStart, et.selectionEnd) else -1
+        val selected = ic.getSelectedText(0)?.toString()
+        if (!selected.isNullOrEmpty()) {
+            return ua.pysanka.ai.AiBridge.Taken(ua.pysanka.ai.AiBridge.Mode.SELECTION, selected, start, end)
+        }
+        val all = wholeText(ic, et, limit)
+        return ua.pysanka.ai.AiBridge.Taken(
+            if (all.isBlank()) ua.pysanka.ai.AiBridge.Mode.INSERT else ua.pysanka.ai.AiBridge.Mode.ALL, all, start, end,
+        )
+    }
+
+    /** The whole field: the extracted text if the app gives it, else the text before and after the cursor. */
+    private fun wholeText(ic: InputConnection, et: android.view.inputmethod.ExtractedText?, limit: Int): String =
+        if (et?.text != null && et.startOffset == 0) {
+            et.text.toString()
+        } else {
+            (ic.getTextBeforeCursor(limit + 1, 0)?.toString() ?: "") +
+                (ic.getSelectedText(0)?.toString() ?: "") +
+                (ic.getTextAfterCursor(limit + 1, 0)?.toString() ?: "")
+        }
+
+    /**
+     * Pysanka: puts the AI editor's text back. It replaces the original only if the field still
+     * holds exactly it (the selection, found again by its place if the app forgot it, or the whole
+     * text). Otherwise nothing is overwritten: the text goes in after the current selection, or,
+     * if the app does not say where that is, it is only copied (returns false then).
+     */
+    fun pysankaApplyAi(result: ua.pysanka.ai.AiBridge.Result): Boolean {
+        val ic = ic.get() ?: return false
+        // Where the selection is now: from the app, or else as the field reported it when it opened
+        val now = ic.getExtractedText(android.view.inputmethod.ExtractedTextRequest(), 0)
+        val curStart: Int
+        val curEnd: Int
+        if (now != null && now.selectionStart >= 0 && now.selectionEnd >= 0) {
+            curStart = now.startOffset + minOf(now.selectionStart, now.selectionEnd)
+            curEnd = now.startOffset + maxOf(now.selectionStart, now.selectionEnd)
+        } else {
+            curStart = minOf(info.initialSelection.start, info.initialSelection.end)
+            curEnd = maxOf(info.initialSelection.start, info.initialSelection.end)
+        }
+        ic.beginBatchEdit()
+        try {
+            ic.finishComposingText()
+            val replace = when (result.mode) {
+                ua.pysanka.ai.AiBridge.Mode.SELECTION -> {
+                    if (ic.getSelectedText(0)?.toString() == result.original) {
+                        true
+                    } else if (result.start >= 0 && result.end > result.start && ic.setSelection(result.start, result.end)) {
+                        val same = ic.getSelectedText(0)?.toString() == result.original
+                        // Not there any more: put the selection back where the person had it
+                        if (!same && curStart >= 0) ic.setSelection(curStart, curEnd)
+                        same
+                    } else {
+                        false
+                    }
+                }
+                ua.pysanka.ai.AiBridge.Mode.ALL -> {
+                    val et = ic.getExtractedText(android.view.inputmethod.ExtractedTextRequest().apply {
+                        hintMaxChars = result.original.length + 1
+                        hintMaxLines = Int.MAX_VALUE
+                    }, 0)
+                    wholeText(ic, et, result.original.length) == result.original &&
+                        ic.setSelection(0, result.original.length)
+                }
+                ua.pysanka.ai.AiBridge.Mode.INSERT -> false
+            }
+            if (replace) return ic.commitText(result.text, 1)
+            // Never overwrite something else: go to the end of the selection first; if where it is
+            // cannot be told, do not touch the field at all
+            if (curStart < 0 || curEnd < 0) {
+                if (!ic.getSelectedText(0).isNullOrEmpty()) return false
+            } else if (curStart != curEnd) {
+                ic.setSelection(curEnd, curEnd)
+            }
+            return ic.commitText(result.text, 1)
+        } finally {
+            ic.endBatchEdit()
+        }
+    }
+
     fun deleteSurroundingText(charsBefore: Int, charsAfter: Int) {
         val ic = ic.get() ?: return
         ic.deleteSurroundingText(charsBefore, charsAfter)

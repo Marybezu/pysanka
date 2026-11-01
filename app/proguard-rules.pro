@@ -37,3 +37,7 @@
 
 # Pysanka: ONNX Runtime is reached from native code (JNI)
 -keep class ai.onnxruntime.** { *; }
+
+# Pysanka: LiteRT-LM (the AI editor's model runtime) is reached from native code (JNI)
+-keep class com.google.ai.edge.litertlm.** { *; }
+-dontwarn com.google.ai.edge.litertlm.**

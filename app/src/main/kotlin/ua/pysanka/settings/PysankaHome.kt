@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -113,10 +114,11 @@ fun PysankaHome() {
             stringRes(if (skipPasswords) R.string.pysanka__settings__privacy_summary else R.string.pysanka__settings__privacy_summary_keeps),
             highlighted = true,
         ) { navController.navigate(Routes.Settings.PysankaPrivacy) }
+        val aiReady = remember { ua.pysanka.ai.ModelStore(context).modelFile() != null }
         WideTile(
             Icons.Default.AutoAwesome, stringRes(R.string.pysanka__settings__ai),
-            stringRes(R.string.pysanka__settings__ai_soon), enabled = false,
-        ) {}
+            stringRes(if (aiReady) R.string.pysanka__settings__ai_ready else R.string.pysanka__settings__ai_missing),
+        ) { navController.navigate(Routes.Settings.PysankaAi) }
         LinkRow(Icons.Outlined.Tune, stringRes(R.string.pysanka__settings__more), stringRes(R.string.pysanka__settings__more_summary)) {
             navController.navigate(Routes.Settings.PysankaMore)
         }

@@ -229,6 +229,12 @@ class ImeController(
                     newTouchLayerId = ImeLayerIds.Base
                 }
             }
+            // Pysanka: a password or PIN field, whatever its keyboard (numeric PINs come as numbers)
+            val isPasswordField = info.inputAttributes.variation in setOf(
+                InputAttributes.Variation.PASSWORD,
+                InputAttributes.Variation.VISIBLE_PASSWORD,
+                InputAttributes.Variation.WEB_PASSWORD,
+            )
             val initialSelection = info.initialSelection
             val initialSurrounding = K3SurroundingText(
                 textBefore = info.getInitialTextBeforeCursor(20)?.toString() ?: "",
@@ -287,14 +293,18 @@ class ImeController(
             // Pysanka: nothing copied from a password field or in incognito goes into the history
             clipboardManager.setFieldPrivacy(
                 incognito = state.flags.isIncognitoMode || info.imeOptions.flagNoPersonalizedLearning,
-                passwordField = keyVariation == KeyVariation.PASSWORD,
+                passwordField = isPasswordField,
             )
             ua.pysanka.privacy.FieldPrivacy.isPrivate = state.flags.isIncognitoMode || info.imeOptions.flagNoPersonalizedLearning
+            ua.pysanka.privacy.FieldPrivacy.isPassword = isPasswordField
             resetContent(initialSelection, initialSurrounding)
             expectedContentQueue.clear()
             // Pysanka: text picked from a photo goes only into the field it was picked for
-            ua.pysanka.ocr.PendingInsert.takeFor(info.packageName, info.base.fieldId, keyVariation == KeyVariation.PASSWORD)
+            ua.pysanka.ocr.PendingInsert.takeFor(info.packageName, info.base.fieldId, isPasswordField)
                 ?.let { state.editor.pysankaInsertText(it) }
+            // Pysanka: text from the AI editor goes only into the field it was taken from
+            ua.pysanka.ai.AiBridge.takeFor(info, isPasswordField)
+                ?.let { r -> if (!state.editor.pysankaApplyAi(r)) ua.pysanka.ai.AiBridge.couldNotPlace(r.text) }
         }
 
         fun handleUpdateSelection(newSelection: K3TextRange) {
@@ -383,6 +393,7 @@ class ImeController(
                 ImeActions.Undo -> state.editor.performUndo()
                 ImeActions.Redo -> state.editor.performRedo()
                 ImeActions.Settings -> FlorisImeService.launchSettings()
+                ImeActions.PysankaAi -> ua.pysanka.ai.AiBridge.openFromKeyboard(state.editor)
                 ImeActions.PysankaTextFromPhoto, ImeActions.PysankaTextFromCamera -> {
                     ua.pysanka.ocr.PendingInsert.opened(state.editor.info.packageName, state.editor.info.base.fieldId)
                     ua.pysanka.ocr.openTextFromImage(

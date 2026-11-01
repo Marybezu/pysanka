@@ -145,6 +145,13 @@ configure<ApplicationExtension> {
         baseline = file("lint.xml")
     }
 
+    // Pysanka: LiteRT-LM loads its native parts from files (as in Tarilka)
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
@@ -209,6 +216,7 @@ dependencies {
     implementation(libs.bouncycastle.bcprov)
     // Pysanka: runs the text recognition models on the phone
     implementation(libs.onnxruntime.android)
+    implementation(libs.litertlm.android)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)

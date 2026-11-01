@@ -188,6 +188,11 @@ object Routes {
         @Deeplink("settings/pysanka/more")
         object PysankaMore
 
+        // Pysanka: AI on the phone (the model)
+        @Serializable
+        @Deeplink("settings/pysanka/ai")
+        object PysankaAi
+
         // Pysanka: the owner's clipboard tags
         @Serializable
         @Deeplink("settings/clipboard/tags")
@@ -325,6 +330,7 @@ object Routes {
             composableWithDeepLink(Settings.PysankaSound::class) { ua.pysanka.settings.PysankaSoundScreen() }
             composableWithDeepLink(Settings.PysankaPrivacy::class) { ua.pysanka.settings.PysankaPrivacyScreen() }
             composableWithDeepLink(Settings.PysankaMore::class) { ua.pysanka.settings.PysankaMoreScreen() }
+            composableWithDeepLink(Settings.PysankaAi::class) { ua.pysanka.ai.AiSettingsScreen() }
 
             composableWithDeepLink(Settings.Media::class) { MediaScreen() }
 

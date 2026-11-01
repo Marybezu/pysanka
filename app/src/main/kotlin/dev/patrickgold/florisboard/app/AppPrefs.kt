@@ -46,6 +46,7 @@ import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.ExtendedActionsPlacement
 import dev.patrickgold.florisboard.ime.smartbar.IncognitoDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.SmartbarLayout
+import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickAction
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionArrangement
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionJsonConfig
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
@@ -855,8 +856,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                 var newArrangement = arrangement.migrateToK3Descriptors()
                 QuickActionArrangement.Default.forEach { defaultAction ->
                     if (defaultAction !in newArrangement) {
+                        // Pysanka: a new AI button goes first (once; after that it stays where the owner puts it)
+                        val first = defaultAction == QuickAction.InsertK3Descriptor(dev.patrickgold.florisboard.ime.keyboard3.ImeActions.PysankaAi)
                         newArrangement = newArrangement.copy(
-                            dynamicActions = newArrangement.dynamicActions.plus(defaultAction),
+                            dynamicActions = if (first) listOf(defaultAction) + newArrangement.dynamicActions
+                            else newArrangement.dynamicActions.plus(defaultAction),
                         )
                     }
                 }

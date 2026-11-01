@@ -315,25 +315,34 @@ private fun ResultView(bitmap: Bitmap, lines: List<OcrLine>, close: () -> Unit) 
         Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(onClick = { selected = words.indices.toSet() }) { Text(stringRes(R.string.pysanka__ocr__all)) }
             TextButton(onClick = { selected = emptySet() }) { Text(stringRes(R.string.pysanka__ocr__none)) }
+            // Pysanka: the AI fixes recognition errors, if the model is installed
+            val aiReady = remember { ua.pysanka.ai.ModelStore(context).modelFile() != null }
+            if (aiReady) {
+                TextButton(enabled = selected.isNotEmpty(), onClick = {
+                    ua.pysanka.ai.AiBridge.openFromPhoto(context, selectedText())
+                    close()
+                }) { Text(stringRes(R.string.pysanka__ai__fix_with_ai)) }
+            }
         }
         Row(
             Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Button(enabled = count > 0, modifier = Modifier.weight(1f), onClick = {
+            val pad = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 8.dp)
+            Button(enabled = count > 0, modifier = Modifier.weight(1f), contentPadding = pad, onClick = {
                 PendingInsert.set(selectedText())
                 close()
-            }) { Text(stringRes(R.string.pysanka__ocr__insert)) }
-            FilledTonalButton(enabled = count > 0, modifier = Modifier.weight(1f), onClick = {
+            }) { Text(stringRes(R.string.pysanka__ocr__insert), maxLines = 1, softWrap = false) }
+            FilledTonalButton(enabled = count > 0, modifier = Modifier.weight(1f), contentPadding = pad, onClick = {
                 val cm = context.getSystemService(android.content.ClipboardManager::class.java)
                 cm?.setPrimaryClip(ClipData.newPlainText("text", selectedText()))
                 close()
-            }) { Text(stringRes(R.string.pysanka__ocr__copy)) }
-            OutlinedButton(enabled = count > 0, modifier = Modifier.weight(1f), onClick = {
+            }) { Text(stringRes(R.string.pysanka__ocr__copy), maxLines = 1, softWrap = false) }
+            OutlinedButton(enabled = count > 0, modifier = Modifier.weight(1f), contentPadding = pad, onClick = {
                 val clipboardManager by context.clipboardManager()
                 clipboardManager.addNewPlaintext(selectedText())
                 close()
-            }) { Text(stringRes(R.string.pysanka__ocr__to_history)) }
+            }) { Text(stringRes(R.string.pysanka__ocr__to_history), maxLines = 1, softWrap = false) }
         }
     }
 }
