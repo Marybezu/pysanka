@@ -71,6 +71,20 @@ data class Subtype(
             popupMapping = extCorePopupMapping("en"),
             layoutMap = SubtypeLayoutMap(characters = extCoreLayout("qwerty")),
         )
+
+        /** Pysanka: the languages a fresh install starts with: Ukrainian (ЙЦУКЕН) and English (QWERTY). */
+        val PYSANKA_DEFAULTS = listOf(
+            Subtype(
+                id = 1,
+                primaryLocale = FlorisLocale.from("uk"),
+                secondaryLocales = emptyList(),
+                composer = extCoreComposer("appender"),
+                currencySet = extCoreCurrencySet("ukrainian_hryvnia"),
+                popupMapping = extCorePopupMapping("uk"),
+                layoutMap = SubtypeLayoutMap(characters = extCoreLayout("jcuken_ukrainian")),
+            ),
+            DEFAULT.copy(id = 2),
+        )
     }
 
     /**

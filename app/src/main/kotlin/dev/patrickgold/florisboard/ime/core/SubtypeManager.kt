@@ -65,6 +65,12 @@ class SubtypeManager(context: Context) {
             } else {
                 emptyList()
             }
+            // Pysanka: with no languages chosen, Ukrainian and English are set up (the keyboard
+            // would otherwise fall back to English alone)
+            if (list.isEmpty()) {
+                persistNewSubtypeList(Subtype.PYSANKA_DEFAULTS)
+                return@collectLatestIn
+            }
             subtypes = list
             evaluateActiveSubtype(list)
         }
