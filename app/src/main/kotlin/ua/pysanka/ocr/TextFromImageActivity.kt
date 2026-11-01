@@ -260,10 +260,10 @@ private fun ResultView(bitmap: Bitmap, lines: List<OcrLine>, close: () -> Unit) 
     var dragAdds by remember { mutableStateOf(true) }
 
     // Pieces of one line (same group) with spaces, lines with line breaks
-    fun selectedText(): String = lines.map { it.group }.distinct().mapNotNull { g ->
+    fun selectedText(): String = joinOcrLines(lines.map { it.group }.distinct().mapNotNull { g ->
         words.withIndex().filter { lines[it.value.first].group == g && it.index in selected }
             .joinToString(" ") { it.value.second.text }.takeIf { it.isNotBlank() }
-    }.joinToString("\n")
+    })
 
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().background(Color.Black)) {
