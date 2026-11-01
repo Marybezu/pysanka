@@ -88,7 +88,7 @@
             <intent-filter android:label="Import Extension">
                 <action android:name="android.intent.action.SEND"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-                <data android:scheme="content"/>
+                <!-- The file comes as an extra here; FlorisAppActivity takes only content:// -->
                 <data android:mimeType="application/vnd.florisboard.extension+zip"/>
                 <data android:mimeType="application/octet-stream"/><!-- Firefox looking at you :eyes: -->
             </intent-filter>

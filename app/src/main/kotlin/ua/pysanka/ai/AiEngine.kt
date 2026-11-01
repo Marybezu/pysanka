@@ -56,15 +56,42 @@ object AiEngine {
     /** Still no editor screen (one may have opened while a text was being stopped). */
     fun screenClosedStill(): Boolean = screens.get() == 0
 
-    /** Counts "Stop" presses: an answer asked for before the last one is not started (or is dropped). */
-    private val stops = java.util.concurrent.atomic.AtomicLong(0)
+    /**
+     * Each run of an action has its own number, so "Stop" in one editor never stops another's work
+     * (two editors can be open: one from the keyboard, one from "Share").
+     */
+    private val runs = java.util.concurrent.atomic.AtomicLong(0)
+    private val stopped: MutableSet<Long> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+    /** Runs up to this number are stopped (all editors closed). */
+    @Volatile
+    private var stoppedUpTo = 0L
+
+    /** The run whose answer is being written now. */
+    @Volatile
+    private var runningRun = 0L
+
+    fun newRun(): Long = runs.incrementAndGet()
+
+    /** The run is over: forget it. */
+    fun endRun(run: Long) {
+        stopped.remove(run)
+    }
+
+    private fun isStopped(run: Long) = run <= stoppedUpTo || run in stopped
 
     /**
-     * Stops the text being written now, if any (the native call does not stop by itself), and any
-     * answer already asked for but still waiting for the model to load.
+     * Stops [run]: the answer being written for it now (the native call does not stop by itself),
+     * and any answer of it still waiting for the model to load.
      */
-    fun cancel() {
-        stops.incrementAndGet()
+    fun cancel(run: Long) {
+        stopped.add(run)
+        synchronized(runningLock) { if (runningRun == run) runCatching { running?.cancelProcess() } }
+    }
+
+    /** Stops every run (the last editor screen closed). */
+    fun cancelAll() {
+        stoppedUpTo = runs.get()
         synchronized(runningLock) { runCatching { running?.cancelProcess() } }
     }
 
@@ -105,13 +132,12 @@ object AiEngine {
      * One answer of the model: [system] instructions, [user] message. Returns the raw answer (the
      * caller cleans it). Stopped by [cancel]; the caller checks for that.
      */
-    suspend fun generate(context: Context, system: String, user: String, temperature: Double, maxOutput: Int): String {
-        val asked = stops.get()
+    suspend fun generate(context: Context, run: Long, system: String, user: String, temperature: Double, maxOutput: Int): String {
         return mutex.withLock { withContext(Dispatchers.Default) {
             // Stopped while waiting for the model (or for another answer): do not start
-            if (stops.get() != asked) throw kotlinx.coroutines.CancellationException("stopped")
+            if (isStopped(run)) throw kotlinx.coroutines.CancellationException("stopped")
             val e = engineLocked(context.applicationContext)
-            if (stops.get() != asked) throw kotlinx.coroutines.CancellationException("stopped")
+            if (isStopped(run)) throw kotlinx.coroutines.CancellationException("stopped")
             e.createConversation(
                 ConversationConfig(
                     systemInstruction = Contents.of(system),
@@ -121,13 +147,19 @@ object AiEngine {
                     maxOutputToken = maxOutput,
                 ),
             ).use { conv ->
-                synchronized(runningLock) { running = conv }
+                synchronized(runningLock) {
+                    running = conv
+                    runningRun = run
+                }
                 try {
-                    if (stops.get() != asked) throw kotlinx.coroutines.CancellationException("stopped")
+                    if (isStopped(run)) throw kotlinx.coroutines.CancellationException("stopped")
                     conv.sendMessage(user).toString()
                 } finally {
                     // Before the conversation is closed, so cancel() never reaches a closed one
-                    synchronized(runningLock) { running = null }
+                    synchronized(runningLock) {
+                        running = null
+                        runningRun = 0L
+                    }
                 }
             }
         } }

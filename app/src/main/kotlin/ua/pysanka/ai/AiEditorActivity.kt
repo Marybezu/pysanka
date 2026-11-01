@@ -1,6 +1,5 @@
 package ua.pysanka.ai
 
-import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -80,6 +79,8 @@ class AiEditorActivity : ComponentActivity() {
         fun intent(
             context: Context, text: String, preset: AiAction?, receiver: ResultReceiver?, canReplace: Boolean,
             forResult: Boolean = false,
+            /** From "Share": opened on top, an editor already open from the keyboard stays. */
+            alongside: Boolean = false,
         ): Intent {
             val prefs by dev.patrickgold.florisboard.app.FlorisPreferenceStore
             val secure = runCatching { prefs.pysankaOcr.blockScreenshots.get() }.getOrDefault(false)
@@ -93,7 +94,13 @@ class AiEditorActivity : ComponentActivity() {
                 .putExtra(EXTRA_FOR_RESULT, forResult)
                 .putExtra(EXTRA_LANGUAGE, language)
                 // A result comes back only within the same task
-                .apply { if (!forResult) addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP) }
+                .apply {
+                    when {
+                        forResult -> {}
+                        alongside -> addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        else -> addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    }
+                }
         }
     }
 
@@ -143,7 +150,7 @@ class AiEditorActivity : ComponentActivity() {
         // The last editor screen gone (a new one may already be open): stop a text being written
         // (it would keep the processor busy), then free the memory
         if (AiEngine.screenClosed() && isFinishing) {
-            AiEngine.cancel()
+            AiEngine.cancelAll()
             CoroutineScope(Dispatchers.Default).launch { if (AiEngine.screenClosedStill()) AiEngine.release() }
         }
     }
@@ -172,20 +179,25 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
     var stage by remember { mutableStateOf<AiStage>(AiStage.Idle) }
     var result by remember { mutableStateOf("") }
     var job by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    var run by remember { mutableStateOf(0L) }
     // Start loading the model while the person chooses what to do
     if (installed) androidx.compose.runtime.LaunchedEffect(Unit) { runCatching { AiEngine.warmUp(context) } }
 
     fun start(text: String) {
         stage = AiStage.Working(1, 1)
+        val thisRun = AiEngine.newRun()
+        run = thisRun
         job = scope.launch {
             stage = try {
-                val out = AiJob.run(context, action, text, language) { part, parts -> stage = AiStage.Working(part, parts) }
+                val out = AiJob.run(context, thisRun, action, text, language) { part, parts -> stage = AiStage.Working(part, parts) }
                 result = out.text
                 if (out.text.isBlank()) AiStage.Failed("empty") else AiStage.Done(out)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Throwable) {
                 AiStage.Failed(e.javaClass.simpleName)
+            } finally {
+                AiEngine.endRun(thisRun)
             }
         }
     }
@@ -201,7 +213,7 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
     }
 
     fun stop() {
-        AiEngine.cancel()
+        AiEngine.cancel(run)
         job?.cancel()
         job = null
         stage = AiStage.Idle

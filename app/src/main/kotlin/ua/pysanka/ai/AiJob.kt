@@ -57,10 +57,11 @@ object AiJob {
     /**
      * Runs [action] on [text] (already within [limit]). [onPart] tells which part is being done
      * (1-based) of how many. Cancelling the calling coroutine stops between parts; the running
-     * part is stopped by [AiEngine.cancel].
+     * part is stopped by [AiEngine.cancel] with the same [run].
      */
     suspend fun run(
         context: Context,
+        run: Long,
         action: AiAction,
         text: String,
         target: AiLanguage,
@@ -74,7 +75,7 @@ object AiJob {
         val result = when (action.kind) {
             AiAction.Kind.WHOLE, AiAction.Kind.ADVICE -> {
                 onPart(1, 1)
-                ask(context, AiPrompts.system(action, target), text, action.temperature, text)
+                ask(context, run, AiPrompts.system(action, target), text, action.temperature, text)
             }
             AiAction.Kind.REWRITE -> {
                 val parts = TextChunks.split(text, PART)
@@ -82,13 +83,13 @@ object AiJob {
                     for ((i, p) in parts.withIndex()) {
                         onPart(i + 1, parts.size)
                         // Whitespace alone (a part between two breaks) is kept as it is
-                        if (p.text.isBlank()) append(p.text) else append(ask(context, AiPrompts.system(action, target), p.text, action.temperature, p.text))
+                        if (p.text.isBlank()) append(p.text) else append(ask(context, run, AiPrompts.system(action, target), p.text, action.temperature, p.text))
                         append(p.after)
                     }
                 }
             }
             AiAction.Kind.SUMMARY -> {
-                val raw = summarise(context, text, onPart)
+                val raw = summarise(context, run, text, onPart)
                 val checked = FactCheck.check(text, raw)
                 removed = checked.removed
                 unconfirmed = checked.allRemoved
@@ -101,16 +102,16 @@ object AiJob {
     }
 
     /** A summary of a text of any allowed length: notes per part, then the notes summed up. */
-    private suspend fun summarise(context: Context, text: String, onPart: (Int, Int) -> Unit): String {
+    private suspend fun summarise(context: Context, run: Long, text: String, onPart: (Int, Int) -> Unit): String {
         if (text.length <= PART) {
             onPart(1, 1)
-            return ask(context, AiPrompts.system(AiAction.SUMMARY, AiLanguage.UK), text, 0.2, text)
+            return ask(context, run, AiPrompts.system(AiAction.SUMMARY, AiLanguage.UK), text, 0.2, text)
         }
         val parts = TextChunks.split(text, PART).filter { it.text.isNotBlank() }
         val total = parts.size + 1
         var notes = parts.mapIndexed { i, p ->
             onPart(i + 1, total)
-            ask(context, AiPrompts.summaryPart(i + 1, parts.size), p.text, 0.2, p.text)
+            ask(context, run, AiPrompts.summaryPart(i + 1, parts.size), p.text, 0.2, p.text)
         }.joinToString("\n")
         // Notes on very many parts may themselves be too long for one go: shorten them in parts
         // (at most twice; whatever is left over is cut at a sentence, never looped on)
@@ -118,19 +119,19 @@ object AiJob {
         while (notes.length > PART * 2 && rounds < 2) {
             val shorter = StringBuilder()
             for (p in TextChunks.split(notes, PART)) {
-                shorter.append(ask(context, AiPrompts.summaryJoin(), p.text, 0.2, p.text)).append('\n')
+                shorter.append(ask(context, run, AiPrompts.summaryJoin(), p.text, 0.2, p.text)).append('\n')
             }
             notes = shorter.toString()
             rounds++
         }
         notes = TextChunks.prefix(notes, PART * 2)
         onPart(total, total)
-        return ask(context, AiPrompts.summaryJoin(), notes, 0.2, notes)
+        return ask(context, run, AiPrompts.summaryJoin(), notes, 0.2, notes)
     }
 
-    private suspend fun ask(context: Context, system: String, text: String, temperature: Double, original: String): String {
+    private suspend fun ask(context: Context, run: Long, system: String, text: String, temperature: Double, original: String): String {
         currentCoroutineContext().ensureActive()
-        val answer = AiEngine.generate(context, system, AiPrompts.user(text), temperature, maxOutput = 4096)
+        val answer = AiEngine.generate(context, run, system, AiPrompts.user(text), temperature, maxOutput = 4096)
         // Stopped while this part was being written: what came back is not an answer
         currentCoroutineContext().ensureActive()
         return AiPrompts.clean(answer, original)

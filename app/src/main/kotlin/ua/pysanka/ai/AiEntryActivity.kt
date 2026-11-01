@@ -62,7 +62,7 @@ class AiEntryActivity : ComponentActivity() {
             editor.launch(AiEditorActivity.intent(this, body, preset, receiver = null, canReplace = true, forResult = true))
         } else {
             // Nothing to put back: the editor only shows and copies the answer
-            startActivity(AiEditorActivity.intent(this, body, preset, receiver = null, canReplace = false))
+            startActivity(AiEditorActivity.intent(this, body, preset, receiver = null, canReplace = false, alongside = true))
             finish()
         }
     }

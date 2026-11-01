@@ -37,7 +37,9 @@ object FactCheck {
             val body = line.replaceFirst(listMarker, "")
             val badNumber = number.findAll(body).any { m ->
                 val d = digits(m.value)
-                d.isNotEmpty() && d !in sourceNumbers
+                // Found whole, or (a range, a date written otherwise) every part of it found
+                val parts = m.value.split('.', ',', ':', '/', '-', '–', '—', ' ', '\u00A0').map { digits(it) }.filter { it.isNotEmpty() }
+                d.isNotEmpty() && d !in sourceNumbers && !(parts.size > 1 && parts.all { it in sourceNumbers })
             }
             val badName = word.findAll(body).any { m ->
                 val w = m.value

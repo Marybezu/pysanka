@@ -48,7 +48,10 @@ fun AiSettingsScreen() = FlorisScreen {
         // A copy that ended (here or while this screen was gone): read the model's state again
         androidx.compose.runtime.LaunchedEffect(importStatus.finished) {
             state = store.state()
-            if (importStatus.originalKept) Toast.makeText(context, R.string.pysanka__ai__original_kept, Toast.LENGTH_LONG).show()
+            if (importStatus.originalKept) {
+                Toast.makeText(context, R.string.pysanka__ai__original_kept, Toast.LENGTH_LONG).show()
+                ModelImport.noteShown()
+            }
         }
         val progress = importStatus.progress ?: -1f
         val error = importStatus.error

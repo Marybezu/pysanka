@@ -26,6 +26,7 @@ class FactCheckTest : FunSpec({
     test("shortened dates, ranges with a dash, numbers listed with commas") {
         val src2 = "Подія 31.10.2026, сезон 2024–2025, ціни 100 і 200 грн."
         FactCheck.check(src2, "• 31.10: подія.\n• Сезон 2024-2025.\n• Ціни 100, 200 грн.").removed shouldBe 0
+        FactCheck.check("Працювали з 2024 по 2025 рік.", "• Працювали 2024–2025.").removed shouldBe 0
     }
     test("if nothing would be left, the text stays and is marked") {
         val s = "• Допомога 9999 грн."

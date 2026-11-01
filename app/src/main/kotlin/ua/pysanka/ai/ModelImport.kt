@@ -57,6 +57,11 @@ object ModelImport {
         }
     }
 
+    /** The "could not delete the downloaded file" note was shown. */
+    fun noteShown() {
+        status.value = status.value.copy(originalKept = false)
+    }
+
     /** Whether a copy is running now (then leftovers must not be cleaned up). */
     val running: Boolean get() = status.value.progress != null
 }
