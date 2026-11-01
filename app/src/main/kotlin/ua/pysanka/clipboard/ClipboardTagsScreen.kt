@@ -50,7 +50,7 @@ import org.florisboard.lib.compose.stringRes
 /** Pysanka: opens the tag settings from the keyboard (hides the keyboard first). */
 fun openTagSettings(context: Context) {
     FlorisImeService.hideUi()
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("ui://florisboard/settings/clipboard/tags")).apply {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("ui://pysanka/settings/clipboard/tags")).apply {
         setPackage(context.packageName)
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }

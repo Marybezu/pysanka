@@ -340,7 +340,7 @@ private fun copy(context: Context, text: String) = ua.pysanka.privacy.Clip.copy(
 
 /** Opens the AI settings (model download) in Pysanka's settings. */
 fun openAiSettings(context: Context) {
-    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("ui://florisboard/settings/pysanka/ai")).apply {
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("ui://pysanka/settings/pysanka/ai")).apply {
         setPackage(context.packageName)
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
