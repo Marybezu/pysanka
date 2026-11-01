@@ -59,6 +59,8 @@ class SettingsScreensTest {
     private fun shot(name: String, dark: Boolean, openTyping: Boolean) = ActivityScenario.launch(ComponentActivity::class.java).use { scenario ->
         scenario.onActivity { activity ->
             activity.setContent {
+                // The settings' own way of finding texts in the chosen language
+                org.florisboard.lib.compose.ProvideLocalizedResources(activity, appName = dev.patrickgold.florisboard.R.string.app_name) {
                 MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
                     Column(
                         Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(12.dp),
@@ -82,6 +84,7 @@ class SettingsScreensTest {
                             LinkRow("Модель і налаштування ШІ", "Завантажити чи видалити модель, «Мій стиль»") {}
                         }
                     }
+                }
                 }
             }
         }
