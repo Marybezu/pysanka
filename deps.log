@@ -1,0 +1,111 @@
+> Task :app:checkDebugAarMetadata FAILED
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :lib:color:compileDebugKotlin
+> Task :lib:color:compileDebugJavaWithJavac NO-SOURCE
+> Task :lib:color:bundleLibCompileToJarDebug
+--
+> Task :app:checkReleaseAarMetadata FAILED
+> Task :app:generateReleaseResValues
+> Task :app:stripReleaseDebugSymbols
+> Task :lib:snygg:extractReleaseAnnotations
+> Task :lib:snygg:mergeReleaseConsumerProguardFiles
+> Task :lib:snygg:mergeReleaseJavaResource
+--
+* What went wrong:
+Execution failed for task ':app:checkDebugAarMetadata'.
+> A failure occurred while executing com.android.build.gradle.internal.tasks.CheckAarMetadataWorkAction
+   > 21 issues were found when checking AAR metadata:
+     
+       1.  Dependency 'dev.patrickgold.jetpref:jetpref-datastore-ui-android:0.3.1' requires libraries and applications that
+--
+* What went wrong:
+Execution failed for task ':app:checkReleaseAarMetadata'.
+> A failure occurred while executing com.android.build.gradle.internal.tasks.CheckAarMetadataWorkAction
+   > 17 issues were found when checking AAR metadata:
+     
+       1.  Dependency 'dev.patrickgold.jetpref:jetpref-datastore-ui-android:0.3.1' requires libraries and applications that
+--
+BUILD FAILED in 2m 45s
+330 actionable tasks: 330 executed
+----
+           on).
+     
+      12.  Dependency 'androidx.core:core-ktx:1.19.0' requires Android Gradle plugin 9.1.0 or higher.
+     
+           This build currently uses Android Gradle plugin 8.12.3.
+     
+      13.  Dependency 'androidx.core:core:1.19.0' requires libraries and applications that
+           depend on it to compile against version 37 or later of the
+           Android APIs.
+     
+           :app is currently compiled against android-36.
+     
+           Also, the maximum recommended compile SDK version for Android Gradle
+           plugin 8.12.3 is 36.
+     
+           Recommended action: Update this project's version of the Android Gradle
+           plugin to one that supports 37, then update this project to use
+           compileSdk of at least 37.
+     
+           Note that updating a library or application's compileSdk (which
+           allows newer APIs to be used) can be done separately from updating
+           targetSdk (which opts the app in to new runtime behavior) and
+           minSdk (which determines which devices the app can be installed
+           on).
+     
+      14.  Dependency 'androidx.core:core:1.19.0' requires Android Gradle plugin 9.1.0 or higher.
+     
+           This build currently uses Android Gradle plugin 8.12.3.
+     
+      15.  Dependency 'androidx.compose.ui:ui-android:1.12.0' requires libraries and applications that
+           depend on it to compile against version 37 or later of the
+           Android APIs.
+     
+           :app is currently compiled against android-36.
+     
+           Also, the maximum recommended compile SDK version for Android Gradle
+           plugin 8.12.3 is 36.
+     
+           Recommended action: Update this project's version of the Android Gradle
+           plugin to one that supports 37, then update this project to use
+           compileSdk of at least 37.
+     
+           Note that updating a library or application's compileSdk (which
+           allows newer APIs to be used) can be done separately from updating
+           targetSdk (which opts the app in to new runtime behavior) and
+           minSdk (which determines which devices the app can be installed
+           on).
+     
+      16.  Dependency 'androidx.compose.ui:ui-android:1.12.0' requires Android Gradle plugin 9.1.0 or higher.
+     
+           This build currently uses Android Gradle plugin 8.12.3.
+     
+      17.  Dependency 'dev.patrickgold.jetpref:jetpref-datastore-model-android:0.3.1' requires libraries and applications that
+           depend on it to compile against version 37 or later of the
+           Android APIs.
+     
+           :app is currently compiled against android-36.
+     
+           Also, the maximum recommended compile SDK version for Android Gradle
+           plugin 8.12.3 is 36.
+     
+           Recommended action: Update this project's version of the Android Gradle
+           plugin to one that supports 37, then update this project to use
+           compileSdk of at least 37.
+     
+           Note that updating a library or application's compileSdk (which
+           allows newer APIs to be used) can be done separately from updating
+           targetSdk (which opts the app in to new runtime behavior) and
+           minSdk (which determines which devices the app can be installed
+           on).
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to generate a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+==============================================================================
+
+BUILD FAILED in 2m 45s
+330 actionable tasks: 330 executed
