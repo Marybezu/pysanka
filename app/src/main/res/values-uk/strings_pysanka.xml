@@ -195,4 +195,5 @@
     <string name="pysanka__links__clean">Очищати скопійовані посилання</string>
     <string name="pysanka__links__clean_summary">Прибирає стеження з посилань, які ви копіюєте (utm_…, fbclid, «si» YouTube і Spotify, «s» і «t» в X тощо), щоб вони не казали, хто, де й коли ними поділився. Решта посилання не змінюється; працює на телефоні.</string>
     <string name="pysanka__photo_history__added">Додано в історію буфера</string>
+    <string name="pysanka__photo_history__button">Додати фото в історію</string>
 </resources>

@@ -171,11 +171,7 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
                 return@launch
             }
             android.widget.Toast.makeText(context, R.string.pysanka__photo_history__added, android.widget.Toast.LENGTH_SHORT).show()
-            val text = runCatching {
-                withContext(Dispatchers.IO) { decode(context, uri) }?.let { b ->
-                    TextRecognizer.get(context).recognize(b).joinedText()
-                }
-            }.getOrNull()
+            val text = runCatching { AllText.read(context, uri) }.getOrNull()
             if (!text.isNullOrBlank()) {
                 withContext(Dispatchers.IO) {
                     runCatching { clipboardManager.setImageText(id, text.take(dev.patrickgold.florisboard.ime.clipboard.ClipboardManager.MAX_IMAGE_TEXT)) }
@@ -185,16 +181,24 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
         }
     }
 
+    // A picker or the camera app is open (its result is still to come)
+    var awaiting by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
+        awaiting = false
         when {
             uri == null -> close()
             source == TextFromImageActivity.SOURCE_HISTORY -> toHistory(uri)
             else -> recognize { decode(context, uri) }
         }
     }
+    fun launchPicker() {
+        awaiting = true
+        pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
     // The phone's camera app takes the picture into Pysanka's file; nothing goes to the gallery
     var shot by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf<Uri?>(null) }
     val takePicture = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { taken ->
+        awaiting = false
         val uri = shot
         if (taken && uri != null) {
             recognize { try { decode(context, uri) } finally { CameraShot.delete(context, uri) } }
@@ -208,12 +212,13 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
         val uri = CameraShot.newShot(context)
         shot = uri
         try {
+            awaiting = true
             takePicture.launch(uri)
         } catch (e: android.content.ActivityNotFoundException) {
             // No camera app: recent photos instead
             CameraShot.delete(context, uri)
             shot = null
-            pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            launchPicker()
         }
     }
     // This screen's shot never stays behind once the screen really closes (not on a mere recreation,
@@ -227,10 +232,15 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
     // Opened once, also if the screen is turned (the activity keeps itself across rotation)
     var started by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
-        if (started) return@LaunchedEffect
+        if (started) {
+            // Recreated after its result was already shown (that is kept only in memory): nothing
+            // left to show, unless a photo or the camera is still to come back
+            if (!awaiting) close()
+            return@LaunchedEffect
+        }
         started = true
         if (source != TextFromImageActivity.SOURCE_CAMERA) {
-            pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            launchPicker()
         } else {
             openCamera()
         }
@@ -245,7 +255,7 @@ private fun TextFromImageScreen(source: String, close: () -> Unit) {
             ) {
                 Text(stringRes(R.string.pysanka__ocr__choose_title), style = MaterialTheme.typography.titleLarge)
                 Text(stringRes(R.string.pysanka__ocr__choose_hint), style = MaterialTheme.typography.bodyMedium)
-                Button(onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = { launchPicker() }, modifier = Modifier.fillMaxWidth()) {
                     Text(stringRes(R.string.pysanka__ocr__recent_photos))
                 }
                 FilledTonalButton(onClick = { openCamera() }, modifier = Modifier.fillMaxWidth()) {

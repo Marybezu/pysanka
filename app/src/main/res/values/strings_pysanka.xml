@@ -196,4 +196,5 @@
     <string name="pysanka__links__clean">Clean copied links</string>
     <string name="pysanka__links__clean_summary">Removes tracking from links you copy (utm_…, fbclid, YouTube and Spotify “si”, X\'s “s” and “t” and similar), so they don\'t tell who shared them, where and when. The rest of the link stays the same; works on the phone.</string>
     <string name="pysanka__photo_history__added">Added to the clipboard history</string>
+    <string name="pysanka__photo_history__button">Add a photo to the history</string>
 </resources>

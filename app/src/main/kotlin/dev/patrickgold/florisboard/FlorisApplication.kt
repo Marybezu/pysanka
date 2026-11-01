@@ -142,6 +142,11 @@ class FlorisApplication : Application() {
 
     fun init() {
         cacheDir?.deleteContentsRecursively()
+        // Pysanka: a camera shot left by a crash (the camera app may still be writing a fresh one)
+        runCatching {
+            val now = System.currentTimeMillis()
+            java.io.File(filesDir, "capture").listFiles()?.forEach { if (now - it.lastModified() > 10 * 60 * 1000L) it.delete() }
+        }
         scope.launch {
             val result = FlorisPreferenceStore.initAndroid(
                 context = this@FlorisApplication,

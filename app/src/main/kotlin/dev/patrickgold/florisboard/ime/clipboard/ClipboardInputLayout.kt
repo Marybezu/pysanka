@@ -252,10 +252,11 @@ fun ClipboardInputLayout(
                 elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
                 onClick = { ua.pysanka.ocr.openTextFromImage(ua.pysanka.ocr.TextFromImageActivity.SOURCE_HISTORY) },
                 modifier = sizeModifier,
-                enabled = !deviceLocked && historyEnabled && !isPopupSurfaceActive(),
+                enabled = !deviceLocked && historyEnabled && !ua.pysanka.privacy.FieldPrivacy.isPrivate && !isPopupSurfaceActive(),
             ) {
                 SnyggIcon(
                     imageVector = Icons.Default.AddPhotoAlternate,
+                    contentDescription = stringRes(R.string.pysanka__photo_history__button),
                 )
             }
             SnyggIconButton(

@@ -281,7 +281,10 @@ class ClipboardManager(
                 // Pysanka: a copied link loses its tracking parameters, in the system clipboard too
                 // (so it is clean wherever it is pasted). Not for passwords or marked-sensitive clips.
                 // Setting the clean text calls this listener again; that time nothing changes.
-                if (prefs.clipboard.cleanLinks.get() && !passwordField &&
+                // Only a plain-text clip: rewriting one with formatting (HTML) would lose the formatting
+                val plainOnly = systemPrimaryClip.description.mimeTypeCount == 1 &&
+                    systemPrimaryClip.description.hasMimeType(android.content.ClipDescription.MIMETYPE_TEXT_PLAIN)
+                if (prefs.clipboard.cleanLinks.get() && !passwordField && plainOnly &&
                     !ClipboardItem.isSensitive(systemPrimaryClip) && systemPrimaryClip.itemCount == 1
                 ) {
                     val text = systemPrimaryClip.getItemAt(0).text?.toString()
@@ -289,10 +292,11 @@ class ClipboardManager(
                         val clean = ua.pysanka.clipboard.LinkCleaner.clean(text)
                         if (clean != text) {
                             val label = systemPrimaryClip.description.label
-                            withContext(Dispatchers.Main) {
-                                runCatching { systemClipboardManager.setPrimaryClip(ClipData.newPlainText(label, clean)) }
+                            val set = withContext(Dispatchers.Main) {
+                                runCatching { systemClipboardManager.setPrimaryClip(ClipData.newPlainText(label, clean)) }.isSuccess
                             }
-                            return@launch
+                            // Set: the next call stores the clean text. Not set: go on with the original
+                            if (set) return@launch
                         }
                     }
                 }
@@ -325,7 +329,16 @@ class ClipboardManager(
     /**
      * Change the current text on clipboard, update history (if enabled).
      */
-    private fun addNewClip(item: ClipboardItem) {
+    private fun addNewClip(original: ClipboardItem) {
+        // Pysanka: a copy made by the keyboard itself is cleaned of tracking before it is stored, so
+        // the history never keeps the tracked link next to the clean one
+        val item = if (original.type == ItemType.TEXT && original.text != null && !original.isSensitive &&
+            !fieldPassword && prefs.clipboard.cleanLinks.get()
+        ) {
+            ua.pysanka.clipboard.LinkCleaner.clean(original.text).let { if (it == original.text) original else original.copy(text = it) }
+        } else {
+            original
+        }
         // Pysanka: see mayKeep (a copy from the keyboard itself happens in the field open right now)
         if (mayKeep(item.isSensitive, fieldIncognito, fieldPassword)) {
             insertOrMoveBeginning(if (fieldPassword && !item.isSensitive) item.copy(isSensitive = true) else item)
@@ -542,7 +555,8 @@ class ClipboardManager(
      */
     fun addImage(context: Context, uri: android.net.Uri): Long? {
         val dao = clipHistoryDao ?: return null
-        if (!prefs.clipboard.historyEnabled.get()) return null
+        // Like any copy: never in incognito or a field that asks for no learning
+        if (!mayKeep(isSensitive = false, incognito = fieldIncognito, passwordField = false)) return null
         val mime = context.contentResolver.getType(uri)?.takeIf { it.startsWith("image/") } ?: "image/jpeg"
         val stored = context.contentResolver.openInputStream(uri)?.use {
             dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage.storeStream(appContext, it)
