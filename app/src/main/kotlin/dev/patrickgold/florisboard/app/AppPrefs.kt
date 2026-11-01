@@ -179,6 +179,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
     val correction = Correction()
     inner class Correction {
+        // Pysanka: a clear typing error is corrected when a space follows (careful; see WordSuggester)
+        val pysankaAutoCorrect = boolean(
+            key = "pysanka__correction__auto_correct",
+            default = true,
+        )
         val autoCapitalization = boolean(
             key = "correction__auto_capitalization",
             default = true,
@@ -362,7 +367,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     inner class Glide {
         val enabled = boolean(
             key = "glide__enabled",
-            default = false,
+            default = true,
         )
         val showTrail = boolean(
             key = "glide__show_trail",
@@ -705,7 +710,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val enabled = boolean(
             key = "suggestion__enabled",
-            default = false,
+            default = true,
         )
         val displayMode = enum(
             key = "suggestion__display_mode",

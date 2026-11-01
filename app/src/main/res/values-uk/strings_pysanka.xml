@@ -228,4 +228,8 @@
     <string name="pysanka__ai__change">Доробити</string>
     <string name="pysanka__ai__expand">Розгорнути</string>
     <string name="pysanka__ai__back">Назад</string>
+    <string name="pysanka__typing__auto_correct">Виправляти описки</string>
+    <string name="pysanka__typing__auto_correct_summary">Лише явні описки, після пробілу; Backspace одразу повертає, як було написано</string>
+    <string name="pysanka__typing__auto_correct_on">Виправлення описок увімкнено</string>
+    <string name="pysanka__typing__auto_correct_off">Виправлення описок вимкнено</string>
 </resources>

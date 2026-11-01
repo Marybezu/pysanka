@@ -18,6 +18,10 @@ those copies keep that licence.
 
 ## Third-party material
 
+- `app/src/main/assets/ime/dict/uk.json`, `en.json` — word lists for suggestions and swipe, made from
+  FrequencyWords by Hermit Dave (OpenSubtitles 2018 counts; CC BY-SA 4.0), the Ukrainian one checked
+  against the dict_uk hunspell dictionary (GPL 3.0+ / LGPL 2.1+ / MPL 1.1). The lists are under
+  CC BY-SA 4.0; how they are made: `scripts/dict/`.
 
 - Pysanka is based on **FlorisBoard** by The FlorisBoard Contributors
   (https://github.com/florisboard/florisboard), Apache License 2.0. The full history of FlorisBoard

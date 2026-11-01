@@ -55,6 +55,12 @@ fun PysankaTypingScreen() = FlorisScreen {
             summary = stringRes(R.string.pysanka__typing__suggestions_summary),
         )
         SwitchPreference(
+            prefs.correction.pysankaAutoCorrect,
+            title = stringRes(R.string.pysanka__typing__auto_correct),
+            summary = stringRes(R.string.pysanka__typing__auto_correct_summary),
+            enabledIf = { prefs.suggestion.enabled isEqualTo true },
+        )
+        SwitchPreference(
             prefs.correction.autoCapitalization,
             title = stringRes(R.string.pysanka__typing__auto_caps),
         )

@@ -423,6 +423,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             it.isManualSelectionModeEnd = false
         }
         revertPreviouslyAcceptedCandidate()
+        // Pysanka: Backspace right after an auto-correction brings back what was typed
+        val undo = pysankaUndoReady
+        if (undo != null && unit == OperationUnit.CHARACTERS && editorInstance.pysankaUndoAutoCorrect(undo.first, undo.second)) return
         editorInstance.deleteBackwards(unit)
     }
 
@@ -549,8 +552,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * enabled by the user.
      */
     private fun handleSpace(data: KeyData) {
+        val typed = editorInstance.activeContent.composingText
         val candidate = nlpManager.getAutoCommitCandidate()
         candidate?.let { commitCandidate(it) }
+        // Pysanka: the next Backspace takes an auto-correction back
+        if (candidate != null && candidate.text.toString() != typed && typed.isNotEmpty()) {
+            pysankaUndo = typed to candidate.text.toString()
+        }
         if (prefs.keyboard.spaceBarSwitchesToCharacters.get()) {
             when (activeState.keyboardMode) {
                 KeyboardMode.NUMERIC_ADVANCED,
@@ -607,9 +615,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * Handles a [KeyCode.TOGGLE_AUTOCORRECT] event.
      */
     private fun handleToggleAutocorrect() {
+        // Pysanka: switches careful auto-correction of typing errors
+        val on = !prefs.correction.pysankaAutoCorrect.get()
+        scope.launch { prefs.correction.pysankaAutoCorrect.set(on) }
         lastToastReference.get()?.cancel()
         lastToastReference = WeakReference(
-            appContext.showLongToastSync("Autocorrect toggle is a placeholder and not yet implemented")
+            appContext.showLongToastSync(if (on) R.string.pysanka__typing__auto_correct_on else R.string.pysanka__typing__auto_correct_off)
         )
     }
 
@@ -692,7 +703,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
     }
 
+    /** Pysanka: the last auto-correction (typed, corrected), until the next key. */
+    private var pysankaUndo: Pair<String, String>? = null
+    private var pysankaUndoReady: Pair<String, String>? = null
+
     override fun onInputKeyUp(data: KeyData) = activeState.batchEdit {
+        // Pysanka: an auto-correction can be taken back only by the very next key (Backspace)
+        pysankaUndoReady = pysankaUndo
+        pysankaUndo = null
         val windowController = FlorisImeService.windowControllerOrNull() ?: return@batchEdit
         when (data.code) {
             KeyCode.ARROW_DOWN,
