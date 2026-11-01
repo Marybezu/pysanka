@@ -33,7 +33,28 @@ data class OcrLine(val text: String, val box: Rect, val confidence: Float, val w
 
 /** Pysanka: the lines joined as text: pieces of one line with spaces, lines with line breaks. */
 fun List<OcrLine>.joinedText(): String =
-    groupBy { it.group }.values.joinToString("\n") { g -> g.joinToString(" ") { it.text } }
+    joinOcrLines(groupBy { it.group }.values.map { g -> g.joinToString(" ") { it.text } })
+
+/**
+ * Pysanka: lines of recognised text joined with line breaks; a word split at the end of a line
+ * ("меди-" + "чної") is joined back ("медичної"). Only a hyphen right after a letter, with the next
+ * line starting with a small letter, counts: a dash after a space ("свідомості –") stays.
+ */
+fun joinOcrLines(lines: List<String>): String {
+    val sb = StringBuilder()
+    for (line in lines) {
+        val l = line.trim()
+        if (l.isEmpty()) continue
+        val n = sb.length
+        val split = n >= 2 && sb[n - 1] in "-\u2010\u00AD\u00AC" && sb[n - 2].isLetter() && l[0].isLowerCase()
+        when {
+            split -> sb.setLength(n - 1)
+            n > 0 -> sb.append('\n')
+        }
+        sb.append(l)
+    }
+    return sb.toString()
+}
 
 /**
  * Pysanka: text recognition on the phone, with the PP-OCRv5 mobile models built into the app
@@ -141,8 +162,8 @@ class TextRecognizer private constructor(private val context: Context) {
     suspend fun recognize(bitmap: Bitmap): List<OcrLine> = withContext(Dispatchers.Default) {
         mutex.withLock {
             load()
-            val read = detect(bitmap).mapNotNull { box -> read(bitmap, box) }.filter { it.text.isNotBlank() }
-            order(read)
+            val read = detect(bitmap).mapNotNull { box -> read(bitmap, box) }
+            order(byScript(read).filter { it.text.isNotBlank() })
         }
     }
 
@@ -296,7 +317,7 @@ class TextRecognizer private constructor(private val context: Context) {
 
     private val cropPaint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
 
-    private fun read(src: Bitmap, box: TextBox): OcrLine? {
+    private fun read(src: Bitmap, box: TextBox): Piece? {
         // Cut the region out straightened and scaled to the model's height
         val k = REC_HEIGHT / box.height
         val rw = min(MAX_REC_WIDTH, max(16, (box.length * k).roundToInt()))
@@ -324,28 +345,56 @@ class TextRecognizer private constructor(private val context: Context) {
             input.put(plane + i, ((c shr 8) and 0xFF) / 127.5f - 1f)
             input.put(2 * plane + i, ((c shr 16) and 0xFF) / 127.5f - 1f)
         }
-        var best: Reading? = null
-        for (reader in readers!!) {
+        val readings = ArrayList<Reading>(2)
+        for ((n, reader) in readers!!.withIndex()) {
             input.rewind()
             val reading = OnnxTensor.createTensor(env, input, longArrayOf(1, 3, REC_HEIGHT.toLong(), rw.toLong())).use { tensor ->
                 reader.session.run(mapOf(reader.session.inputNames.first() to tensor)).use { out ->
                     decode(out[0] as OnnxTensor, reader.chars)
                 }
             }
-            if (best == null || reading.evidence > best.evidence) best = reading
+            readings.add(reading.also { it.cyrillic = n == 0 })
             // Letters only Cyrillic has, read surely: the Latin model would only see part of it
             val letters = reading.text.count { it.isLetter() }
             val cyr = reading.text.count { it in CYRILLIC_ONLY }
             if (reading.mean >= 0.85f && cyr >= 2 && cyr * 100 >= letters * 15) break
         }
-        val r = best ?: return null
-        val text = r.text.trim()
-        if (text.isEmpty()) return null
-        return OcrLine(text, box.bounds(w = src.width, h = src.height), r.mean, words(r, box, src.width, src.height))
+        if (readings.isEmpty()) return null
+        return Piece(box, readings, src.width, src.height)
+    }
+
+    /** A region with each model's reading; which one is used is decided with the whole picture in view. */
+    private inner class Piece(val box: TextBox, val readings: List<Reading>, val w: Int, val h: Int) {
+        fun line(r: Reading) = OcrLine(r.text.trim(), box.bounds(w = w, h = h), r.mean, words(r, box, w, h))
+    }
+
+    /**
+     * Picks each line's reading. On its own, the one with more confidently read letters wins; but
+     * in a text that is mostly Cyrillic (or mostly Latin), the other script wins only if it is
+     * clearly surer (by a quarter): so a Ukrainian page does not get "osvitu" or "6ез" in it, and
+     * an English one stays English.
+     */
+    private fun byScript(pieces: List<Piece>): List<OcrLine> {
+        val first = pieces.map { p -> p.readings.maxBy { it.evidence } }
+        val cyr = first.filter { it.cyrillic }.sumOf { it.text.count(Char::isLetter) }
+        val lat = first.filter { !it.cyrillic }.sumOf { it.text.count(Char::isLetter) }
+        val main: Boolean? = when {
+            cyr > 2 * lat -> true
+            lat > 2 * cyr -> false
+            else -> null
+        }
+        return pieces.mapIndexed { i, p ->
+            val best = first[i]
+            val home = p.readings.firstOrNull { it.cyrillic == main }
+            val chosen = if (main != null && home != null && best !== home && best.evidence < home.evidence * 1.25f) home else best
+            p.line(chosen)
+        }
     }
 
     /** One model's reading of a line. */
     private class Reading(
+        /** Read by the Cyrillic model (else the Latin one). */
+        var cyrillic: Boolean = false,
         val text: String,
         val mean: Float,
         /** Sum of the confidence of the letters read with confidence above one half (not spaces). */
@@ -384,7 +433,7 @@ class TextRecognizer private constructor(private val context: Context) {
             }
             prev = bi
         }
-        return Reading(sb.toString(), if (n == 0) 0f else sum / n, evidence, pos, tSteps)
+        return Reading(text = sb.toString(), mean = if (n == 0) 0f else sum / n, evidence = evidence, positions = pos, steps = tSteps)
     }
 
     /** Splits a line into words and places each one by where its letters were read. */
