@@ -21,6 +21,9 @@ object AiJob {
     /** Characters per part (about 1500–2000 tokens: room for the answer in the model's 8192). */
     const val PART = 3500
 
+    /** Changes of style, asked again when they changed almost nothing. */
+    private val STYLES = setOf(AiAction.FRIENDLY, AiAction.FORMAL, AiAction.SHORTER)
+
     /** The most a [AiAction.Kind.WHOLE] or [AiAction.Kind.ADVICE] action takes at once. */
     const val WHOLE_MAX = 6000
 
@@ -72,10 +75,12 @@ object AiJob {
         val warm = AiEngine.loaded
         var removed = 0
         var unconfirmed = false
+        // A part asked again takes longer than the speed of this phone says
+        var retried = false
         val result = when (action.kind) {
             AiAction.Kind.WHOLE, AiAction.Kind.ADVICE -> {
                 onPart(1, 1)
-                ask(context, run, AiPrompts.system(action, target), text, action.temperature, text)
+                ask(context, run, AiPrompts.system(action, target, text), text, action.temperature, text)
             }
             AiAction.Kind.REWRITE -> {
                 val parts = TextChunks.split(text, PART)
@@ -83,7 +88,7 @@ object AiJob {
                     for ((i, p) in parts.withIndex()) {
                         onPart(i + 1, parts.size)
                         // Whitespace alone (a part between two breaks) is kept as it is
-                        if (p.text.isBlank()) append(p.text) else append(ask(context, run, AiPrompts.system(action, target), p.text, action.temperature, p.text))
+                        if (p.text.isBlank()) append(p.text) else append(rewrite(context, run, action, target, p.text) { retried = true })
                         append(p.after)
                     }
                 }
@@ -97,7 +102,7 @@ object AiJob {
             }
         }.let { if (action == AiAction.REDACT) Redact.apply(it) else it }
         val seconds = ((System.currentTimeMillis() - started) / 1000).toInt()
-        if (warm) Speed.learn(context, action, text.length, seconds)
+        if (warm && !retried) Speed.learn(context, action, text.length, seconds)
         return Output(result.trim(), removed, unconfirmed, seconds, AiEngine.backend)
     }
 
@@ -105,13 +110,13 @@ object AiJob {
     private suspend fun summarise(context: Context, run: Long, text: String, onPart: (Int, Int) -> Unit): String {
         if (text.length <= PART) {
             onPart(1, 1)
-            return ask(context, run, AiPrompts.system(AiAction.SUMMARY, AiLanguage.UK), text, 0.2, text)
+            return ask(context, run, AiPrompts.system(AiAction.SUMMARY, AiLanguage.UK, text), text, 0.2, text)
         }
         val parts = TextChunks.split(text, PART).filter { it.text.isNotBlank() }
         val total = parts.size + 1
         var notes = parts.mapIndexed { i, p ->
             onPart(i + 1, total)
-            ask(context, run, AiPrompts.summaryPart(i + 1, parts.size), p.text, 0.2, p.text)
+            ask(context, run, AiPrompts.summaryPart(i + 1, parts.size, p.text), p.text, 0.2, p.text)
         }.joinToString("\n")
         // Notes on very many parts may themselves be too long for one go: shorten them in parts
         // (at most twice; whatever is left over is cut at a sentence, never looped on)
@@ -119,14 +124,34 @@ object AiJob {
         while (notes.length > PART * 2 && rounds < 2) {
             val shorter = StringBuilder()
             for (p in TextChunks.split(notes, PART)) {
-                shorter.append(ask(context, run, AiPrompts.summaryJoin(), p.text, 0.2, p.text)).append('\n')
+                shorter.append(ask(context, run, AiPrompts.summaryJoin(p.text), p.text, 0.2, p.text)).append('\n')
             }
             notes = shorter.toString()
             rounds++
         }
         notes = TextChunks.prefix(notes, PART * 2)
         onPart(total, total)
-        return ask(context, run, AiPrompts.summaryJoin(), notes, 0.2, notes)
+        return ask(context, run, AiPrompts.summaryJoin(notes), notes, 0.2, notes)
+    }
+
+    /**
+     * One part rewritten. A change of style that came back almost the same as the text is asked
+     * for once more, more boldly (a small model is often too careful).
+     */
+    private suspend fun rewrite(
+        context: Context,
+        run: Long,
+        action: AiAction,
+        target: AiLanguage,
+        text: String,
+        onRetry: () -> Unit,
+    ): String {
+        val system = AiPrompts.system(action, target, text)
+        val first = ask(context, run, system, text, action.temperature, text)
+        if (action !in STYLES || !TextChanges.tooLittle(action, text, first)) return first
+        onRetry()
+        val second = ask(context, run, system + AiPrompts.bolder(action), text, minOf(1.0, action.temperature + 0.3), text)
+        return second.ifBlank { first }
     }
 
     private suspend fun ask(context: Context, run: Long, system: String, text: String, temperature: Double, original: String): String {

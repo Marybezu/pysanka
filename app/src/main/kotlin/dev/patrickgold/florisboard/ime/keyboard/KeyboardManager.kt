@@ -445,8 +445,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             ua.pysanka.typing.AutoCorrect.reject(undo.typed)
             if (pysankaMayLearn()) {
                 val language = subtypeManager.activeSubtype.primaryLocale.language
-                ua.pysanka.typing.UserWords.unlearn(appContext, language, undo.corrected)
-                ua.pysanka.typing.UserWords.learn(appContext, language, undo.typed, insisted = true, midSentence = undo.midSentence)
+                ua.pysanka.typing.UserWords.unlearn(appContext, language, undo.corrected, undo.previous)
+                ua.pysanka.typing.UserWords.learn(
+                    appContext, language, undo.typed, insisted = true, midSentence = undo.midSentence, previous = undo.previous,
+                )
             }
             return
         }
@@ -582,11 +584,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // Pysanka: a correction worked out for an earlier keystroke is not applied
         val candidate = pysankaAutoCommitCandidate()
         val midSentence = pysankaMidSentence(typed)
-        pysankaLearn(typed, candidate)
+        val previous = pysankaPreviousWord(typed)
+        pysankaLearn(typed, candidate, previous = previous)
         candidate?.let { commitCandidate(it) }
         // Pysanka: the next Backspace takes an auto-correction back
         if (candidate != null && candidate.text.toString() != typed && typed.isNotEmpty()) {
-            pysankaUndo = PysankaUndo(typed, candidate.text.toString(), midSentence)
+            pysankaUndo = PysankaUndo(typed, candidate.text.toString(), midSentence, previous)
         }
         if (prefs.keyboard.spaceBarSwitchesToCharacters.get()) {
             when (activeState.keyboardMode) {
@@ -742,7 +745,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     /** Pysanka: the last auto-correction, until the next key. */
-    private data class PysankaUndo(val typed: String, val corrected: String, val midSentence: Boolean)
+    private data class PysankaUndo(val typed: String, val corrected: String, val midSentence: Boolean, val previous: String?)
     private var pysankaUndo: PysankaUndo? = null
     private var pysankaUndoReady: PysankaUndo? = null
 
@@ -765,19 +768,35 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         return before.isNotEmpty() && before.last() !in ".!?…\n"
     }
 
+    /** Pysanka: the word before the one being typed, in the same sentence (for word pairs). */
+    private fun pysankaPreviousWord(typed: String): String? = ua.pysanka.typing.PreviousWord.of(
+        editorInstance.activeContent.textBeforeSelection.dropLast(typed.length),
+        // A tapped suggestion's space comes only with the next word
+        spaceComing = typed.isEmpty() && editorInstance.phantomSpace.isActive,
+    )
+
     /**
      * Pysanka: a word is finished: learns what ended up in the field ([candidate]'s word, or
-     * [typed] as it is). [insisted]: the person chose the word exactly as typed.
+     * [typed] as it is), and that it followed the word before. [insisted]: the person chose the
+     * word exactly as typed. [typed] is empty for an offered next word.
      */
-    private fun pysankaLearn(typed: String, candidate: SuggestionCandidate?, insisted: Boolean = false) {
-        if (typed.isEmpty() || !pysankaMayLearn()) return
-        val word = when (candidate) {
-            null -> typed
-            is dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate -> candidate.text.toString()
+    private fun pysankaLearn(
+        typed: String,
+        candidate: SuggestionCandidate?,
+        insisted: Boolean = false,
+        previous: String? = pysankaPreviousWord(typed),
+    ) {
+        if (!pysankaMayLearn()) return
+        val word = when {
+            candidate == null -> typed
+            // Words only (not clipboard items or emoji)
+            candidate.sourceProvider is dev.patrickgold.florisboard.ime.nlp.latin.LatinLanguageProvider -> candidate.text.toString()
             else -> return
         }
+        if (word.isEmpty()) return
         ua.pysanka.typing.UserWords.learn(
-            appContext, subtypeManager.activeSubtype.primaryLocale.language, word, insisted, pysankaMidSentence(typed),
+            appContext, subtypeManager.activeSubtype.primaryLocale.language, word, insisted,
+            pysankaMidSentence(typed), previous,
         )
     }
 

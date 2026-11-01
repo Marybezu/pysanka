@@ -156,23 +156,6 @@ object Routes {
         @Deeplink("settings/clipboard/copy")
         object ClipboardCopy
 
-        // Pysanka: the short settings screens
-        @Serializable
-        @Deeplink("settings/pysanka/typing")
-        object PysankaTyping
-
-        @Serializable
-        @Deeplink("settings/pysanka/look")
-        object PysankaLook
-
-        @Serializable
-        @Deeplink("settings/pysanka/privacy")
-        object PysankaPrivacy
-
-        @Serializable
-        @Deeplink("settings/pysanka/more")
-        object PysankaMore
-
         // Pysanka: AI on the phone (the model)
         @Serializable
         @Deeplink("settings/pysanka/ai")
@@ -305,10 +288,6 @@ object Routes {
             composableWithDeepLink(Settings.Clipboard::class) { ClipboardScreen() }
             composableWithDeepLink(Settings.ClipboardCopy::class) { ua.pysanka.clipboard.ClipboardBackupScreen() }
             composableWithDeepLink(Settings.ClipboardTags::class) { ua.pysanka.clipboard.ClipboardTagsScreen() }
-            composableWithDeepLink(Settings.PysankaTyping::class) { ua.pysanka.settings.PysankaTypingScreen() }
-            composableWithDeepLink(Settings.PysankaLook::class) { ua.pysanka.settings.PysankaLookScreen() }
-            composableWithDeepLink(Settings.PysankaPrivacy::class) { ua.pysanka.settings.PysankaPrivacyScreen() }
-            composableWithDeepLink(Settings.PysankaMore::class) { ua.pysanka.settings.PysankaMoreScreen() }
             composableWithDeepLink(Settings.PysankaAi::class) { ua.pysanka.ai.AiSettingsScreen() }
 
             composableWithDeepLink(Settings.Media::class) { MediaScreen() }

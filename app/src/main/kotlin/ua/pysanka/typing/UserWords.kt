@@ -63,21 +63,34 @@ object UserWords {
     /** The words already in memory (never reads a file; for the main thread). */
     fun peek(language: String): PersonalWords? = loaded[language]
 
-    /** One use of [word]; see [PersonalWords.learn]. */
-    fun learn(context: Context, language: String, word: String, insisted: Boolean, midSentence: Boolean) {
+    /** One use of [word], after [previous] in the same sentence if given; see [PersonalWords.learn]. */
+    fun learn(context: Context, language: String, word: String, insisted: Boolean, midSentence: Boolean, previous: String?) {
         if (!PersonalWords.isLearnable(word)) return
         val app = context.applicationContext
         scope.launch {
-            if (get(app, language)?.learn(word, insisted, midSentence, day()) == true) changed(app, language)
+            val words = get(app, language) ?: return@launch
+            val day = day()
+            val learned = words.learn(word, insisted, midSentence, day)
+            val paired = previous != null && words.learnPair(previous, word, day)
+            if (learned || paired) changed(app, language)
         }
     }
 
-    /** Takes back one use of an auto-correction the person undid. */
-    fun unlearn(context: Context, language: String, word: String) {
+    /** Takes back one use of an auto-correction the person undid (and of its pair). */
+    fun unlearn(context: Context, language: String, word: String, previous: String?) {
         val app = context.applicationContext
         scope.launch {
-            if (get(app, language)?.unlearn(word) == true) changed(app, language)
+            val words = get(app, language) ?: return@launch
+            val unlearned = words.unlearn(word)
+            val unpaired = previous != null && words.unlearnPair(previous, word)
+            if (unlearned || unpaired) changed(app, language)
         }
+    }
+
+    /** Forgets that [word] follows [previous] (long press on an offered next word). */
+    fun forgetPair(context: Context, language: String, previous: String, word: String): Boolean {
+        val words = peek(language) ?: return false
+        return words.forgetPair(previous, word).also { if (it) changed(context.applicationContext, language) }
     }
 
     /** Forgets one word (long press on its suggestion). */

@@ -28,6 +28,7 @@ import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
+import ua.pysanka.settings.PysankaHome // Pysanka
 
 @Composable
 fun HomeScreen() = FlorisScreen {
@@ -56,7 +57,7 @@ fun HomeScreen() = FlorisScreen {
             )
         }
 
-        // Pysanka: tiles with their current state instead of eleven plain rows
-        ua.pysanka.settings.PysankaHome()
+        // Pysanka: all settings in one list under short headings
+        PysankaHome()
     }
 }

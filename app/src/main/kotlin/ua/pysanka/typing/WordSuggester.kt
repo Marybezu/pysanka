@@ -14,7 +14,9 @@ package ua.pysanka.typing
  * - Apostrophes: ', ’ and ʼ count as the same; the one typed is kept.
  * - The person's own words ([PersonalWords], when given): a list word used often is offered
  *   higher; a word of their own is offered once known and never corrected. Auto-correction goes
- *   only into a list word (a learned word may itself be a typo typed twice).
+ *   only into a list word (a learned word may itself be a typo typed again).
+ * - The word before ([PersonalWords] pairs): a word that often followed it is offered higher, and
+ *   before anything is typed the usual next words are offered ([predict]).
  *
  * The case of what was typed is kept («Прив» → «Привіт», «ПРИВ» → «ПРИВІТ»).
  */
@@ -46,6 +48,10 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
         private const val OWN_BASE = 60
         private const val OWN_STEP = 15
         private const val OWN_MAX = 200
+
+        /** A word that followed the previous one gains this share per time (up to [PAIR_USES] times). */
+        private const val PAIR_GAIN = 0.6
+        private const val PAIR_USES = 5
     }
 
     /** Frequency (1..255) by the word in small letters. */
@@ -87,9 +93,15 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
 
     /**
      * [rejected]: words whose auto-correction was taken back; they are left as typed.
-     * [own]: the person's own words, if any.
+     * [own]: the person's own words, if any; [previous]: the word before, in the same sentence.
      */
-    fun suggest(typed: String, max: Int, rejected: Set<String> = emptySet(), own: PersonalWords? = null): List<Suggestion> {
+    fun suggest(
+        typed: String,
+        max: Int,
+        rejected: Set<String> = emptySet(),
+        own: PersonalWords? = null,
+        previous: String? = null,
+    ): List<Suggestion> {
         if (typed.isEmpty() || max <= 0) return emptyList()
         val lower = norm(typed)
         val f = { key: String -> score(key, own) }
@@ -112,20 +124,44 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
             scored.merge(cand, c * (if (extra == 0) 1.2 else 1.0 / (1 + extra * 0.05)), ::maxOf)
         }
         if (known) scored[lower] = maxOf(scored[lower] ?: 0.0, f(lower) * 1.5)
-
         val ranked = scored.entries.sortedByDescending { it.value }.take(max)
         val best = ranked.firstOrNull()
         val second = ranked.getOrNull(1)?.value ?: 0.0
-        val auto = best != null && !known && !hasDigit && lower.length >= AUTO_MIN_LENGTH &&
+        // Decided before the word before is weighed: a correction must stand on its own
+        var auto = best != null && !known && !hasDigit && lower.length >= AUTO_MIN_LENGTH &&
             lower !in rejected && best.key in freq && f(best.key) >= AUTO_MIN_FREQ &&
             (!typed.first().isUpperCase() || f(best.key) >= AUTO_CAPITAL_MIN_FREQ) &&
             best.key.length in (lower.length - 1)..(lower.length + 1) &&
             isOneEditAway(lower, best.key) && best.value >= second * AUTO_MARGIN
+        val autoWord = best?.key
+        // What usually comes after the previous word (a pair used [PersonalWords.PAIR_KNOWN] times) ranks higher
+        val order = if (own != null && previous != null) {
+            val prev = norm(previous)
+            scored.mapValues { (key, v) ->
+                val n = own.pairCount(prev, key)
+                if (n >= PersonalWords.PAIR_KNOWN) v * (1 + PAIR_GAIN * minOf(n, PAIR_USES)) else v
+            }.entries.sortedByDescending { it.value }.take(max).map { it.key }
+        } else {
+            ranked.map { it.key }
+        }
+        // A correction is applied only while it is still the first word offered
+        if (order.firstOrNull() != autoWord) auto = false
         val apostrophe = typed.firstOrNull { it == '\'' || it in APOSTROPHES }
-        return ranked.mapIndexed { i, e ->
-            val shown = display[e.key] ?: (if (e.key !in freq) own?.display(e.key) else null) ?: e.key
+        return order.mapIndexed { i, key ->
+            val shown = display[key] ?: (if (key !in freq) own?.display(key) else null) ?: key
             val word = if (apostrophe != null) shown.replace('\'', apostrophe) else shown
             Suggestion(matchCase(typed, word), autoCorrect = auto && i == 0)
+        }
+    }
+
+    /**
+     * The words that usually follow [previous] in a sentence (from the person's own typing),
+     * before anything is typed.
+     */
+    fun predict(previous: String, max: Int, own: PersonalWords?): List<String> {
+        if (own == null || max <= 0) return emptyList()
+        return own.next(norm(previous), max).filter { score(it, own) > 0 }.map { key ->
+            display[key] ?: (if (key !in freq) own.display(key) else null) ?: key
         }
     }
 

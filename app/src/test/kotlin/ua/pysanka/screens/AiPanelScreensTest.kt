@@ -34,6 +34,7 @@ import org.florisboard.lib.snygg.ui.rememberSnyggTheme
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
@@ -140,6 +141,11 @@ class AiPanelScreensTest {
     @Test fun menu() = shot("ai-01-menu", PanelStage.Menu)
     @Test fun menuDark() = shot("ai-01-menu-dark", PanelStage.Menu, dark = true)
     @Test fun menuAll() = shot("ai-02-menu-all", PanelStage.Menu, more = true)
+    @Test fun menuLargeText() {
+        // As on a phone with large text: no word may break in the middle
+        RuntimeEnvironment.setFontScale(1.3f)
+        shot("ai-02-menu-all-large-text", PanelStage.Menu, more = true)
+    }
     @Test fun languages() = shot("ai-03-languages", PanelStage.Languages)
     @Test fun working() = shot("ai-04-working", PanelStage.Working(AiAction.SUMMARY, false, 2, 5))
     @Test fun result() = shot("ai-05-result", done(AiAction.FIX, FIXED))
