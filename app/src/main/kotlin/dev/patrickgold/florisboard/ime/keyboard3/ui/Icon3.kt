@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.ime.keyboard3.ui
 
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.AutoAwesome
 import android.content.Context
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowRightAlt
