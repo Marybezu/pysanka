@@ -100,6 +100,8 @@ class FlorisAppActivity : ComponentActivity() {
         }
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Pysanka: optional, off by default
+        ua.pysanka.privacy.followScreenshotBlock()
 
         prefs.other.settingsTheme.asFlow().collectIn(lifecycleScope) {
             appTheme = it

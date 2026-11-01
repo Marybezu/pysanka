@@ -10,7 +10,6 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -111,8 +110,8 @@ class TextFromImageActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // Paired with letGo in every onDestroy, so the count is right however the screen ends
         TextRecognizer.get(this).hold()
-        // What is on a photo of a document is as private as what is typed
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        // Blocked from screenshots only if the owner chose so (Privacy)
+        ua.pysanka.privacy.followScreenshotBlock()
         val source = intent.getStringExtra(EXTRA_SOURCE) ?: SOURCE_PHOTO
         setContent {
             // The app's texts (stringRes) are read through this; without it the screen fails at once
@@ -429,22 +428,45 @@ private fun LiveCamera(onCaptured: (Bitmap) -> Unit, onFailed: () -> Unit, close
 private fun hasCamera(context: Context) =
     ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
 
-/** Reads a picture upright and not larger than needed (a 50 MP photo would not fit in memory). */
+/**
+ * Reads a picture upright and not larger than needed. A phone photo can be 50 MP (about 200 MB as
+ * pixels), far more than the keyboard may use, so it is decoded already reduced: by the system's
+ * decoder straight to the size needed (Android 9+), or else by a power of two that stays at most
+ * about 3600 px, then scaled.
+ */
 private fun decode(context: Context, uri: Uri): Bitmap? {
     val cr = context.contentResolver
+    if (android.os.Build.VERSION.SDK_INT >= 28) {
+        val source = android.graphics.ImageDecoder.createSource(cr, uri)
+        // Upright by itself (it applies the photo's rotation); software pixels, so they can be read
+        return android.graphics.ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+            decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
+            val w = info.size.width
+            val h = info.size.height
+            val s = MAX_PICTURE.toFloat() / max(w, h)
+            if (s < 1f) decoder.setTargetSize(max(1, (w * s).toInt()), max(1, (h * s).toInt()))
+        }.let { if (it.config == Bitmap.Config.ARGB_8888) it else it.copy(Bitmap.Config.ARGB_8888, false) }
+    }
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
     cr.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return null
     var sample = 1
-    while (max(bounds.outWidth, bounds.outHeight) / (sample * 2) >= 2400) sample *= 2
+    while (max(bounds.outWidth, bounds.outHeight) / sample > MAX_PICTURE * 3 / 2) sample *= 2
     val bmp = cr.openInputStream(uri)?.use {
         BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
     } ?: return null
+    val small = shrink(bmp)
+    if (small !== bmp) bmp.recycle()
     val rotation = runCatching { cr.openInputStream(uri)?.use { ExifInterface(it).rotationDegrees } ?: 0 }.getOrDefault(0)
-    val rotated = if (rotation == 0) bmp else Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, Matrix().apply { postRotate(rotation.toFloat()) }, true)
-    return shrink(rotated)
+    if (rotation == 0) return small
+    val rotated = Bitmap.createBitmap(small, 0, 0, small.width, small.height, Matrix().apply { postRotate(rotation.toFloat()) }, true)
+    if (rotated !== small) small.recycle()
+    return rotated
 }
 
+/** Longest side of a picture to read (detection uses up to 2048 px of it). */
+private const val MAX_PICTURE = 2400
+
 private fun shrink(b: Bitmap): Bitmap {
-    val s = 2400f / max(b.width, b.height)
+    val s = MAX_PICTURE.toFloat() / max(b.width, b.height)
     return if (s >= 1f) b else Bitmap.createScaledBitmap(b, (b.width * s).toInt(), (b.height * s).toInt(), true)
 }

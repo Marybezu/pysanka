@@ -167,6 +167,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "pysanka__ocr__live_camera",
             default = false,
         )
+        /** Pysanka's own screens (settings, text from photo) hidden from screenshots and screen sharing. */
+        val blockScreenshots = boolean(
+            key = "pysanka__privacy__block_screenshots",
+            default = false,
+        )
     }
 
     // Pysanka: new screenshots into the clipboard history (needs the photos permission)
