@@ -44,7 +44,7 @@
     <string name="pysanka__tag__color">Колір</string>
     <string name="pysanka__tag__save">Зберегти</string>
     <string name="pysanka__tag__cancel">Скасувати</string>
-    <string name="pysanka__tag__edit">Доробити</string>
+    <string name="pysanka__tag__edit">Змінити</string>
     <string name="pysanka__tag__delete">Видалити</string>
     <string name="pysanka__tag__move_up">Вище</string>
     <string name="pysanka__tag__move_down">Нижче</string>

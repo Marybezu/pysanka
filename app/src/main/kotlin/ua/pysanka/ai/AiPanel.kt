@@ -564,6 +564,8 @@ private class AiLink(
             this.data = data
             replyTo = incoming
         }
+        // A run loads the model itself: no warm-up after it
+        if (what == AiService.RUN) main.removeCallbacks(warm)
         when {
             !bound -> onLost()
             service == null -> waiting = msg.takeIf { what == AiService.RUN }
