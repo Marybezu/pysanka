@@ -6,16 +6,6 @@
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove"/>
 
-    <!-- Pysanka: only for "Live camera" in text recognition, asked when it is first used; without it
-         recent photos and the system camera app work with no permission at all -->
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-feature android:name="android.hardware.camera" android:required="false"/>
-
-    <!-- Pysanka: only for "Screenshots into the history" (off by default), asked when it is turned on.
-         On GrapheneOS, Storage Scopes can limit it to the Screenshots folder. -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
-
     <!-- Permission needed to vibrate if the user has key press vibration enabled -->
     <uses-permission android:name="android.permission.VIBRATE"/>
 
@@ -46,9 +36,6 @@
         android:supportsRtl="true"
         android:theme="@style/FlorisAppTheme"
         tools:targetApi="tiramisu">
-
-        <!-- Allow app to be profiled for benchmarking and baseline profile generation -->
-        <profileable android:shell="true"/>
 
         <!-- IME service -->
         <service
@@ -88,7 +75,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Pysanka: not BROWSABLE, so no web page can open the settings -->
                 <data android:scheme="ui" android:host="florisboard" android:pathPrefix="/" />
             </intent-filter>
             <intent-filter android:label="Import Extension">
@@ -101,6 +88,7 @@
             <intent-filter android:label="Import Extension">
                 <action android:name="android.intent.action.SEND"/>
                 <category android:name="android.intent.category.DEFAULT"/>
+                <!-- The file comes as an extra here; FlorisAppActivity takes only content:// -->
                 <data android:mimeType="application/vnd.florisboard.extension+zip"/>
                 <data android:mimeType="application/octet-stream"/><!-- Firefox looking at you :eyes: -->
             </intent-filter>
@@ -131,18 +119,6 @@
             android:configChanges="orientation|screenSize"
             android:theme="@style/CrashDialogTheme"/>
 
-        <!-- Copy to Clipboard Activity -->
-        <activity
-            android:name="dev.patrickgold.florisboard.ime.clipboard.FlorisCopyToClipboardActivity"
-            android:theme="@style/FlorisAppTheme.Transparent"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.SEND"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="image/*"/>
-            </intent-filter>
-        </activity>
-
         <!-- Clipboard Media File Provider -->
         <provider
             android:name="dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider"
@@ -163,9 +139,30 @@
             android:excludeFromRecents="true"
             android:taskAffinity="ua.pysanka.ai"
             android:windowSoftInputMode="adjustResize"
-            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode|locale|layoutDirection|fontScale|density"
             android:theme="@style/FlorisAppTheme"
             android:label="@string/pysanka__ai__title" />
+
+        <!-- Pysanka: the AI editor from "Share" and the text selection menu of any app (only plain text);
+             turned on only while the AI model is installed (AiEntry.sync) -->
+        <activity
+            android:name="ua.pysanka.ai.AiEntryActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:label="@string/pysanka__ai__entry_label">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
 
         <!-- Pysanka: text from a photo or the camera; its own task, not in recent apps -->
         <activity

@@ -9,9 +9,9 @@
 ## Що буде
 
 - 🔒 **Приватність.** Дозволу на інтернет немає, і збірка зупиняється, якщо він з'явиться. Нічого не потрапляє в хмарну копію чи на інший телефон.
-- 📋 **Зашифрований буфер** ✅ Історія тексту й зображень зашифрована (SQLCipher + AES-256, ключ в апаратному сховищі). «Не зберігати паролі» — на ваш вибір. Копія буфера під паролем та імпорт із FlorisBoard. Кольорові теги й автотеги (посилання, номери, коди). Нові скріншоти автоматично, з розпізнаним текстом (за бажанням). Далі: пошук, шаблони.
+- 📋 **Зашифрований буфер** ✅ Історія тексту й зображень зашифрована (SQLCipher + AES-256, ключ в апаратному сховищі). «Не зберігати паролі» — на ваш вибір. Копія буфера під паролем та імпорт із FlorisBoard. Кольорові теги й автотеги (посилання, номери, коди). Очищення посилань від стеження. Фото й скріншоти в історію одним дотиком, з розпізнаним текстом. Далі: пошук, шаблони.
 - 🔍 **Текст із фото й камери** ✅ розпізнається на телефоні.
-- 🤖 **Локальний ШІ (Gemma 4), за бажанням** ✅ стиль, граматика й пунктуація, підсумок, переклад, перевірка русизмів, виправлення розпізнаного тексту. Далі: інструменти для соцмереж.
+- 🤖 **Локальний ШІ (Gemma 4), за бажанням** ✅ стиль, граматика й пунктуація, підсумок довгих текстів (з перевіркою чисел і назв), переклад, русизми, список, таблиця, нотатки, лист за описом, варіанти відповіді, приховати особисте; «Поділитися → Писанка ШІ» з будь-якого застосунку. Далі: інструменти для соцмереж.
 - 🎙️ **Диктування** на телефоні (Whisper), за бажанням.
 
 Зараз це клавіатура на основі FlorisBoard з простішими налаштуваннями, посиленою приватністю й зашифрованим буфером із тегами. Функції з'являтимуться поступово.
@@ -36,8 +36,8 @@ A private keyboard for Android with no internet access. Typing, swipe, clipboard
 ## Privacy
 
 - No internet permission; the build fails if one appears. Nothing goes to a cloud backup or to another phone.
-- Encrypted clipboard history (SQLCipher + AES-256, hardware-backed key); "Don't keep passwords" is your choice; password-protected clipboard copy and import from FlorisBoard. Coloured and automatic tags. New screenshots automatically, with recognised text (optional). Planned: search, snippets.
-- Optional on-device AI (Gemma 4): grammar, style, summaries, translation, Russianism check, fixing recognised text. Planned: social-media tools; on-device dictation (Whisper).
+- Encrypted clipboard history (SQLCipher + AES-256, hardware-backed key); "Don't keep passwords" is your choice; password-protected clipboard copy and import from FlorisBoard. Coloured and automatic tags. Copied links are cleaned of tracking. Photos and screenshots into the history with one tap, with recognised text. Planned: search, snippets.
+- Optional on-device AI (Gemma 4): grammar, style, summaries of long texts (numbers and names checked), translation, Russianisms, list, table, notes, letters, reply options, hiding personal data; "Share → Pysanka AI" from any app. Planned: social-media tools; on-device dictation (Whisper).
 - On-device text recognition from photos and the camera.
 
 Today this is a keyboard built on FlorisBoard with simpler settings, stronger privacy and an encrypted clipboard with tags. Features will arrive step by step.

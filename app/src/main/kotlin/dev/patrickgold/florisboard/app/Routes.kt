@@ -36,7 +36,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
-import dev.patrickgold.florisboard.app.ext.CheckUpdatesScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionEditScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionExportScreen
 import dev.patrickgold.florisboard.app.ext.ExtensionHomeScreen
@@ -255,10 +254,6 @@ object Routes {
         @Serializable
         @Deeplink("ext/view")
         data class View(val id: String)
-
-        @Serializable
-        @Deeplink("ext/check-updates")
-        object CheckUpdates
     }
 
     @Composable
@@ -373,9 +368,6 @@ object Routes {
                 val payload = navBackStack.toRoute<Ext.View>()
                 val extensionId = payload.id
                 ExtensionViewScreen(id = extensionId)
-            }
-            composableWithDeepLink(Ext.CheckUpdates::class) {
-                CheckUpdatesScreen()
             }
         }
     }

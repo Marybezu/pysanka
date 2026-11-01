@@ -11,5 +11,5 @@
   unchanged in weights (see `SOURCES.json` and `scripts/ocr_models.py`).
 - LiteRT-LM (Google, Apache 2.0) runs the AI editor's model. The Gemma model is not included; the
   owner downloads it under its own terms, and only the exact published file is accepted.
-- ONNX Runtime (Microsoft, MIT), CameraX (AndroidX, Apache 2.0), Bouncy Castle (MIT-style),
+- ONNX Runtime (Microsoft, MIT), Bouncy Castle (MIT-style),
   SQLCipher for Android (BSD-style) are used as dependencies under their own licences.

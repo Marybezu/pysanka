@@ -52,8 +52,6 @@ fun openTagSettings(context: Context) {
     FlorisImeService.hideUi()
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("ui://florisboard/settings/clipboard/tags")).apply {
         setPackage(context.packageName)
-        // The settings activity sends only BROWSABLE view intents to navigation (others are extension imports)
-        addCategory(Intent.CATEGORY_BROWSABLE)
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
     runCatching { context.startActivity(intent) }

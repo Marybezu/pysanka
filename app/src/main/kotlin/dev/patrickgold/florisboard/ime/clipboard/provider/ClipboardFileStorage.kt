@@ -35,14 +35,12 @@ import java.util.UUID
  * Backend helper object which is used by [ClipboardMediaProvider] to serve content.
  */
 object ClipboardFileStorage {
-    const val CLIPBOARD_FILES_PATH = "clipboard_files"
-    const val OPEN_DIR = "clipboard_open"
 
     /** Pysanka: largest image kept in the history (screenshots are a few MB). */
     const val MAX_IMAGE_BYTES = 20L * 1024 * 1024
 
     private val Context.clipboardFilesDir: FsFile
-        get() = FsFile(this.noBackupFilesDir, "clipboard_files").also { it.mkdirs() }
+        get() = FsFile(this.noBackupFilesDir, ua.pysanka.clipboard.SecureClipboard.FILES_DIR).also { it.mkdirs() }
 
     /** Pysanka: a stored file's id and its original (not encrypted) size. */
     data class Cloned(val id: Long, val size: Long)
@@ -107,7 +105,11 @@ object ClipboardFileStorage {
      * cache and unlinked right after it is opened, so it disappears when the descriptor is closed.
      */
     fun openPlainDescriptor(context: Context, id: Long): ParcelFileDescriptor {
-        val dir = File(context.noBackupFilesDir, OPEN_DIR).apply { mkdirs() }
+        // Pysanka: on Android 11+ the decrypted copy lives only in memory (an anonymous memory file)
+        if (android.os.Build.VERSION.SDK_INT >= 30) {
+            runCatching { return memoryCopy(context, id) }
+        }
+        val dir = File(context.noBackupFilesDir, ua.pysanka.clipboard.SecureClipboard.OPEN_DIR).apply { mkdirs() }
         // Leftovers from a crash in the middle of this function
         dir.listFiles()?.forEach { if (it.lastModified() < System.currentTimeMillis() - 60_000) it.delete() }
         val tmp = File(dir, UUID.randomUUID().toString())
@@ -116,6 +118,18 @@ object ClipboardFileStorage {
             return ParcelFileDescriptor.open(tmp, ParcelFileDescriptor.MODE_READ_ONLY)
         } finally {
             tmp.delete()
+        }
+    }
+
+    @androidx.annotation.RequiresApi(30)
+    private fun memoryCopy(context: Context, id: Long): ParcelFileDescriptor {
+        val fd = android.system.Os.memfd_create("clip", 0)
+        try {
+            java.io.FileOutputStream(fd).let { out -> openStream(context, id).use { it.copyTo(out) } }
+            android.system.Os.lseek(fd, 0, android.system.OsConstants.SEEK_SET)
+            return ParcelFileDescriptor.dup(fd)
+        } finally {
+            android.system.Os.close(fd)
         }
     }
 
@@ -133,27 +147,6 @@ object ClipboardFileStorage {
     }
 
 
-    /**
-     * Insert file from backup if not existing
-     *
-     * @param context the application context
-     * @param file the file to be inserted
-     */
-    fun insertFileFromBackupIfNotExisting(context: Context, file: FsFile) {
-        if (!context.clipboardFilesDir.subFile(file.name).isFile) {
-            file.copyTo(context.clipboardFilesDir.subFile(file.name), overwrite = false)
-        }
-    }
 
-    /**
-     * Deletes all files from the clipboard subdirectory
-     *
-     * @param context the application context
-     */
-    fun resetClipboardFileStorage(context: Context) {
-        context.clipboardFilesDir.listFiles()?.forEach {
-            it.delete()
-        }
-    }
 
 }

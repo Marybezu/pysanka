@@ -93,6 +93,7 @@ class ModelStore(private val context: Context) {
     fun delete() {
         dir.listFiles()?.forEach { it.delete() }
         AiEngine.cacheDir(context).deleteRecursively()
+        AiEntry.sync(context)
     }
 
     /**

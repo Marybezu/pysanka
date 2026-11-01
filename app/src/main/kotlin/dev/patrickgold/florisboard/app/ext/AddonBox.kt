@@ -66,14 +66,6 @@ fun ImportExtensionBox(navController: NavController) {
     }
 }
 
-/**
- * Pysanka: checking for extension updates opened FlorisBoard's store website; Pysanka stays
- * offline, so there is nothing to show.
- */
-@Suppress("UNUSED_PARAMETER")
-@Composable
-fun UpdateBox(extensionIndex: ExtensionIndex) = Unit
-
 @Composable
 fun AddonManagementReferenceBox(
     type: ExtensionListScreenType

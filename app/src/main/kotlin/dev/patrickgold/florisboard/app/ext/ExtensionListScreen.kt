@@ -118,9 +118,6 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
                 item {
                     ImportExtensionBox(navController)
                 }
-                item {
-                    UpdateBox(extensionIndex)
-                }
             }
             items(extensions) { extension ->
                 val manifest = extension.manifest

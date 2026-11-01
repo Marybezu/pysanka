@@ -56,8 +56,42 @@ object AiEngine {
     /** Still no editor screen (one may have opened while a text was being stopped). */
     fun screenClosedStill(): Boolean = screens.get() == 0
 
-    /** Stops the text being written now, if any (the native call does not stop by itself). */
-    fun cancel() {
+    /**
+     * Each run of an action has its own number, so "Stop" in one editor never stops another's work
+     * (two editors can be open: one from the keyboard, one from "Share").
+     */
+    private val runs = java.util.concurrent.atomic.AtomicLong(0)
+    private val stopped: MutableSet<Long> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+    /** Runs up to this number are stopped (all editors closed). */
+    @Volatile
+    private var stoppedUpTo = 0L
+
+    /** The run whose answer is being written now. */
+    @Volatile
+    private var runningRun = 0L
+
+    fun newRun(): Long = runs.incrementAndGet()
+
+    /** The run is over: forget it. */
+    fun endRun(run: Long) {
+        stopped.remove(run)
+    }
+
+    private fun isStopped(run: Long) = run <= stoppedUpTo || run in stopped
+
+    /**
+     * Stops [run]: the answer being written for it now (the native call does not stop by itself),
+     * and any answer of it still waiting for the model to load.
+     */
+    fun cancel(run: Long) {
+        stopped.add(run)
+        synchronized(runningLock) { if (runningRun == run) runCatching { running?.cancelProcess() } }
+    }
+
+    /** Stops every run (the last editor screen closed). */
+    fun cancelAll() {
+        stoppedUpTo = runs.get()
         synchronized(runningLock) { runCatching { running?.cancelProcess() } }
     }
 
@@ -94,29 +128,41 @@ object AiEngine {
         Unit
     }
 
-    /** Runs [action] on [text]; [target] is the language for translation. Returns only the new text. */
-    suspend fun run(context: Context, action: AiAction, text: String, target: AiLanguage): String = mutex.withLock {
-        withContext(Dispatchers.Default) {
+    /**
+     * One answer of the model: [system] instructions, [user] message. Returns the raw answer (the
+     * caller cleans it). Stopped by [cancel]; the caller checks for that.
+     */
+    suspend fun generate(context: Context, run: Long, system: String, user: String, temperature: Double, maxOutput: Int): String {
+        return mutex.withLock { withContext(Dispatchers.Default) {
+            // Stopped while waiting for the model (or for another answer): do not start
+            if (isStopped(run)) throw kotlinx.coroutines.CancellationException("stopped")
             val e = engineLocked(context.applicationContext)
+            if (isStopped(run)) throw kotlinx.coroutines.CancellationException("stopped")
             e.createConversation(
                 ConversationConfig(
-                    systemInstruction = Contents.of(AiPrompts.system(action, target)),
-                    samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = action.temperature),
+                    systemInstruction = Contents.of(system),
+                    samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = temperature),
                     // No hidden "thinking": it would use up the output before the text is written
                     thinkingConfig = ThinkingConfig(enableThinking = false),
-                    // About 4000 characters of Ukrainian are up to ~2000 tokens, more after translation
-                    maxOutputToken = 4096,
+                    maxOutputToken = maxOutput,
                 ),
             ).use { conv ->
-                synchronized(runningLock) { running = conv }
+                synchronized(runningLock) {
+                    running = conv
+                    runningRun = run
+                }
                 try {
-                    AiPrompts.clean(conv.sendMessage(AiPrompts.user(action, text, target)).toString(), text)
+                    if (isStopped(run)) throw kotlinx.coroutines.CancellationException("stopped")
+                    conv.sendMessage(user).toString()
                 } finally {
                     // Before the conversation is closed, so cancel() never reaches a closed one
-                    synchronized(runningLock) { running = null }
+                    synchronized(runningLock) {
+                        running = null
+                        runningRun = 0L
+                    }
                 }
             }
-        }
+        } }
     }
 
     /** Frees the model's memory; waits for a running action to finish first. */

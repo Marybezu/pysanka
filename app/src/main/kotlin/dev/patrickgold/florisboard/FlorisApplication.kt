@@ -92,9 +92,9 @@ class FlorisApplication : Application() {
         super.onCreate()
         FlorisApplicationReference = WeakReference(this)
         // Pysanka: the AI editor's own process (":ai") holds only the model and its screen. It must
-        // not open the clipboard database, watch screenshots, clear the cache or load settings,
+        // not open the clipboard database, clear the cache or load settings,
         // which belong to the keyboard's process.
-        if (ua.pysanka.ai.AiProcess.isAiProcess(this)) {
+        if (ua.pysanka.ai.AiProcess.isAiProcess()) {
             CrashUtility.install(this)
             return
         }
@@ -142,12 +142,18 @@ class FlorisApplication : Application() {
 
     fun init() {
         cacheDir?.deleteContentsRecursively()
+        // Pysanka: "Pysanka AI" in Share and the selection menu only while the model is there
+        runCatching { ua.pysanka.ai.AiEntry.sync(this) }
+        // Pysanka: a camera shot left by a crash (the camera app may still be writing a fresh one)
+        runCatching {
+            val now = System.currentTimeMillis()
+            java.io.File(filesDir, "capture").listFiles()?.forEach { if (now - it.lastModified() > 10 * 60 * 1000L) it.delete() }
+        }
         scope.launch {
             val result = FlorisPreferenceStore.initAndroid(
                 context = this@FlorisApplication,
                 datastoreName = FlorisPreferenceModel.NAME,
             )
-            Log.i("PREFS", result.toString())
             preferenceStoreLoaded.value = true
         }
         clipboardManager.value.initializeForContext(this)

@@ -95,6 +95,41 @@ open class ImeEditor(
     }
 
     /**
+     * Pysanka: text typed on the wrong layout, turned into what was meant: the selection, or else
+     * the word just before the cursor (back to the last space). Nothing leaves the keyboard.
+     */
+    fun pysankaFixLayout(): Boolean {
+        val ic = ic.get() ?: return false
+        ic.beginBatchEdit()
+        try {
+            ic.finishComposingText()
+            val selected = ic.getSelectedText(0)?.toString()
+            if (!selected.isNullOrEmpty()) {
+                val fixed = ua.pysanka.typing.LayoutSwitch.convert(selected)
+                if (fixed == selected) return false
+                // Keep it selected, so a second tap turns it back
+                val et = ic.getExtractedText(android.view.inputmethod.ExtractedTextRequest(), 0)
+                val start = et?.let { it.startOffset + minOf(it.selectionStart, it.selectionEnd) }
+                ic.commitText(fixed, 1)
+                if (start != null && start >= 0) ic.setSelection(start, start + fixed.length)
+                return true
+            }
+            val before = ic.getTextBeforeCursor(64, 0)?.toString() ?: return false
+            // The last word: back to whitespace (punctuation keys are letters on the other layout);
+            // a space just typed after it (the usual moment a mistake is seen) stays as it is
+            val trailing = before.takeLastWhile { it == ' ' }
+            val word = before.dropLast(trailing.length).takeLastWhile { !it.isWhitespace() }
+            if (word.isEmpty()) return false
+            val fixed = ua.pysanka.typing.LayoutSwitch.convert(word)
+            if (fixed == word) return false
+            ic.deleteSurroundingText(word.length + trailing.length, 0)
+            return ic.commitText(fixed + trailing, 1)
+        } finally {
+            ic.endBatchEdit()
+        }
+    }
+
+    /**
      * Pysanka: the text the AI editor works on: the selection, or else the whole field (up to
      * [limit] + 1 characters, so a longer text can be told apart), with where the selection was
      * (absolute offsets, -1 if the app does not say). Null if the field cannot be read.
@@ -143,8 +178,9 @@ open class ImeEditor(
             curStart = now.startOffset + minOf(now.selectionStart, now.selectionEnd)
             curEnd = now.startOffset + maxOf(now.selectionStart, now.selectionEnd)
         } else {
-            curStart = minOf(info.initialSelection.start, info.initialSelection.end)
-            curEnd = maxOf(info.initialSelection.start, info.initialSelection.end)
+            // As the field reported it when it opened; -1 when it did not say
+            curStart = minOf(info.base.initialSelStart, info.base.initialSelEnd)
+            curEnd = maxOf(info.base.initialSelStart, info.base.initialSelEnd)
         }
         ic.beginBatchEdit()
         try {
@@ -176,7 +212,8 @@ open class ImeEditor(
             // Never overwrite something else: go to the end of the selection first; if where it is
             // cannot be told, do not touch the field at all
             if (curStart < 0 || curEnd < 0) {
-                if (!ic.getSelectedText(0).isNullOrEmpty()) return false
+                // Where the cursor is cannot be told: only an empty field is safe to write into
+                if (result.mode != ua.pysanka.ai.AiBridge.Mode.INSERT || !ic.getSelectedText(0).isNullOrEmpty()) return false
             } else if (curStart != curEnd) {
                 ic.setSelection(curEnd, curEnd)
             }

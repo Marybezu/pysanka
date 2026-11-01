@@ -298,7 +298,7 @@ object ClipboardBackup {
                     // The same file named twice is used once
                     if (!name.startsWith(IMAGES) || !files.add(name)) continue
                     val mime = o.optJSONArray("mime")?.let { a -> List(a.length()) { a.optString(it) } } ?: emptyList()
-                    val seen = if (o.has("text") && !o.isNull("text")) o.optString("text").take(ua.pysanka.clipboard.Screenshots.MAX_TEXT) else null
+                    val seen = if (o.has("text") && !o.isNull("text")) o.optString("text").take(ClipboardManager.MAX_IMAGE_TEXT) else null
                     candidates.add(Candidate(imageItem(mime, time, pinned, sensitive, seen), name, "Image", names))
                 }
             }

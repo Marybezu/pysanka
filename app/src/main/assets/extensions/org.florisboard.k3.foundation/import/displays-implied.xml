@@ -56,6 +56,7 @@ the mapping to a different display value.
     <display output="@fl:action/pysanka_text_from_photo" display="@fl:icon/pysanka_text_from_photo" />
     <display output="@fl:action/pysanka_text_from_camera" display="@fl:icon/pysanka_text_from_camera" />
     <display output="@fl:action/pysanka_ai" display="@fl:icon/pysanka_ai" />
+    <display output="@fl:action/pysanka_fix_layout" display="@fl:icon/pysanka_fix_layout" />
 
     <display output="@fl:action/undo" display="@fl:icon/undo" />
     <display output="@fl:action/redo" display="@fl:icon/redo" />

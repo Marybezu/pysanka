@@ -18,11 +18,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,8 +29,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.stringRes
 
 /**
@@ -45,36 +42,23 @@ fun AiSettingsScreen() = FlorisScreen {
 
     content {
         val context = LocalContext.current
-        val scope = rememberCoroutineScope()
-        val store = remember { ModelStore(context).also { it.cleanUp() } }
+        val store = remember { ModelStore(context).also { if (!ModelImport.running) it.cleanUp() } }
+        val importStatus by ModelImport.status.collectAsState()
         var state by remember { mutableStateOf(store.state()) }
-        var progress by remember { mutableFloatStateOf(-1f) }
+        // A copy that ended (here or while this screen was gone): read the model's state again
+        androidx.compose.runtime.LaunchedEffect(importStatus.finished) {
+            state = store.state()
+            if (importStatus.originalKept) {
+                Toast.makeText(context, R.string.pysanka__ai__original_kept, Toast.LENGTH_LONG).show()
+                ModelImport.noteShown()
+            }
+        }
+        val progress = importStatus.progress ?: -1f
+        val error = importStatus.error
         var deleteOriginal by remember { mutableStateOf(true) }
-        var error by remember { mutableStateOf<Int?>(null) }
 
         val pick = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
-            if (uri == null) return@rememberLauncherForActivityResult
-            error = null
-            progress = 0f
-            scope.launch {
-                try {
-                    val r = store.import(uri, deleteOriginal) { p -> progress = p }
-                    if (r.originalDeleted == false) {
-                        Toast.makeText(context, R.string.pysanka__ai__original_kept, Toast.LENGTH_LONG).show()
-                    }
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: ModelStore.WrongFile) {
-                    error = R.string.pysanka__ai__wrong_file
-                } catch (e: ModelStore.NoSpace) {
-                    error = R.string.pysanka__ai__no_space
-                } catch (e: Throwable) {
-                    error = R.string.pysanka__ai__import_failed
-                } finally {
-                    progress = -1f
-                    state = store.state()
-                }
-            }
+            if (uri != null) ModelImport.start(context, uri, deleteOriginal)
         }
 
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

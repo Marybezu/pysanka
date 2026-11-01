@@ -77,6 +77,8 @@ object ImeActions {
     val PysankaTextFromCamera = flAction("pysanka_text_from_camera")
     // Pysanka: the AI editor (on the phone)
     val PysankaAi = flAction("pysanka_ai")
+    // Pysanka: text typed on the wrong layout ("ghbdsn" → "привіт")
+    val PysankaFixLayout = flAction("pysanka_fix_layout")
 
     val NoopDragMarker = flAction("noop_drag_marker")
     val NoopSpacer = flAction("noop_spacer")
@@ -118,6 +120,7 @@ object ImeActions {
         PysankaTextFromPhoto,
         PysankaTextFromCamera,
         PysankaAi,
+        PysankaFixLayout,
     )
 
     val Repeatable = listOf(

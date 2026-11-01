@@ -300,7 +300,7 @@ class ImeController(
             resetContent(initialSelection, initialSurrounding)
             expectedContentQueue.clear()
             // Pysanka: text picked from a photo goes only into the field it was picked for
-            ua.pysanka.ocr.PendingInsert.takeFor(info.packageName, info.base.fieldId, isPasswordField)
+            ua.pysanka.ocr.PendingInsert.takeFor(info.packageName, info.base.fieldId, isPasswordField, ua.pysanka.privacy.FieldPrivacy.isPrivate)
                 ?.let { state.editor.pysankaInsertText(it) }
             // Pysanka: text from the AI editor goes only into the field it was taken from
             ua.pysanka.ai.AiBridge.takeFor(info, isPasswordField)
@@ -394,6 +394,7 @@ class ImeController(
                 ImeActions.Redo -> state.editor.performRedo()
                 ImeActions.Settings -> FlorisImeService.launchSettings()
                 ImeActions.PysankaAi -> ua.pysanka.ai.AiBridge.openFromKeyboard(state.editor)
+                ImeActions.PysankaFixLayout -> state.editor.pysankaFixLayout()
                 ImeActions.PysankaTextFromPhoto, ImeActions.PysankaTextFromCamera -> {
                     ua.pysanka.ocr.PendingInsert.opened(state.editor.info.packageName, state.editor.info.base.fieldId)
                     ua.pysanka.ocr.openTextFromImage(
@@ -620,6 +621,7 @@ class ImeController(
             // Pysanka: a copy made while no field is open is not judged by the last field
             clipboardManager.setFieldPrivacy(incognito = false, passwordField = false)
             ua.pysanka.privacy.FieldPrivacy.isPrivate = false
+            ua.pysanka.privacy.FieldPrivacy.isPassword = false
             resetContent()
             state = state.copy(editor = ImeEditor.Disconnected)
             expectedContentQueue.clear()

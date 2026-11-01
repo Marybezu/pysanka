@@ -148,7 +148,7 @@ class TextRecognizer private constructor(private val context: Context) {
         if (holders.updateAndGet { maxOf(0, it - 1) } == 0) release()
     }
 
-    /** Frees the models' memory (about 60 MB) if no screen is using them (after a batch of screenshots). */
+    /** Frees the models' memory (about 60 MB) if no screen is using them (after reading a photo for the clipboard history). */
     suspend fun releaseIfUnused() {
         if (holders.get() == 0) release()
     }

@@ -19,13 +19,13 @@ package dev.patrickgold.florisboard.ime.clipboard
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.filled.Check
 import android.content.ContentUris
 import android.graphics.BitmapFactory
-import android.media.MediaMetadataRetriever
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -63,7 +63,6 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.ToggleOff
 import androidx.compose.material.icons.filled.ToggleOn
-import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material.icons.outlined.ContentPasteGo
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.PushPin
@@ -246,6 +245,18 @@ fun ClipboardInputLayout(
                     },
                 )
             }
+            // Pysanka: a photo (a screenshot, say) into the history, picked with the system picker
+            SnyggIconButton(
+                elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
+                onClick = { ua.pysanka.ocr.openTextFromImage(ua.pysanka.ocr.TextFromImageActivity.SOURCE_HISTORY) },
+                modifier = sizeModifier,
+                enabled = !deviceLocked && historyEnabled && !ua.pysanka.privacy.FieldPrivacy.isPrivate && !isPopupSurfaceActive(),
+            ) {
+                SnyggIcon(
+                    imageVector = Icons.Default.AddPhotoAlternate,
+                    contentDescription = stringRes(R.string.pysanka__photo_history__button),
+                )
+            }
             SnyggIconButton(
                 elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
                 onClick = { showClearAllHistory = true },
@@ -312,7 +323,14 @@ fun ClipboardInputLayout(
                     value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching {
                         check(file.exists()) { "Unable to resolve image at ${file.absolutePath}" }
                         // Pysanka: the stored file is encrypted
-                        val rawBitmap = ClipboardFileStorage.openStream(context, id).use { BitmapFactory.decodeStream(it) }
+                        // Pysanka: small enough for a tile (a tall screenshot would be tens of MB at full size)
+                        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                        ClipboardFileStorage.openStream(context, id).use { BitmapFactory.decodeStream(it, null, bounds) }
+                        var sample = 1
+                        while (bounds.outWidth / (sample * 2) >= 480 || bounds.outHeight / (sample * 2) >= 1600) sample *= 2
+                        val rawBitmap = ClipboardFileStorage.openStream(context, id).use {
+                            BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample })
+                        }
                         checkNotNull(rawBitmap) { "Unable to decode image at ${file.absolutePath}" }
                         rawBitmap.asImageBitmap()
                     } }
@@ -325,51 +343,6 @@ fun ClipboardInputLayout(
                         bitmap = bitmap.getOrThrow(),
                         contentDescription = null,
                         contentScale = ContentScale.FillWidth,
-                    )
-                } else {
-                    SnyggText(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = bitmap.exceptionOrNull()?.message ?: "Unknown error",
-                    )
-                }
-            } else if (item.type == ItemType.VIDEO) {
-                val id = ContentUris.parseId(item.uri!!)
-                val file = ClipboardFileStorage.getFileForId(context, id)
-                // Pysanka: decrypted in the background, so the keyboard never stalls on a big file
-                val bitmap = produceState<Result<androidx.compose.ui.graphics.ImageBitmap>?>(null, id) {
-                    value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching {
-                        check(file.exists()) { "Unable to resolve video at ${file.absolutePath}" }
-                        // Pysanka: the stored file is encrypted; read a frame from a short-lived decrypted copy
-                        val rawBitmap = ClipboardFileStorage.openPlainDescriptor(context, id).use { pfd ->
-                            val dataRetriever = MediaMetadataRetriever()
-                            try {
-                                dataRetriever.setDataSource(pfd.fileDescriptor)
-                                dataRetriever.getFrameAtTime(0)
-                            } finally {
-                                dataRetriever.release()
-                            }
-                        }
-                        checkNotNull(rawBitmap) { "Unable to decode video at ${file.absolutePath}" }
-                        rawBitmap.asImageBitmap()
-                    } }
-                }.value
-                if (bitmap == null) {
-                    // Still decrypting
-                } else if (bitmap.isSuccess) {
-                    Image(
-                        modifier = Modifier.fillMaxWidth(),
-                        bitmap = bitmap.getOrThrow(),
-                        contentDescription = null,
-                        contentScale = ContentScale.FillWidth,
-                    )
-                    Icon(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(start = 4.dp, bottom = 4.dp)
-                            .background(Color.White, CircleShape),
-                        imageVector = Icons.Default.Videocam,
-                        contentDescription = null,
-                        tint = Color.Black,
                     )
                 } else {
                     SnyggText(
