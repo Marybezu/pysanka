@@ -64,6 +64,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.clipboardManager
@@ -102,13 +103,15 @@ fun AiPanel(modifier: Modifier = Modifier) {
     val imeController = LocalImeController.current
     val panel = remember { AiBridge.takePanel() }
 
-    fun close() = imeController.updateStateBlocking {
-        state = state.copy(flags = state.flags.withImeUiMode(ImeUiMode.TEXT))
+    fun closePanel() {
+        imeController.updateStateBlocking {
+            state = state.copy(flags = state.flags.withImeUiMode(ImeUiMode.TEXT))
+        }
     }
 
     if (panel == null) {
         // Opened again without ✨ (the keyboard was rebuilt): nothing to work on
-        LaunchedEffect(Unit) { close() }
+        LaunchedEffect(Unit) { closePanel() }
         return
     }
     val installed = remember { ModelStore(context).modelFile() != null }
@@ -165,7 +168,7 @@ fun AiPanel(modifier: Modifier = Modifier) {
 
     fun input(action: AiAction) = if (fromClip(action)) clip!! else source
 
-    fun run(action: AiAction) {
+    fun runAction(action: AiAction) {
         val text = input(action)
         if (text.isBlank() || link == null) return
         if (text.length > AiJob.limit(context, action)) {
@@ -182,37 +185,111 @@ fun AiPanel(modifier: Modifier = Modifier) {
         })
     }
 
-    fun back() {
+    fun goBack() {
         if (stage is PanelStage.Working) link?.send(AiService.STOP)
         stage = PanelStage.Menu
     }
 
     /** Into the field: in place of the text it came from, or (possible replies, an empty field) at the cursor. */
-    fun place(text: String, insert: Boolean) {
+    fun placeText(text: String, insert: Boolean) {
         val t = panel.taken
         val result = AiBridge.Result(if (insert) AiBridge.Mode.INSERT else t.mode, t.text, text, t.start, t.end)
         if (!panel.editor.pysankaApplyAi(result)) AiBridge.couldNotPlace(text)
-        close()
+        closePanel()
     }
 
-    fun expand(action: AiAction) {
+    fun openFull(action: AiAction) {
         val t = panel.taken
         // Replies are never put in place of the text
         val taken = if (action == AiAction.REPLIES) t.copy(mode = AiBridge.Mode.INSERT) else t
         AiBridge.openEditor(panel.editor, taken, input(action), action)
     }
 
-    SnyggColumn(modifier = modifier.fillMaxWidth().height(FlorisImeSizing.imeUiHeight())) {
+    AiPanelView(
+        stage = stage,
+        note = when {
+            source != panel.taken.text -> R.string.pysanka__ai__panel_previous
+            source.isBlank() -> R.string.pysanka__ai__panel_empty
+            panel.taken.mode == AiBridge.Mode.SELECTION -> R.string.pysanka__ai__panel_selection
+            else -> R.string.pysanka__ai__panel_all
+        },
+        loaded = loaded,
+        more = more,
+        target = target,
+        intoEmptyField = panel.taken.mode == AiBridge.Mode.INSERT,
+        canRun = { input(it).isNotBlank() },
+        modifier = modifier.fillMaxWidth().height(FlorisImeSizing.imeUiHeight()),
+        headerHeight = FlorisImeSizing.smartbarHeight,
+        actions = object : PanelActions {
+            override fun close() = closePanel()
+            override fun back() = goBack()
+            override fun tile(action: AiAction) {
+                if (action == AiAction.TRANSLATE) stage = PanelStage.Languages else runAction(action)
+            }
+            override fun toggleMore() {
+                more = !more
+            }
+            override fun translate(language: AiLanguage) {
+                target = language
+                runAction(AiAction.TRANSLATE)
+            }
+            override fun again(action: AiAction) = runAction(action)
+            override fun expand(action: AiAction) = openFull(action)
+            override fun place(text: String, insert: Boolean) = placeText(text, insert)
+            override fun copy(text: String) = ua.pysanka.privacy.Clip.copy(context, text)
+            override fun change(text: String) {
+                source = text
+                stage = PanelStage.Menu
+            }
+            override fun settings() {
+                closePanel()
+                openAiSettings(context)
+            }
+        },
+    )
+}
+
+/** What the panel's buttons do (see [AiPanel]; the screenshots draw it with none). */
+internal interface PanelActions {
+    fun close()
+    fun back()
+    fun tile(action: AiAction)
+    fun toggleMore()
+    fun translate(language: AiLanguage)
+    fun again(action: AiAction)
+    fun expand(action: AiAction)
+    fun place(text: String, insert: Boolean)
+    fun copy(text: String)
+    /** Another action on this answer (it still goes in place of the field's text). */
+    fun change(text: String)
+    fun settings()
+}
+
+/** The panel as it looks: [note] says what it works on; [canRun] whether an action has a text. */
+@Composable
+internal fun AiPanelView(
+    stage: PanelStage,
+    note: Int,
+    loaded: Boolean,
+    more: Boolean,
+    target: AiLanguage,
+    intoEmptyField: Boolean,
+    canRun: (AiAction) -> Boolean,
+    modifier: Modifier,
+    headerHeight: Dp,
+    actions: PanelActions,
+) {
+    SnyggColumn(modifier = modifier) {
         SnyggRow(
             FlorisImeUi.ClipboardHeader.elementName,
-            modifier = Modifier.fillMaxWidth().height(FlorisImeSizing.smartbarHeight),
+            modifier = Modifier.fillMaxWidth().height(headerHeight),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val size = Modifier.sizeIn(maxHeight = FlorisImeSizing.smartbarHeight).aspectRatio(1f)
+            val size = Modifier.sizeIn(maxHeight = headerHeight).aspectRatio(1f)
             val inMenu = stage is PanelStage.Menu || stage is PanelStage.NoModel
             SnyggIconButton(
                 FlorisImeUi.ClipboardHeaderButton.elementName,
-                onClick = { if (inMenu) close() else back() },
+                onClick = { if (inMenu) actions.close() else actions.back() },
                 modifier = size,
             ) {
                 SnyggIcon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringRes(R.string.pysanka__ai__back))
@@ -222,54 +299,37 @@ fun AiPanel(modifier: Modifier = Modifier) {
                 modifier = Modifier.weight(1f),
                 text = stringRes(stage.action?.label ?: R.string.pysanka__ai__panel_title),
             )
-            SnyggIconButton(FlorisImeUi.ClipboardHeaderButton.elementName, onClick = { close() }, modifier = size) {
+            SnyggIconButton(FlorisImeUi.ClipboardHeaderButton.elementName, onClick = { actions.close() }, modifier = size) {
                 SnyggIcon(imageVector = Icons.Default.Close, contentDescription = stringRes(R.string.pysanka__ocr__close))
             }
         }
         SnyggBox(FlorisImeUi.ClipboardContent.elementName, modifier = Modifier.fillMaxWidth().weight(1f)) {
             when (val s = stage) {
                 PanelStage.NoModel -> Notice(stringRes(R.string.pysanka__ai__no_model)) {
-                    Chip(stringRes(R.string.pysanka__ai__open_settings), primary = true) {
-                        close()
-                        openAiSettings(context)
-                    }
+                    Chip(stringRes(R.string.pysanka__ai__open_settings), primary = true) { actions.settings() }
                 }
                 PanelStage.Menu -> Column(Modifier.fillMaxSize()) {
-                    Note(
-                        stringRes(
-                            when {
-                                source != panel.taken.text -> R.string.pysanka__ai__panel_previous
-                                source.isBlank() -> R.string.pysanka__ai__panel_empty
-                                panel.taken.mode == AiBridge.Mode.SELECTION -> R.string.pysanka__ai__panel_selection
-                                else -> R.string.pysanka__ai__panel_all
-                            },
-                        ),
-                    )
+                    Note(stringRes(note))
                     val actions = if (more) AiAction.entries else MAIN
                     LazyVerticalGrid(columns = GridCells.Adaptive(88.dp), modifier = Modifier.fillMaxWidth().weight(1f)) {
                         items(actions) { a ->
-                            Tile(icon(a), stringRes(a.label), enabled = input(a).isNotBlank()) {
-                                if (a == AiAction.TRANSLATE) stage = PanelStage.Languages else run(a)
-                            }
+                            Tile(icon(a), stringRes(a.label), enabled = canRun(a)) { actions.tile(a) }
                         }
                         item {
                             Tile(
                                 if (more) Icons.Default.ExpandLess else Icons.Default.MoreHoriz,
                                 stringRes(if (more) R.string.pysanka__ai__less else R.string.pysanka__ai__more),
-                            ) { more = !more }
+                            ) { actions.toggleMore() }
                         }
                     }
                 }
                 PanelStage.Languages -> Notice(stringRes(R.string.pysanka__ai__translate_into)) {
                     for (l in AiLanguage.entries) {
-                        Chip(stringRes(l.label), primary = l == target) {
-                            target = l
-                            run(AiAction.TRANSLATE)
-                        }
+                        Chip(stringRes(l.label), primary = l == target) { actions.translate(l) }
                     }
                 }
                 is PanelStage.TooLong -> Notice(stringRes(R.string.pysanka__ai__panel_too_long)) {
-                    Chip(stringRes(R.string.pysanka__ai__expand), primary = true) { expand(s.action) }
+                    Chip(stringRes(R.string.pysanka__ai__expand), primary = true) { actions.expand(s.action) }
                 }
                 is PanelStage.Working -> Working(
                     when {
@@ -277,26 +337,25 @@ fun AiPanel(modifier: Modifier = Modifier) {
                         s.parts > 1 -> stringRes(R.string.pysanka__ai__working_part, "k" to s.part.toString(), "n" to s.parts.toString())
                         else -> stringRes(R.string.pysanka__ai__working)
                     },
-                ) { back() }
+                ) { actions.back() }
                 is PanelStage.Failed -> Notice(stringRes(R.string.pysanka__ai__failed)) {
-                    Chip(stringRes(R.string.pysanka__ai__again), primary = true) { run(s.action) }
-                    Chip(stringRes(R.string.pysanka__ai__expand)) { expand(s.action) }
+                    Chip(stringRes(R.string.pysanka__ai__again), primary = true) { actions.again(s.action) }
+                    Chip(stringRes(R.string.pysanka__ai__expand)) { actions.expand(s.action) }
                 }
                 is PanelStage.Done -> Done(
                     s,
                     replaceLabel = when {
                         !s.action.replaces -> null
-                        panel.taken.mode == AiBridge.Mode.INSERT || s.action == AiAction.REPLIES -> R.string.pysanka__ai__insert
+                        intoEmptyField || s.action == AiAction.REPLIES -> R.string.pysanka__ai__insert
                         else -> R.string.pysanka__ai__replace
                     },
-                    onPlace = { text, insert -> place(text, insert) },
-                    onCopy = { ua.pysanka.privacy.Clip.copy(context, s.text) },
-                    onAgain = { run(s.action) },
-                    // Another action on this answer (it still goes in place of the field's text)
+                    onPlace = actions::place,
+                    onCopy = { actions.copy(s.text) },
+                    onAgain = { actions.again(s.action) },
                     onChange = if (s.action.kind == AiAction.Kind.ADVICE || s.action == AiAction.REPLIES) null else {
-                        { source = s.text; stage = PanelStage.Menu }
+                        { actions.change(s.text) }
                     },
-                    onExpand = { expand(s.action) },
+                    onExpand = { actions.expand(s.action) },
                 )
             }
         }
@@ -328,7 +387,7 @@ private fun icon(action: AiAction): ImageVector = when (action) {
     AiAction.REDACT -> Icons.Default.VisibilityOff
 }
 
-private sealed interface PanelStage {
+internal sealed interface PanelStage {
     /** The action this stage is about (its name is the panel's title). */
     val action: AiAction? get() = null
 
