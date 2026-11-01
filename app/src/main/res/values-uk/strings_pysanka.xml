@@ -149,4 +149,6 @@
     <string name="pysanka__screenshots__summary">Кожен новий скріншот потрапляє в історію зашифрованим, із тегом «Скріншоти» й розпізнаним на телефоні текстом. Старіші скріншоти не додаються. Потрібен доступ до фото; на GrapheneOS через Storage Scopes можна дозволити лише теку зі скріншотами.</string>
     <string name="pysanka__screenshots__no_access">Немає доступу до фото: торкніться, щоб дозволити</string>
     <string name="pysanka__screenshots__denied">Без доступу до фото скріншоти не додаються. Дозволити можна в налаштуваннях застосунку.</string>
+    <string name="pysanka__privacy__block_screenshots">Заборонити знімки екрана Писанки</string>
+    <string name="pysanka__privacy__block_screenshots_summary">Налаштування Писанки й екран «Текст із фото» не можна зняти чи показати через трансляцію екрана, а в недавніх застосунках вони порожні. На саму клавіатуру не впливає.</string>
 </resources>

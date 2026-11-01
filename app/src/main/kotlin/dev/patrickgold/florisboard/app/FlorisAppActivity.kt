@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.app
 
+import ua.pysanka.privacy.followScreenshotBlock
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
@@ -100,6 +101,8 @@ class FlorisAppActivity : ComponentActivity() {
         }
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Pysanka: optional, off by default
+        followScreenshotBlock()
 
         prefs.other.settingsTheme.asFlow().collectIn(lifecycleScope) {
             appTheme = it

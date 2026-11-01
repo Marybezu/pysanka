@@ -150,4 +150,6 @@
     <string name="pysanka__screenshots__summary">Each new screenshot goes into the history, encrypted, tagged “Screenshots”, with the text read from it on the phone. Older screenshots stay out. Needs access to photos; on GrapheneOS you can allow only the Screenshots folder with Storage Scopes.</string>
     <string name="pysanka__screenshots__no_access">No access to photos: tap to allow</string>
     <string name="pysanka__screenshots__denied">Without access to photos screenshots cannot be added. You can allow it in the app\'s settings.</string>
+    <string name="pysanka__privacy__block_screenshots">Block screenshots of Pysanka</string>
+    <string name="pysanka__privacy__block_screenshots_summary">Pysanka\'s settings and the text-from-photo screen cannot be captured or shared and show blank in recent apps. The keyboard itself is not affected.</string>
 </resources>
