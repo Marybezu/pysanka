@@ -19,7 +19,9 @@ package dev.patrickgold.florisboard.ime
 enum class ImeUiMode(val value: Int) {
     TEXT(0),
     MEDIA(1),
-    CLIPBOARD(2);
+    CLIPBOARD(2),
+    // Pysanka: the AI panel (fits the 3 bits of ImeStateFlags)
+    PYSANKA_AI(3);
 
     companion object {
         fun fromInt(int: Int) = entries.firstOrNull { it.value == int } ?: TEXT

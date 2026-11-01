@@ -393,7 +393,10 @@ class ImeController(
                 ImeActions.Undo -> state.editor.performUndo()
                 ImeActions.Redo -> state.editor.performRedo()
                 ImeActions.Settings -> FlorisImeService.launchSettings()
-                ImeActions.PysankaAi -> ua.pysanka.ai.AiBridge.openFromKeyboard(state.editor)
+                // Pysanka: the AI panel in place of the keys
+                ImeActions.PysankaAi -> if (ua.pysanka.ai.AiBridge.openPanel(state.editor)) {
+                    state = state.copy(flags = state.flags.withImeUiMode(ImeUiMode.PYSANKA_AI))
+                }
                 ImeActions.PysankaFixLayout -> state.editor.pysankaFixLayout()
                 ImeActions.PysankaTextFromPhoto, ImeActions.PysankaTextFromCamera -> {
                     ua.pysanka.ocr.PendingInsert.opened(state.editor.info.packageName, state.editor.info.base.fieldId)
