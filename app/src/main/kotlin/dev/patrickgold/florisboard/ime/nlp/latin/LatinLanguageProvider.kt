@@ -187,12 +187,17 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
     }
 
+    // Pysanka: swipe knows the person's own words too (those already in memory: called on the
+    // main thread), and how often they use words
+    private fun ownInMemory(subtype: Subtype): PersonalWords? =
+        if (prefs.correction.pysankaLearnWords.get()) UserWords.peek(subtype.primaryLocale.language) else null
+
     override suspend fun getListOfWords(subtype: Subtype): List<String> {
-        return suggester(subtype)?.words() ?: emptyList()
+        return suggester(subtype)?.words(ownInMemory(subtype)) ?: emptyList()
     }
 
     override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double {
-        return (suggester(subtype)?.frequency(word) ?: 0) / 255.0
+        return (suggester(subtype)?.frequency(word, ownInMemory(subtype)) ?: 0) / 255.0
     }
 
     override suspend fun destroy() {

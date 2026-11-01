@@ -191,6 +191,10 @@ class PersonalWords(private val max: Int = MAX_WORDS, private val maxPairs: Int 
 
     val pairCount: Int @Synchronized get() = pairs.size
 
+    /** The keys of the words used at least [KNOWN] times. */
+    @Synchronized
+    fun known(): List<String> = words.entries.filter { it.value.count >= KNOWN }.map { it.key }
+
     /** Takes one use back (the word was an auto-correction the person undid). */
     @Synchronized
     fun unlearn(word: String): Boolean {

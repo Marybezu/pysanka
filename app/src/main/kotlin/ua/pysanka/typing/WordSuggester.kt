@@ -87,9 +87,12 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
     /** A word the person taught that the list does not have (it can be forgotten). */
     fun isOwn(word: String, own: PersonalWords?): Boolean = norm(word).let { it !in freq && score(it, own) > 0 }
 
-    fun words(): List<String> = sorted.map { display[it] ?: it }
+    /** The list's words and the person's known own words (for swipe). */
+    fun words(own: PersonalWords? = null): List<String> =
+        sorted.map { display[it] ?: it } + own?.known().orEmpty().filter { it !in freq }.map { own!!.display(it) ?: it }
 
-    fun frequency(word: String): Int = freq[norm(word)] ?: 0
+    /** How common a word is (1..255; 0: not a word), the person's use included. */
+    fun frequency(word: String, own: PersonalWords? = null): Int = score(norm(word), own)
 
     /**
      * [rejected]: words whose auto-correction was taken back; they are left as typed.

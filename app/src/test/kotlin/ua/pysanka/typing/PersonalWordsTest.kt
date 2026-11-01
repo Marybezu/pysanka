@@ -143,6 +143,16 @@ class PersonalWordsTest : FunSpec({
         s.suggest("привесит", 3, own = own, previous = "дуже").first().autoCorrect shouldBe plain
     }
 
+    test("swipe knows the known own words and their use") {
+        val own = PersonalWords()
+        repeat(PersonalWords.KNOWN) { own.learn("Ярина", insisted = false, midSentence = true, day = 1) }
+        own.learn("рідкісне", insisted = false, midSentence = true, day = 1)
+        s.words(own).contains("Ярина") shouldBe true
+        s.words(own).contains("рідкісне") shouldBe false
+        (s.frequency("ярина", own) > 0) shouldBe true
+        s.frequency("борщ") shouldBe 90
+    }
+
     test("forgetting a word forgets its pairs") {
         val own = PersonalWords()
         own.learnPair("мій", "борщ", 1)
