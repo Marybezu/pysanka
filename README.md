@@ -23,7 +23,7 @@
 - **Підпис:** відбиток сертифіката SHA-256 `ea082ca6d8620c201948d08a9572c0b74a75101eb71b2752ceddcb4807d038ce`.
 - **Як створено:** код написано за допомогою ШІ (Claude, Anthropic) під керівництвом і з тестуванням авторки.
 
-Kotlin · Jetpack Compose · Rust. Сторонні матеріали — [NOTICE.md](NOTICE.md). Ліцензія Apache 2.0.
+Kotlin · Jetpack Compose · Rust. Ліцензія GPL-3.0; код із FlorisBoard лишається під Apache 2.0 — що під якою ліцензією, у [NOTICE.md](NOTICE.md).
 
 ---
 
@@ -49,4 +49,4 @@ Today this is a keyboard built on FlorisBoard with simpler settings, stronger pr
 - **Signing:** certificate SHA-256 `ea082ca6d8620c201948d08a9572c0b74a75101eb71b2752ceddcb4807d038ce`.
 - **How it was made:** the code was written with AI (Claude, Anthropic) under the author's direction and testing.
 
-Licence: Apache 2.0. Third-party material: [NOTICE.md](NOTICE.md).
+Licence: GPL-3.0; code from FlorisBoard stays under Apache 2.0 — what is under which licence, and third-party material: [NOTICE.md](NOTICE.md).

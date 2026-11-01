@@ -30,7 +30,7 @@
     <string name="pysanka__clipboard_copy__history_off">Історію буфера вимкнено. Спершу ввімкніть її в налаштуваннях буфера.</string>
     <string name="pysanka__ext__info">Теми, розкладки й мовні пакети додаються з файлу розширення (.flex), який ви приносите самі: Писанка не ходить в інтернет.</string>
     <string name="pysanka__about__based_on__title">На основі FlorisBoard</string>
-    <string name="pysanka__about__based_on__summary">Писанку побудовано на FlorisBoard від The FlorisBoard Contributors (Apache 2.0); це незалежний проєкт</string>
+    <string name="pysanka__about__based_on__summary">Писанку побудовано на FlorisBoard від The FlorisBoard Contributors (Apache 2.0); це незалежний проєкт, сама Писанка — під GPL-3.0</string>
     <string name="pysanka__tag__all">Усе</string>
     <string name="pysanka__tag__tags">Теги</string>
     <string name="pysanka__tag__manage">Керувати тегами</string>

@@ -8,6 +8,8 @@
 - 🛡️ Заборона знімків екрана Писанки — на ваш вибір (Приватність, типово вимкнено).
 - 📥 **Модель ШІ** (≈2,6 ГБ, та сама, що в Тарілці): Налаштування → ШІ на телефоні → «Завантажити», потім «Вибрати файл». Без моделі клавіатура працює як завжди.
 
+⚖️ Відтепер Писанка — під ліцензією GPL-3.0: хто поширює змінену Писанку, мусить відкрити її код (код FlorisBoard лишається під Apache 2.0).
+
 ℹ️ Писанка працює на 64-бітних телефонах (майже всі сучасні; усі, що підтримує GrapheneOS).
 
 📲 Завантажте файл .apk нижче й відкрийте його на телефоні. 🔄 Для оновлень — Obtainium: «Додати застосунок» → `github.com/Marybezu/pysanka`.
@@ -23,3 +25,4 @@
 - Clean links: tracking is removed from copied links (can be turned off).
 - Blocking screenshots of Pysanka is optional (Privacy, off by default).
 - The AI model (about 2.6 GB, same file as Tarilka): Settings → On-device AI. Without it the keyboard works as usual.
+- Licence is now GPL-3.0: anyone who shares a changed Pysanka must share its source (code from FlorisBoard stays under Apache 2.0).
