@@ -95,9 +95,9 @@ object AiBridge {
     /** [done]: an answer the panel already has, shown at once. */
     fun openEditor(
         info: FlorisEditorInfo, taken: Taken, text: String, preset: AiAction,
-        done: AiJob.Output? = null, target: AiLanguage? = null,
+        done: AiJob.Output? = null, language: AiLanguage? = null,
     ) {
-        open(fieldOf(info), taken, text, preset, done, target)
+        open(fieldOf(info), taken, text, preset, done, language)
     }
 
     /**
@@ -113,7 +113,7 @@ object AiBridge {
     }
 
     @Synchronized
-    private fun open(field: Field, taken: Taken, text: String, preset: AiAction, done: AiJob.Output? = null, target: AiLanguage? = null) {
+    private fun open(field: Field, taken: Taken, text: String, preset: AiAction, done: AiJob.Output? = null, language: AiLanguage? = null) {
         // A new session: an answer from an editor opened earlier is not taken for this one
         val session = ++sessions
         target = Target(field, taken, session)
@@ -122,7 +122,7 @@ object AiBridge {
             AiEditorActivity.intent(
                 context, text, preset, receiver { result -> set(session, result) }, canReplace = taken.mode != Mode.INSERT,
                 done = done,
-                target = target,
+                target = language,
             )
         }
     }
