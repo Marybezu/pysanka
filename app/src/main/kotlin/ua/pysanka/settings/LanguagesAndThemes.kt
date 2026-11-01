@@ -26,6 +26,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
@@ -33,6 +34,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.model.observeAsState
@@ -52,10 +54,13 @@ fun LanguagesBlock() {
     val presets by keyboardManager.resources.subtypePresets.collectAsState()
     var adding by rememberSaveable { mutableStateOf(false) }
     var removing by remember { mutableStateOf<Subtype?>(null) }
+    // Names in the settings' own language, not the phone's
+    val ui = FlorisLocale.from(LocalConfiguration.current.locales[0])
+    fun name(locale: FlorisLocale) = locale.displayName(ui)
 
     Block(
         stringRes(R.string.pysanka__settings__languages),
-        subtypes.joinToString { it.primaryLocale.displayName() },
+        subtypes.joinToString { name(it.primaryLocale) },
         icon = Icons.Default.Language,
     ) {
         for (subtype in subtypes) {
@@ -63,11 +68,11 @@ fun LanguagesBlock() {
                 Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 16.dp, end = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(subtype.primaryLocale.displayName(), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                Text(name(subtype.primaryLocale), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                 // The last language stays: a keyboard needs one
                 if (subtypes.size > 1) {
                     IconButton(onClick = { removing = subtype }) {
-                        Icon(Icons.Outlined.Delete, contentDescription = stringRes(R.string.pysanka__languages__remove))
+                        Icon(Icons.Outlined.Delete, contentDescription = stringRes(R.string.pysanka__languages__remove, "name" to name(subtype.primaryLocale)))
                     }
                 }
             }
@@ -77,18 +82,22 @@ fun LanguagesBlock() {
     }
 
     if (adding) {
+        // One row per language (some come with several layouts: the first is the usual one)
         val choices = remember(presets, subtypes) {
-            presets.filter { p -> subtypes.none { it.primaryLocale == p.locale } }
-                .sortedWith(compareBy({ PopularLanguages.rank(it.locale.languageTag()) }, { it.locale.displayName() }))
+            presets.distinctBy { it.locale.languageTag() }
+                .filter { p -> subtypes.none { it.primaryLocale == p.locale } }
+                .sortedWith(compareBy({ PopularLanguages.rank(it.locale.languageTag()) }, { name(it.locale) }))
         }
         AlertDialog(
             onDismissRequest = { adding = false },
             title = { Text(stringRes(R.string.pysanka__languages__add)) },
             text = {
+                // The list is read when the keyboard starts: a moment after a fresh start it may be empty
+                if (choices.isEmpty()) Text(stringRes(R.string.pysanka__languages__loading))
                 LazyColumn(Modifier.heightIn(max = 420.dp)) {
                     items(choices, key = { it.locale.languageTag() }) { preset ->
                         Text(
-                            preset.locale.displayName(),
+                            name(preset.locale),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                                 .clickable { adding = false; subtypeManager.addSubtype(preset.toSubtype()) }
@@ -104,7 +113,7 @@ fun LanguagesBlock() {
     removing?.let { subtype ->
         AlertDialog(
             onDismissRequest = { removing = null },
-            title = { Text(stringRes(R.string.pysanka__languages__remove_confirm, "name" to subtype.primaryLocale.displayName())) },
+            title = { Text(stringRes(R.string.pysanka__languages__remove_confirm, "name" to name(subtype.primaryLocale))) },
             confirmButton = {
                 TextButton(onClick = { removing = null; subtypeManager.removeSubtype(subtype) }) { Text(stringRes(R.string.action__yes)) }
             },
@@ -121,15 +130,21 @@ fun ThemeChoices() {
     val extensionManager by context.extensionManager()
     val scope = rememberCoroutineScope()
     val extensions by extensionManager.themes.collectAsState()
+    // The names without FlorisBoard's brand ("Floris Day" → "Day")
     val themes = remember(extensions) {
-        extensions.flatMap { ext -> ext.themes.map { ExtensionComponentName(ext.meta.id, it.id) to it } }.sortedBy { it.second.label }
+        extensions.flatMap { ext -> ext.themes.map { ExtensionComponentName(ext.meta.id, it.id) to it } }
+            .map { (id, t) -> Triple(id, t.label.removePrefix("Floris ").trim(), t.isNightTheme) }
+            .sortedBy { it.second }
     }
     val day by prefs.theme.dayThemeId.observeAsState()
     val night by prefs.theme.nightThemeId.observeAsState()
-    ChoiceRow(stringRes(R.string.pysanka__look__day_theme), themes.filter { !it.second.isNightTheme }.map { it.first to it.second.label }, day) {
+    // A theme chosen that is not of that kind (a night theme by day) is still shown as chosen
+    fun options(night: Boolean, chosen: ExtensionComponentName) =
+        themes.filter { it.third == night || it.first == chosen }.map { it.first to it.second }
+    ChoiceRow(stringRes(R.string.pysanka__look__day_theme), options(false, day), day) {
         scope.launch { prefs.theme.dayThemeId.set(it) }
     }
-    ChoiceRow(stringRes(R.string.pysanka__look__night_theme), themes.filter { it.second.isNightTheme }.map { it.first to it.second.label }, night) {
+    ChoiceRow(stringRes(R.string.pysanka__look__night_theme), options(true, night), night) {
         scope.launch { prefs.theme.nightThemeId.set(it) }
     }
 }

@@ -29,7 +29,6 @@
     <string name="pysanka__clipboard_copy__working">Working… (the password check takes a few seconds)</string>
     <string name="pysanka__clipboard_copy__over_limit">Over the history size limit, not added: {n}. To import everything, raise or turn off the limit in clipboard settings and import again.</string>
     <string name="pysanka__clipboard_copy__history_off">Clipboard history is turned off. Turn it on in clipboard settings first.</string>
-    <string name="pysanka__ext__info">Themes, layouts and language packs are added from an extension file (.flex) that you bring yourself: Pysanka never goes online.</string>
     <string name="pysanka__about__based_on__title">Based on FlorisBoard</string>
     <string name="pysanka__about__based_on__summary">Pysanka is built on FlorisBoard by The FlorisBoard Contributors (Apache 2.0); an independent project, Pysanka itself is under GPL-3.0</string>
     <string name="pysanka__tag__all">All</string>
@@ -76,6 +75,8 @@
     <string name="pysanka__settings__privacy">Privacy</string>
     <string name="pysanka__settings__ai">On-device AI</string>
     <string name="pysanka__settings__more">More</string>
+    <string name="pysanka__settings__block_open">open</string>
+    <string name="pysanka__settings__block_closed">closed</string>
     <string name="pysanka__settings__on">on</string>
     <string name="pysanka__settings__off">off</string>
     <string name="pysanka__settings__typing_state">Swipe: {glide} · suggestions: {suggestions} · typo correction: {correct}</string>
@@ -88,7 +89,8 @@
     <string name="pysanka__emoji__more">More emoji settings</string>
     <string name="pysanka__emoji__more_hint">Clearing the history and pinned emoji</string>
     <string name="pysanka__languages__add">Add a language</string>
-    <string name="pysanka__languages__remove">Remove the language</string>
+    <string name="pysanka__languages__remove">Remove “{name}”</string>
+    <string name="pysanka__languages__loading">The list of languages is still loading; try again in a moment.</string>
     <string name="pysanka__languages__remove_confirm">Remove {name}?</string>
     <string name="pysanka__languages__switch_hint">The globe key on the keyboard switches between them.</string>
     <string name="pysanka__look__day_theme">Theme by day</string>

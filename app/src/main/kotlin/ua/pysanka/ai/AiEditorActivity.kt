@@ -72,6 +72,7 @@ class AiEditorActivity : ComponentActivity() {
         private const val EXTRA_FOR_RESULT = "for_result"
         private const val EXTRA_LANGUAGE = "language"
         private const val EXTRA_DONE = "done"
+        private const val EXTRA_TARGET = "target"
 
         /**
          * [receiver]: where the answer goes back to the keyboard; or [forResult]: the answer is
@@ -84,6 +85,8 @@ class AiEditorActivity : ComponentActivity() {
             alongside: Boolean = false,
             /** An answer the keyboard's panel already has: shown at once, not asked for again. */
             done: AiJob.Output? = null,
+            /** The language the panel translated into. */
+            target: AiLanguage? = null,
         ): Intent {
             val prefs by dev.patrickgold.florisboard.app.FlorisPreferenceStore
             val secure = runCatching { prefs.pysankaOcr.blockScreenshots.get() }.getOrDefault(false)
@@ -96,6 +99,7 @@ class AiEditorActivity : ComponentActivity() {
                 .putExtra(EXTRA_SECURE, secure)
                 .putExtra(EXTRA_FOR_RESULT, forResult)
                 .putExtra(EXTRA_LANGUAGE, language)
+                .putExtra(EXTRA_TARGET, target?.name)
                 .apply {
                     if (done != null) {
                         putExtra(EXTRA_DONE, Bundle().apply {
@@ -142,6 +146,7 @@ class AiEditorActivity : ComponentActivity() {
                             original = text,
                             preset = preset,
                             done = done,
+                            target = intent.getStringExtra(EXTRA_TARGET)?.let { n -> AiLanguage.entries.firstOrNull { it.name == n } },
                             replaceLabel = when {
                                 forResult -> if (canReplace) R.string.pysanka__ai__replace else null
                                 receiver == null -> null
@@ -191,6 +196,7 @@ private fun AiEditorScreen(
     original: String,
     preset: AiAction?,
     done: AiJob.Output?,
+    target: AiLanguage?,
     replaceLabel: Int?,
     onUse: (String) -> Unit,
     close: () -> Unit,
@@ -203,7 +209,7 @@ private fun AiEditorScreen(
     // turning the phone does not recreate this screen
     var source by remember { mutableStateOf(original) }
     var action by rememberSaveable { mutableStateOf(preset ?: AiAction.FIX) }
-    var language by rememberSaveable { mutableStateOf(AiLanguage.EN) }
+    var language by rememberSaveable { mutableStateOf(target ?: AiLanguage.EN) }
     var stage by remember { mutableStateOf<AiStage>(if (done != null) AiStage.Done(done) else AiStage.Idle) }
     var result by remember { mutableStateOf(done?.text.orEmpty()) }
     var job by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }

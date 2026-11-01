@@ -16,6 +16,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -208,9 +209,11 @@ fun AiPanel(modifier: Modifier = Modifier) {
         // Replies are never put in place of the text
         val taken = if (action == AiAction.REPLIES) t.copy(mode = AiBridge.Mode.INSERT) else t
         // An answer already written goes along, so the work is not lost
-        val done = (stage as? PanelStage.Done)?.takeIf { it.action == action }
+        // (not a very long text with its answer: together they could be too big to hand over)
+        val text = input(action)
+        val done = (stage as? PanelStage.Done)?.takeIf { it.action == action && text.length + it.text.length <= HANDOVER_MAX }
             ?.let { AiJob.Output(it.text, it.removed, it.unconfirmed, it.seconds, it.backend) }
-        AiBridge.openEditor(panel.info, taken, input(action), action, done)
+        AiBridge.openEditor(panel.info, taken, text, action, done, target)
     }
 
     AiPanelView(
@@ -449,10 +452,22 @@ private fun Tile(icon: ImageVector, label: String, enabled: Boolean = true, onCl
     }
 }
 
-/** A quiet action as an icon (its name is read out, and shown on a long press by the system). */
+/** A quiet action as an icon: its name is read out, and shown on a long press. */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun ActionIcon(icon: ImageVector, label: String, onClick: () -> Unit) {
-    SnyggIconButton(FlorisImeUi.ClipboardHeaderButton.elementName, onClick = onClick, modifier = Modifier.size(44.dp)) {
+    val context = LocalContext.current
+    SnyggBox(
+        FlorisImeUi.ClipboardHeaderButton.elementName,
+        modifier = Modifier.size(48.dp),
+        clickAndSemanticsModifier = Modifier.combinedClickable(
+            role = androidx.compose.ui.semantics.Role.Button,
+            onClickLabel = label,
+            onLongClick = { android.widget.Toast.makeText(context, label, android.widget.Toast.LENGTH_SHORT).show() },
+            onClick = onClick,
+        ),
+        contentAlignment = Alignment.Center,
+    ) {
         SnyggIcon(imageVector = icon, contentDescription = label, modifier = Modifier.size(22.dp))
     }
 }
@@ -557,6 +572,9 @@ private fun Done(
 }
 
 private const val WARM_DELAY_MS = 1500L
+
+/** At most this many characters of text and answer together go to the editor on "Expand". */
+private const val HANDOVER_MAX = 80_000
 
 /** The panel's connection to [AiService], from opening to closing the panel. */
 private class AiLink(

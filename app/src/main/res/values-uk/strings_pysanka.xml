@@ -28,7 +28,6 @@
     <string name="pysanka__clipboard_copy__working">Працюю… (перевірка пароля триває кілька секунд)</string>
     <string name="pysanka__clipboard_copy__over_limit">Не вмістилося в обмеження історії, не додано: {n}. Щоб імпортувати все, збільште або вимкніть обмеження в налаштуваннях буфера й імпортуйте знову.</string>
     <string name="pysanka__clipboard_copy__history_off">Історію буфера вимкнено. Спершу ввімкніть її в налаштуваннях буфера.</string>
-    <string name="pysanka__ext__info">Теми, розкладки й мовні пакети додаються з файлу розширення (.flex), який ви приносите самі: Писанка не ходить в інтернет.</string>
     <string name="pysanka__about__based_on__title">На основі FlorisBoard</string>
     <string name="pysanka__about__based_on__summary">Писанку побудовано на FlorisBoard від The FlorisBoard Contributors (Apache 2.0); це незалежний проєкт, сама Писанка — під GPL-3.0</string>
     <string name="pysanka__tag__all">Усе</string>
@@ -75,6 +74,8 @@
     <string name="pysanka__settings__privacy">Приватність</string>
     <string name="pysanka__settings__ai">ШІ на телефоні</string>
     <string name="pysanka__settings__more">Більше</string>
+    <string name="pysanka__settings__block_open">розгорнуто</string>
+    <string name="pysanka__settings__block_closed">згорнуто</string>
     <string name="pysanka__settings__on">увімкнено</string>
     <string name="pysanka__settings__off">вимкнено</string>
     <string name="pysanka__settings__typing_state">Свайп: {glide} · підказки: {suggestions} · виправлення: {correct}</string>
@@ -87,7 +88,8 @@
     <string name="pysanka__emoji__more">Інші налаштування емодзі</string>
     <string name="pysanka__emoji__more_hint">Очищення історії й закріплених емодзі</string>
     <string name="pysanka__languages__add">Додати мову</string>
-    <string name="pysanka__languages__remove">Видалити мову</string>
+    <string name="pysanka__languages__remove">Видалити «{name}»</string>
+    <string name="pysanka__languages__loading">Список мов ще завантажується; спробуйте за мить.</string>
     <string name="pysanka__languages__remove_confirm">Видалити «{name}»?</string>
     <string name="pysanka__languages__switch_hint">Перемикає між ними кнопка з глобусом на клавіатурі.</string>
     <string name="pysanka__look__day_theme">Тема вдень</string>

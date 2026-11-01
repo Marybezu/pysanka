@@ -170,7 +170,6 @@ private tailrec fun Context.florisApplication(): FlorisApplication {
 
 fun Context.appContext() = lazyOf(this.florisApplication())
 
-
 fun Context.clipboardManager() = this.florisApplication().clipboardManager
 
 fun Context.editorInstance() = this.florisApplication().editorInstance

@@ -140,11 +140,19 @@ private fun PrefToggle(pref: PreferenceData<Boolean>, title: String, hint: Strin
 
 /** A choice bound to a setting, with the names FlorisBoard gives its values. */
 @Composable
-private fun <T : Any> PrefChoice(pref: PreferenceData<T>, title: String, values: KClass<T>, variant: String? = null, enabled: Boolean = true) {
+private fun <T : Any> PrefChoice(
+    pref: PreferenceData<T>,
+    title: String,
+    values: KClass<T>,
+    variant: String? = null,
+    enabled: Boolean = true,
+    /** Values not offered here. */
+    except: Set<T> = emptySet(),
+) {
     val value by pref.observeAsState()
     val scope = rememberCoroutineScope()
     val entries = if (variant == null) enumDisplayEntriesOf(values) else enumDisplayEntriesOf(values, variant)
-    ChoiceRow(title, entries.map { it.key to it.label }, value, enabled) { scope.launch { pref.set(it) } }
+    ChoiceRow(title, entries.filter { it.key !in except }.map { it.key to it.label }, value, enabled) { scope.launch { pref.set(it) } }
 }
 
 @Composable
@@ -192,7 +200,8 @@ private fun LookSettings() {
     val prefs by FlorisPreferenceStore
     val scope = rememberCoroutineScope()
     val audio by prefs.inputFeedback.audioEnabled.observeAsState()
-    PrefChoice(prefs.theme.mode, stringRes(R.string.pysanka__look__theme_mode), ThemeMode::class)
+    // "By the time of day" needs times there is no screen for
+    PrefChoice(prefs.theme.mode, stringRes(R.string.pysanka__look__theme_mode), ThemeMode::class, except = setOf(ThemeMode.FOLLOW_TIME))
     ThemeChoices()
     PrefToggle(prefs.keyboard.numberRow, stringRes(R.string.pysanka__look__number_row))
     PrefToggle(prefs.keyboard.hintedSymbolsEnabled, stringRes(R.string.pysanka__look__key_hints), stringRes(R.string.pysanka__look__key_hints_summary))

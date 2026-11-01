@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -90,8 +91,17 @@ fun Block(
         border = BorderStroke(1.dp, tint.container),
         modifier = Modifier.fillMaxWidth(),
     ) {
+        val stateText = org.florisboard.lib.compose.stringRes(
+            if (open) dev.patrickgold.florisboard.R.string.pysanka__settings__block_open else dev.patrickgold.florisboard.R.string.pysanka__settings__block_closed,
+        )
+        // The whole header is one control: read as a heading with its state, opened or closed with a tap
         Row(
-            Modifier.fillMaxWidth().background(tint.container).clickable { open = !open }
+            Modifier.fillMaxWidth().background(tint.container)
+                .semantics(mergeDescendants = true) {
+                    heading()
+                    stateDescription = stateText
+                }
+                .clickable(role = Role.Button) { open = !open }
                 .heightIn(min = 56.dp).padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -99,7 +109,7 @@ fun Block(
                 Icon(icon, contentDescription = null, tint = tint.ink)
                 Spacer(Modifier.width(14.dp))
             }
-            Column(Modifier.weight(1f).semantics(mergeDescendants = true) { heading() }) {
+            Column(Modifier.weight(1f)) {
                 Text(title, style = BlockTitle, color = tint.ink)
                 if (summary != null && !open) Text(summary, style = MaterialTheme.typography.bodyMedium, color = tint.ink)
             }
