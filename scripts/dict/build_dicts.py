@@ -19,6 +19,11 @@ import sys
 from pathlib import Path
 
 MAX_WORDS = {"uk": 60000, "en": 50000}
+UKRAINIAN_ONLY = set("іїєґ'")
+# Valid as rare Ukrainian forms, but in subtitles they are the Russian words
+STOP = {"uk": {"мне", "его", "ее", "конечно", "надо"}, "en": set()}
+# Spelling of 2019 (the subtitles keep the older one): the beginning of a word and its replacement
+RESPELL = {"uk": {"проект": "проєкт"}, "en": {}}
 LETTERS = {
     "uk": re.compile(r"^[абвгґдеєжзиіїйклмнопрстуфхцчшщьюя']+(-[абвгґдеєжзиіїйклмнопрстуфхцчшщьюя']+)*$"),
     "en": re.compile(r"^[a-z]+('[a-z]+)?$"),
@@ -41,7 +46,12 @@ def hunspell_forms(dic: Path, aff: Path) -> set[str]:
         if not line or line.startswith("+"):
             continue
         stem, _, flags = line.partition("/")
-        stem = stem.lower()
+        # Names: lowercased, their forms would let in common Russian words («Мень» → «меня»), so a
+        # name is kept only if it is plainly Ukrainian (і, ї, є, ґ or an apostrophe: «Київ»,
+        # «Україна»); it keeps its capital letter. Abbreviations are left out.
+        if stem != stem.lower():
+            if stem.isupper() or not any(c in UKRAINIAN_ONLY for c in stem.lower()):
+                continue
         forms.add(stem)
         for f in flags:
             for strip, add, cond in rules.get(f, []):
@@ -81,10 +91,19 @@ def build(lang: str, freq_file: Path, known: set[str] | None) -> dict[str, int]:
         if word and n.isdigit() and LETTERS[lang].match(word):
             raw[word] = raw.get(word, 0) + int(n)
     if known is not None:
-        found = {w: n for w, n in raw.items() if w in known}
-        for w, n in apostrophe_words(raw, known).items():
+        # Lowercase dictionary forms win; a name keeps its capital letter («київ» → «Київ»)
+        display = {}
+        for k in known:
+            display.setdefault(k.lower(), k)
+            if k == k.lower():
+                display[k] = k
+        found = {display[w]: n for w, n in raw.items() if w in display and w not in STOP[lang]}
+        for w, n in apostrophe_words(raw, {k for k in known if k == k.lower()}).items():
             found.setdefault(w, n)
         raw = found
+    for old, new in RESPELL[lang].items():
+        for w in [w for w in raw if w.startswith(old)]:
+            raw[new + w[len(old):]] = raw.get(new + w[len(old):], 0) + raw.pop(w)
     counts = sorted(raw.items(), key=lambda kv: -kv[1])[: MAX_WORDS[lang]]
     top = math.log(counts[0][1])
     low = math.log(max(counts[-1][1], 1))

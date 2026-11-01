@@ -33,6 +33,7 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import org.florisboard.lib.android.readText
 import org.florisboard.lib.kotlin.guardedByLock
+import ua.pysanka.typing.AutoCorrect
 import ua.pysanka.typing.KeyNeighbours
 import ua.pysanka.typing.WordSuggester
 
@@ -55,12 +56,12 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     private suspend fun suggester(subtype: Subtype): WordSuggester? {
         val lang = subtype.primaryLocale.language
         return suggesters.withLock { map ->
-            map.getOrPut(lang) {
-                runCatching {
-                    val raw = appContext.assets.readText("ime/dict/$lang.json")
-                    WordSuggester(Json.decodeFromString(wordDataSerializer, raw), KeyNeighbours.forLanguage(lang))
-                }.getOrNull()
-            }
+            // A language without a list is remembered as such (not looked for on every key)
+            if (lang in map) return@withLock map[lang]
+            runCatching {
+                val raw = appContext.assets.readText("ime/dict/$lang.json")
+                WordSuggester(Json.decodeFromString(wordDataSerializer, raw), KeyNeighbours.forLanguage(lang))
+            }.getOrNull().also { map[lang] = it }
         }
     }
 
@@ -101,13 +102,23 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         if (word.isEmpty()) return emptyList()
         val dict = suggester(subtype) ?: return emptyList()
         val autoCorrect = prefs.correction.pysankaAutoCorrect.get()
-        return dict.suggest(word, maxCandidateCount).map {
+        val found = dict.suggest(word, maxCandidateCount, AutoCorrect.rejected)
+        AutoCorrect.suggestedFor = word
+        val list = found.map {
             WordSuggestionCandidate(
                 text = it.word,
                 confidence = if (it.autoCorrect) 0.9 else 0.5,
                 isEligibleForAutoCommit = autoCorrect && it.autoCorrect,
                 sourceProvider = this@LatinLanguageProvider,
             )
+        }
+        // The word as typed is offered next to its correction, so it can be kept with a tap
+        val corrected = list.firstOrNull()?.isEligibleForAutoCommit == true
+        return if (corrected) {
+            listOf(list.first(), WordSuggestionCandidate(text = word, confidence = 0.5, sourceProvider = this@LatinLanguageProvider)) +
+                list.drop(1).take(maxCandidateCount - 2)
+        } else {
+            list
         }
     }
 

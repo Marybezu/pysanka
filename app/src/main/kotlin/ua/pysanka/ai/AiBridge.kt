@@ -59,7 +59,7 @@ object AiBridge {
         Toast.makeText(app, res, Toast.LENGTH_LONG).show()
     }
 
-    /** What the panel works on, from pressing ✨ until the panel takes it. */
+    /** What the panel works on, from pressing ✦ until the panel takes it. */
     class Panel(val info: FlorisEditorInfo, val taken: Taken) {
         /** In Pysanka's own fields the full editor is not offered (it could be the editor's own field). */
         val canExpand get() = info.packageName != FlorisApplication.getHack().packageName

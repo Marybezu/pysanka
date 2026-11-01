@@ -8,7 +8,10 @@ package ua.pysanka.typing
  * - Corrections: words one typing error away (a letter missing, extra, wrong or two letters
  *   swapped), a wrong letter next to the intended one on the keyboard counting as more likely.
  * - Auto-correction is careful: only for a word of at least [AUTO_MIN_LENGTH] letters that is not
- *   in the list itself, when one correction is clearly the most likely.
+ *   in the list itself, when one correction is clearly the most likely; never for a word with
+ *   digits, nor for one taken back with Backspace ([rejected]); a capitalised word (often a name)
+ *   only into a common word.
+ * - Apostrophes: ', ’ and ʼ count as the same; the one typed is kept.
  *
  * The case of what was typed is kept («Прив» → «Привіт», «ПРИВ» → «ПРИВІТ»).
  */
@@ -21,29 +24,51 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
         /** A correction is applied by itself only if it is this much likelier than the next one. */
         private const val AUTO_MARGIN = 2.0
 
-        /** At most this many words with the same beginning are looked at (they are by frequency). */
-        private const val PREFIX_SCAN = 4000
+        /** A word is auto-corrected only into a word at least this common (rare words are often typos themselves). */
+        private const val AUTO_MIN_FREQ = 70
+
+        /** A capitalised word (a name, often) is auto-corrected only into a word at least this common. */
+        private const val AUTO_CAPITAL_MIN_FREQ = 150
+
+        /** Longer words are not corrected (the longest in the lists has 26 letters). */
+        private const val MAX_CORRECTED_LENGTH = 30
+
+        private val APOSTROPHES = charArrayOf('’', 'ʼ')
     }
 
-    /** Words sorted alphabetically (for the beginning), with their frequency (1..255). */
-    private val sorted: Array<String> = words.keys.sorted().toTypedArray()
-    private val freq: Map<String, Int> = words
-    private val alphabet: String = words.keys.flatMap { it.asIterable() }.toSortedSet().joinToString("")
+    /** Frequency (1..255) by the word in small letters. */
+    private val freq: Map<String, Int> = HashMap<String, Int>().also { m ->
+        for ((w, f) in words) m.merge(w.lowercase(), f, ::maxOf)
+    }
 
-    fun contains(word: String) = word.lowercase() in freq
+    /** Names keep their capital letter («київ» → «Київ»). */
+    private val display: Map<String, String> = words.keys.filter { it != it.lowercase() }.associateBy { it.lowercase() }
 
-    fun words(): List<String> = sorted.asList()
+    /** Words sorted alphabetically (for the beginning). */
+    private val sorted: Array<String> = freq.keys.sorted().toTypedArray()
+    private val alphabet: String = freq.keys.flatMap { it.asIterable() }.toSortedSet().joinToString("")
 
-    fun frequency(word: String): Int = freq[word.lowercase()] ?: 0
+    /** The most frequent words for each beginning of one or two letters (worked out once). */
+    private val shortPrefixes = java.util.concurrent.ConcurrentHashMap<String, List<String>>()
 
-    fun suggest(typed: String, max: Int): List<Suggestion> {
+    private fun norm(word: String) = word.lowercase().let { w -> APOSTROPHES.fold(w) { s, c -> s.replace(c, '\'') } }
+
+    fun contains(word: String) = norm(word) in freq
+
+    fun words(): List<String> = sorted.map { display[it] ?: it }
+
+    fun frequency(word: String): Int = freq[norm(word)] ?: 0
+
+    /** [rejected]: words whose auto-correction was taken back; they are left as typed. */
+    fun suggest(typed: String, max: Int, rejected: Set<String> = emptySet()): List<Suggestion> {
         if (typed.isEmpty() || max <= 0) return emptyList()
-        val lower = typed.lowercase()
+        val lower = norm(typed)
         val known = lower in freq
         val scored = HashMap<String, Double>()
+        val hasDigit = lower.any { it.isDigit() }
 
         // Corrections first, so a completion of the same word keeps the better score
-        if (lower.length >= 2) {
+        if (lower.length in 3..MAX_CORRECTED_LENGTH && !hasDigit) {
             for ((cand, likely) in corrections(lower)) {
                 val f = freq[cand] ?: continue
                 scored.merge(cand, f * likely, ::maxOf)
@@ -60,17 +85,29 @@ class WordSuggester(words: Map<String, Int>, private val neighbours: Map<Char, S
         val ranked = scored.entries.sortedByDescending { it.value }.take(max)
         val best = ranked.firstOrNull()
         val second = ranked.getOrNull(1)?.value ?: 0.0
-        val auto = best != null && !known && lower.length >= AUTO_MIN_LENGTH &&
+        val auto = best != null && !known && !hasDigit && lower.length >= AUTO_MIN_LENGTH &&
+            lower !in rejected && freq.getValue(best.key) >= AUTO_MIN_FREQ &&
+            (!typed.first().isUpperCase() || freq.getValue(best.key) >= AUTO_CAPITAL_MIN_FREQ) &&
             best.key.length in (lower.length - 1)..(lower.length + 1) &&
             isOneEditAway(lower, best.key) && best.value >= second * AUTO_MARGIN
-        return ranked.mapIndexed { i, e -> Suggestion(matchCase(typed, e.key), autoCorrect = auto && i == 0) }
+        val apostrophe = typed.firstOrNull { it == '\'' || it in APOSTROPHES }
+        return ranked.mapIndexed { i, e ->
+            val shown = display[e.key] ?: e.key
+            val word = if (apostrophe != null) shown.replace('\'', apostrophe) else shown
+            Suggestion(matchCase(typed, word), autoCorrect = auto && i == 0)
+        }
     }
 
-    /** Words starting with [prefix], most frequent first. */
+    /** Words starting with [prefix], most frequent first (at most 50). */
     private fun withPrefix(prefix: String): List<String> {
+        if (prefix.length <= 2) return shortPrefixes.getOrPut(prefix) { scanPrefix(prefix) }
+        return scanPrefix(prefix)
+    }
+
+    private fun scanPrefix(prefix: String): List<String> {
         var lo = sorted.binarySearch(prefix).let { if (it < 0) -it - 1 else it }
         val out = ArrayList<String>()
-        while (lo < sorted.size && sorted[lo].startsWith(prefix) && out.size < PREFIX_SCAN) out.add(sorted[lo++])
+        while (lo < sorted.size && sorted[lo].startsWith(prefix)) out.add(sorted[lo++])
         return out.sortedByDescending { freq.getValue(it) }.take(50)
     }
 

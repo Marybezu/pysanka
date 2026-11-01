@@ -8,7 +8,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Pysanka: the mark of the AI — one four-pointed star ✦, as in Mandat. Drawn in the colour of
- * where it stands (the keyboard theme, or [AiViolet] in the settings).
+ * where it stands (the keyboard theme, or the AI violet below in the settings).
  */
 val AiMark: ImageVector = ImageVector.Builder(
     name = "PysankaAiMark",
