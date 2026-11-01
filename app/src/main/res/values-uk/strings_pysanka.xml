@@ -145,7 +145,7 @@
     <string name="pysanka__settings__ai_ready">Модель встановлено: стиль, граматика, підсумок, переклад</string>
     <string name="pysanka__settings__ai_missing">Завантажте модель (≈2,6 ГБ), щоб користуватися</string>
     <string name="pysanka__ai__title">ШІ-редактор</string>
-    <string name="pysanka__ai__quick_action">ШІ-редактор</string>
+    <string name="pysanka__ai__quick_action">ШІ-помічник</string>
     <string name="pysanka__ai__quick_action__tooltip">Редагувати текст ШІ на телефоні</string>
     <string name="pysanka__ai__not_here">ШІ не працює в полях пароля, в інкогніто й там, де застосунок просить не вчитися.</string>
     <string name="pysanka__ai__no_model">Модель ШІ ще не завантажено. Вона працює повністю на телефоні; завантажте її один раз у налаштуваннях.</string>
@@ -158,7 +158,7 @@
     <string name="pysanka__ai__replace">Замінити</string>
     <string name="pysanka__ai__insert">Вставити</string>
     <string name="pysanka__ai__fix_with_ai">Виправити ШІ</string>
-    <string name="pysanka__ai__action_fix">Граматика й пунктуація</string>
+    <string name="pysanka__ai__action_fix">Граматика</string>
     <string name="pysanka__ai__action_fix_ocr">Виправити розпізнане</string>
     <string name="pysanka__ai__action_russisms">Прибрати русизми</string>
     <string name="pysanka__ai__action_friendly">Дружніше</string>
@@ -186,7 +186,7 @@
     <string name="pysanka__ai__import_failed">Не вдалося скопіювати файл. Спробуйте ще раз.</string>
     <string name="pysanka__ai__original_kept">Не вдалося видалити завантажений файл: видаліть його у «Файлах».</string>
     <string name="pysanka__ai__ready">Модель встановлено ({size} МБ).</string>
-    <string name="pysanka__ai__how_to_use">Торкніться ✨ на панелі над клавіатурою: ШІ візьме виділений текст (або все поле) і запропонує граматику, стиль, підсумок, переклад тощо. У полях пароля й інкогніто ШІ не працює ніколи.</string>
+    <string name="pysanka__ai__how_to_use">Торкніться ✨ на панелі над клавіатурою: замість клавіш відкриється ШІ-помічник для виділеного тексту (або всього поля) — граматика, стиль, підсумок, переклад, варіанти відповіді на повідомлення з буфера тощо. «Розгорнути» відкриває великий редактор. У полях пароля й інкогніто ШІ не працює ніколи.</string>
     <string name="pysanka__ai__delete">Видалити модель</string>
     <string name="pysanka__ai__copied_instead">Відповідь не вдалося безпечно вставити, тож її скопійовано: вставте, куди треба.</string>
     <string name="pysanka__links__group">Посилання</string>
@@ -202,7 +202,7 @@
     <string name="pysanka__ai__action_notes">Упорядкувати нотатки</string>
     <string name="pysanka__ai__action_letter">Лист за описом</string>
     <string name="pysanka__ai__action_replies">Варіанти відповіді</string>
-    <string name="pysanka__ai__action_tone">Як це прозвучить?</string>
+    <string name="pysanka__ai__action_tone">Як це звучить?</string>
     <string name="pysanka__ai__action_redact">Приховати особисте</string>
     <string name="pysanka__ai__source_count">Текст, знаків: {n}</string>
     <string name="pysanka__ai__stop">Зупинити</string>
@@ -215,4 +215,19 @@
     <string name="pysanka__ai__fact_removed">Прибрано пунктів, чиїх чисел чи назв немає в тексті: {n}</string>
     <string name="pysanka__ai__fact_unconfirmed">Підсумок не вдалося звірити з текстом: перевірте його, перш ніж використати.</string>
     <string name="pysanka__ai__too_long">Текст задовгий для ШІ: виділіть частину (до 60 000 знаків).</string>
+    <string name="pysanka__ai__panel_title">ШІ-помічник</string>
+    <string name="pysanka__ai__panel_selection">Виділений текст</string>
+    <string name="pysanka__ai__panel_all">Увесь текст поля</string>
+    <string name="pysanka__ai__panel_previous">Попередній результат: виберіть, що зробити далі</string>
+    <string name="pysanka__ai__panel_empty">Виділіть текст або напишіть його в полі</string>
+    <string name="pysanka__ai__panel_clip">Відповіді на повідомлення з буфера обміну. Торкніться варіанта — він вставиться в поле</string>
+    <string name="pysanka__ai__panel_tap_reply">Торкніться варіанта — він вставиться в поле</string>
+    <string name="pysanka__ai__panel_too_long">Цей текст задовгий для панелі: відкрийте його у великому редакторі.</string>
+    <string name="pysanka__ai__translate_into">Перекласти на:</string>
+    <string name="pysanka__ai__more">Ще</string>
+    <string name="pysanka__ai__less">Менше</string>
+    <string name="pysanka__ai__again">Ще раз</string>
+    <string name="pysanka__ai__change">Доробити</string>
+    <string name="pysanka__ai__expand">Розгорнути</string>
+    <string name="pysanka__ai__back">Назад</string>
 </resources>

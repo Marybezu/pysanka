@@ -317,8 +317,9 @@ class ClipboardManager(
                     val keep = !isVideo && !ours && mayKeep(ClipboardItem.isSensitive(systemPrimaryClip), incognito, passwordField)
                     val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = keep).let {
                         // Kept although copied in a password field ("Don't keep passwords" off): mark it
-                        // sensitive, so it is masked and the timed clean-up of sensitive items applies
-                        if (passwordField && !it.isSensitive) it.copy(isSensitive = true) else it
+                        // sensitive, so it is masked and the timed clean-up of sensitive items applies.
+                        // Copied in incognito (never kept): sensitive too, so the AI panel leaves it alone
+                        if ((passwordField || incognito) && !it.isSensitive) it.copy(isSensitive = true) else it
                     }
                     primaryClip = item
                     // An image that could not be stored (too large, unreadable) gets id 0: not kept
@@ -344,10 +345,10 @@ class ClipboardManager(
             original
         }
         // Pysanka: see mayKeep (a copy from the keyboard itself happens in the field open right now)
-        if (mayKeep(item.isSensitive, fieldIncognito, fieldPassword)) {
-            insertOrMoveBeginning(if (fieldPassword && !item.isSensitive) item.copy(isSensitive = true) else item)
-        }
-        updatePrimaryClip(item)
+        // Pysanka: copied in a password or incognito field: sensitive (masked; never for the AI panel)
+        val marked = if ((fieldPassword || fieldIncognito) && !item.isSensitive) item.copy(isSensitive = true) else item
+        if (mayKeep(item.isSensitive, fieldIncognito, fieldPassword)) insertOrMoveBeginning(marked)
+        updatePrimaryClip(marked)
     }
 
     /**

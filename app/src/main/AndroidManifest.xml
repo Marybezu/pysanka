@@ -143,6 +143,13 @@
             android:theme="@style/FlorisAppTheme"
             android:label="@string/pysanka__ai__title" />
 
+        <!-- Pysanka: the AI for the panel inside the keyboard, in the same process as the editor;
+             not exported, only Pysanka binds to it -->
+        <service
+            android:name="ua.pysanka.ai.AiService"
+            android:exported="false"
+            android:process=":ai" />
+
         <!-- Pysanka: the AI editor from "Share" and the text selection menu of any app (only plain text);
              turned on only while the AI model is installed (AiEntry.sync) -->
         <activity

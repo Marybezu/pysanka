@@ -79,6 +79,8 @@ jobs:
           { echo "run ${{ github.run_number }} ${{ job.status }}"; grep -E "^e: |error:|FAILED|What went wrong|Dependency verification" -A3 build.log | head -300; echo ----; tail -150 build.log; cat permissions.txt 2>/dev/null; } > log/build.log || true
           find app/build/test-results -name "*.xml" -exec cp {} log/ \; 2>/dev/null || true
           cp gradle/verification-metadata.xml log/ 2>/dev/null || true
+          # Pictures of the screens drawn with made-up texts, for review
+          cp -r app/build/screens log/screens 2>/dev/null || true
           # Room writes the schema of a new database version during the build; keep it so it can be committed
           cp -r app/schemas log/ 2>/dev/null || true
           # The first errors as annotations, so they show on the pull request without opening the log.

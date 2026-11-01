@@ -45,6 +45,8 @@ androidx-test-uiautomator = "2.3.0"
 kotest = "6.1.11"
 kotlinx-kover = "0.9.8"
 turbine = "1.2.1"
+robolectric = "4.16.1"
+junit-vintage = "5.13.4"
 
 
 [libraries]
@@ -106,6 +108,8 @@ kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref 
 kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit-vintage" }
 
 
 [plugins]

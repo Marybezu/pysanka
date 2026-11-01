@@ -59,20 +59,40 @@ object AiBridge {
         Toast.makeText(app, res, Toast.LENGTH_LONG).show()
     }
 
-    /** The "AI" button on the keyboard. */
-    fun openFromKeyboard(editor: ImeEditor) {
-        // Not in the editor's own text field (that would replace the field the text came from)
-        if (editor.info.packageName == FlorisApplication.getHack().packageName) return
+    /** What the panel works on, from pressing ✨ until the panel takes it. */
+    class Panel(val editor: ImeEditor, val taken: Taken)
+
+    private var panel: Panel? = null
+
+    /**
+     * The "AI" button on the keyboard: reads the text for the panel (see [AiPanel]). False if the
+     * panel must not open here (then the person is told why, or nothing happens in Pysanka itself).
+     */
+    fun openPanel(editor: ImeEditor): Boolean {
+        // Not in Pysanka's own fields (the full editor would replace the field the text came from)
+        if (editor.info.packageName == FlorisApplication.getHack().packageName) return false
         if (FieldPrivacy.isPassword || FieldPrivacy.isPrivate) {
             toast(R.string.pysanka__ai__not_here)
-            return
+            return false
         }
-        val taken = editor.pysankaTextForAi(MAX_CHARS) ?: return
+        val taken = editor.pysankaTextForAi(MAX_CHARS) ?: return false
         if (taken.text.length > MAX_CHARS) {
             toast(R.string.pysanka__ai__too_long)
-            return
+            return false
         }
-        open(fieldOf(editor.info), taken)
+        panel = Panel(editor, taken)
+        return true
+    }
+
+    /** The panel takes its text once; nothing of it stays here. */
+    fun takePanel(): Panel? = panel.also { panel = null }
+
+    /**
+     * "Expand" in the panel: the full editor on [text] (the field's text, or what the panel made of
+     * it), its answer going back to the field as from the panel.
+     */
+    fun openEditor(editor: ImeEditor, taken: Taken, text: String, preset: AiAction) {
+        open(fieldOf(editor.info), taken, text, preset)
     }
 
     /**
@@ -88,14 +108,14 @@ object AiBridge {
     }
 
     @Synchronized
-    private fun open(field: Field, taken: Taken) {
+    private fun open(field: Field, taken: Taken, text: String, preset: AiAction) {
         // A new session: an answer from an editor opened earlier is not taken for this one
         val session = ++sessions
         target = Target(field, taken, session)
         answer = null
         FlorisImeService.pysankaLaunch { context ->
             AiEditorActivity.intent(
-                context, taken.text, null, receiver { result -> set(session, result) }, canReplace = taken.mode != Mode.INSERT,
+                context, text, preset, receiver { result -> set(session, result) }, canReplace = taken.mode != Mode.INSERT,
             )
         }
     }

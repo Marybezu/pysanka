@@ -188,7 +188,6 @@ dependencies {
     implementation(composeBom)
     // testImplementation(composeBom)
     // androidTestImplementation(composeBom)
-    // My connection security code is: 9 8 5 0, check that you see the same numbers in my connection approval dialog.
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.activity.ktx)
@@ -242,6 +241,10 @@ dependencies {
     testImplementation(libs.kotlin.test.junit5)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+    // Pysanka: screens drawn on the computer (Robolectric) for review, see ua.pysanka.screens
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.ext)
+    testRuntimeOnly(libs.junit.vintage.engine)
     androidTestImplementation(libs.androidx.test.ext)
     androidTestImplementation(libs.androidx.test.espresso.core)
 }

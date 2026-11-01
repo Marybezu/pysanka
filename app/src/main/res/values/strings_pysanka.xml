@@ -146,7 +146,7 @@
     <string name="pysanka__settings__ai_ready">Model installed: style, grammar, summary, translation</string>
     <string name="pysanka__settings__ai_missing">Download the model (about 2.6 GB) to use it</string>
     <string name="pysanka__ai__title">AI editor</string>
-    <string name="pysanka__ai__quick_action">AI editor</string>
+    <string name="pysanka__ai__quick_action">AI assistant</string>
     <string name="pysanka__ai__quick_action__tooltip">Edit the text with AI on the phone</string>
     <string name="pysanka__ai__not_here">The AI does not work in password fields, in incognito or where the app asks for no learning.</string>
     <string name="pysanka__ai__no_model">The AI model is not downloaded yet. It works fully on the phone; download it once in the settings.</string>
@@ -159,7 +159,7 @@
     <string name="pysanka__ai__replace">Replace</string>
     <string name="pysanka__ai__insert">Insert</string>
     <string name="pysanka__ai__fix_with_ai">Fix with AI</string>
-    <string name="pysanka__ai__action_fix">Grammar &amp; punctuation</string>
+    <string name="pysanka__ai__action_fix">Grammar</string>
     <string name="pysanka__ai__action_fix_ocr">Fix recognised text</string>
     <string name="pysanka__ai__action_russisms">Russianisms</string>
     <string name="pysanka__ai__action_friendly">Friendlier</string>
@@ -187,7 +187,7 @@
     <string name="pysanka__ai__import_failed">The file could not be copied. Try again.</string>
     <string name="pysanka__ai__original_kept">The downloaded file could not be deleted: delete it in Files.</string>
     <string name="pysanka__ai__ready">Model installed ({size} MB).</string>
-    <string name="pysanka__ai__how_to_use">Tap ✨ on the bar above the keyboard: it takes the selected text (or the whole field) and offers grammar, style, summary, translation and more. The AI never works in password fields or incognito.</string>
+    <string name="pysanka__ai__how_to_use">Tap ✨ on the bar above the keyboard: the AI assistant opens in place of the keys for the selected text (or the whole field): grammar, style, summary, translation, replies to the message on the clipboard and more. “Expand” opens the full editor. The AI never works in password fields or incognito.</string>
     <string name="pysanka__ai__delete">Delete the model</string>
     <string name="pysanka__ai__copied_instead">The answer could not be put back safely, so it was copied: paste it where you need it.</string>
     <string name="pysanka__links__group">Links</string>
@@ -203,7 +203,7 @@
     <string name="pysanka__ai__action_notes">Tidy notes</string>
     <string name="pysanka__ai__action_letter">Letter from a description</string>
     <string name="pysanka__ai__action_replies">Reply options</string>
-    <string name="pysanka__ai__action_tone">How will it sound?</string>
+    <string name="pysanka__ai__action_tone">How it sounds</string>
     <string name="pysanka__ai__action_redact">Hide personal data</string>
     <string name="pysanka__ai__source_count">Text ({n} characters)</string>
     <string name="pysanka__ai__stop">Stop</string>
@@ -216,4 +216,19 @@
     <string name="pysanka__ai__fact_removed">Points removed because their numbers or names are not in the text: {n}</string>
     <string name="pysanka__ai__fact_unconfirmed">The summary could not be confirmed against the text: check it before using.</string>
     <string name="pysanka__ai__too_long">The text is too long for the AI: select a part (up to 60 000 characters).</string>
+    <string name="pysanka__ai__panel_title">AI assistant</string>
+    <string name="pysanka__ai__panel_selection">Selected text</string>
+    <string name="pysanka__ai__panel_all">All text in the field</string>
+    <string name="pysanka__ai__panel_previous">The previous result: choose what to do next</string>
+    <string name="pysanka__ai__panel_empty">Select text or type it in the field</string>
+    <string name="pysanka__ai__panel_clip">Replies to the message on the clipboard. Tap a reply to put it in the field</string>
+    <string name="pysanka__ai__panel_tap_reply">Tap a reply to put it in the field</string>
+    <string name="pysanka__ai__panel_too_long">This text is too long for the panel: open it in the full editor.</string>
+    <string name="pysanka__ai__translate_into">Translate into:</string>
+    <string name="pysanka__ai__more">More</string>
+    <string name="pysanka__ai__less">Less</string>
+    <string name="pysanka__ai__again">Again</string>
+    <string name="pysanka__ai__change">Refine</string>
+    <string name="pysanka__ai__expand">Expand</string>
+    <string name="pysanka__ai__back">Back</string>
 </resources>

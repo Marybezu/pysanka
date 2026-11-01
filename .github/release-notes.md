@@ -1,6 +1,6 @@
-**Писанка 0.7.0** — приватна клавіатура для Android без доступу до інтернету. Тестова версія.
+**Писанка 0.8.0** — приватна клавіатура для Android без доступу до інтернету. Тестова версія.
 
-- ✨ **ШІ-редактор на телефоні (Gemma 4), за бажанням.** Кнопка ✨ над клавіатурою бере виділений текст або все поле: граматика й пунктуація, русизми, дружніше, офіційніше, коротше, підсумок, переклад, а також **список, таблиця, упорядкувати нотатки, лист за описом, варіанти відповіді, «Як це прозвучить?» і «Приховати особисте»**. Результат можна підправити й «Замінити» чи скопіювати. Нічого не надсилається в мережу; у полях пароля, PIN та інкогніто ШІ не працює.
+- ✨ **ШІ-помічник просто в клавіатурі (Gemma 4 на телефоні), за бажанням.** Кнопка ✨ відкриває панель замість клавіш для виділеного тексту або всього поля: граматика й пунктуація, русизми, дружніше, офіційніше, коротше, підсумок, переклад, а також **список, таблиця, упорядкувати нотатки, лист за описом, варіанти відповіді, «Як це звучить?» і «Приховати особисте»**. Відповідь — одразу в панелі: «Замінити», «Копіювати», «Ще раз», «Доробити» або «Розгорнути» у великий редактор, де її можна підправити. **Варіанти відповіді** пишуться до скопійованого повідомлення й вставляються торканням. Нічого не надсилається в мережу; у полях пароля, PIN та інкогніто ШІ не працює.
 - 📚 **Довгі тексти й підсумок «як у браузері»:** «Поділитися» → «Писанка ШІ» з будь-якого застосунку (стаття, лист, документ), або «Писанка ШІ» в меню виділеного тексту. Довге робиться частинами, у межах ≈2 хвилин на вашому телефоні; видно «частину k з n» і є «Зупинити». Числа й назви в підсумку звіряються з текстом: пункти з тим, чого в тексті немає, прибираються (а якщо звірити не вдалося — є попередження).
 - 🔤 **Виправити розкладку:** «ghbdsn» → «привіт» однією кнопкою, без ШІ.
 - 📷 **Без доступу до камери й фото.** «Текст із камери» відкриває камеру телефона, знімок не потрапляє в галерею. Скріншот чи фото в буфер — кнопкою з фото в заголовку буфера, з розпізнаним текстом. «Виправити ШІ» на екрані «Текст із фото».
@@ -14,9 +14,9 @@
 
 ---
 
-**Pysanka 0.7.0** — a private keyboard for Android with no internet access. Test version.
+**Pysanka 0.8.0** — a private keyboard for Android with no internet access. Test version.
 
-- On-device AI editor (Gemma 4), optional: the ✨ button takes the selection or the whole field — grammar, Russianisms, friendlier, more formal, shorter, summary, translation, plus list, table, tidy notes, letter from a description, reply options, "How will it sound?" and hide personal data. Nothing goes online; never in password, PIN or incognito fields.
+- On-device AI assistant right in the keyboard (Gemma 4), optional: ✨ opens a panel in place of the keys for the selection or the whole field, with the answer right there (Replace, Copy, Again, Refine, Expand to the full editor; reply options to a copied message go in with a tap) — grammar, Russianisms, friendlier, more formal, shorter, summary, translation, plus list, table, tidy notes, letter from a description, reply options, "How it sounds" and hide personal data. Nothing goes online; never in password, PIN or incognito fields.
 - Long texts: "Share" → "Pysanka AI" from any app, or "Pysanka AI" in the text selection menu. Long texts are done in parts within about two minutes on your phone, with progress and Stop; numbers and names in summaries are checked against the text.
 - Fix layout: "ghbdsn" → "привіт" with one button, no AI.
 - No camera or photo permission: the phone's camera app takes the picture (not saved to the gallery); a photo button in the clipboard header adds a screenshot or photo with its recognised text.

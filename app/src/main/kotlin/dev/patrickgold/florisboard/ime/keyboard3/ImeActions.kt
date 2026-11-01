@@ -75,7 +75,7 @@ object ImeActions {
     // Pysanka: text from a photo / from the camera
     val PysankaTextFromPhoto = flAction("pysanka_text_from_photo")
     val PysankaTextFromCamera = flAction("pysanka_text_from_camera")
-    // Pysanka: the AI editor (on the phone)
+    // Pysanka: the AI assistant panel (on the phone)
     val PysankaAi = flAction("pysanka_ai")
     // Pysanka: text typed on the wrong layout ("ghbdsn" → "привіт")
     val PysankaFixLayout = flAction("pysanka_fix_layout")
