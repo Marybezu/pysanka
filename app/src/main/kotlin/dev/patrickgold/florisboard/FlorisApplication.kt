@@ -61,6 +61,9 @@ private var FlorisApplicationReference = WeakReference<FlorisApplication?>(null)
 @Suppress("unused")
 class FlorisApplication : Application() {
     companion object {
+        /** Pysanka: the app, for code that has no context at hand (the keyboard's own helpers). */
+        fun getHack(): FlorisApplication = FlorisApplicationReference.get()!!
+
         init {
             try {
                 System.loadLibrary("fl_native")

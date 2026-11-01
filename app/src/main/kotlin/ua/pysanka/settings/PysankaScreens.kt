@@ -19,7 +19,7 @@ import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
-import dev.patrickgold.florisboard.ime.theme.PreferredThemeMode
+import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
@@ -56,7 +56,7 @@ fun PysankaTypingScreen() = FlorisScreen {
             summary = stringRes(R.string.pysanka__typing__suggestions_summary),
         )
         SwitchPreference(
-            prefs.typing.autoCapitalization,
+            prefs.correction.autoCapitalization,
             title = stringRes(R.string.pysanka__typing__auto_caps),
         )
         SwitchPreference(
@@ -109,7 +109,7 @@ fun PysankaLookScreen() = FlorisScreen {
         ListPreference(
             prefs.theme.mode,
             title = stringRes(R.string.pysanka__look__theme_mode),
-            entries = enumDisplayEntriesOf(PreferredThemeMode::class),
+            entries = enumDisplayEntriesOf(ThemeMode::class),
         )
         Preference(
             title = stringRes(R.string.pysanka__look__themes),
@@ -121,7 +121,7 @@ fun PysankaLookScreen() = FlorisScreen {
             title = stringRes(R.string.pysanka__look__number_row),
         )
         SwitchPreference(
-            prefs.keyboard.longPressKeyHintEnabled,
+            prefs.keyboard.hintedSymbolsEnabled,
             title = stringRes(R.string.pysanka__look__key_hints),
             summary = stringRes(R.string.pysanka__look__key_hints_summary),
         )

@@ -48,7 +48,9 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
-import dev.patrickgold.florisboard.app.settings.advanced.RadioListItem
+import androidx.compose.material3.RadioButton
+import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import org.florisboard.lib.compose.rippleClickable
 import dev.patrickgold.florisboard.app.settings.theme.DialogProperty
 import dev.patrickgold.florisboard.app.settings.theme.PrettyPrintConfig
 import dev.patrickgold.florisboard.app.settings.theme.ThemeEditorScreen
@@ -878,4 +880,25 @@ private fun EditorSheetTextField(
         )
         Validation(showValidationError, validationResult)
     }
+}
+
+// Pysanka: was shared with the backup screen, which Pysanka does not have
+@Composable
+private fun RadioListItem(
+    onClick: () -> Unit,
+    selected: Boolean,
+    text: String,
+    secondaryText: String? = null,
+) {
+    JetPrefListItem(
+        modifier = Modifier.rippleClickable(onClick = onClick),
+        icon = {
+            RadioButton(
+                selected = selected,
+                onClick = null,
+            )
+        },
+        text = text,
+        secondaryText = secondaryText,
+    )
 }

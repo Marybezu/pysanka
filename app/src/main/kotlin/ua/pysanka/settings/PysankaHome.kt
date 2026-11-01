@@ -41,7 +41,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.clipboardManager
-import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.jetpref.datastore.model.observeAsState
 import org.florisboard.lib.compose.stringRes
 
 /**
@@ -55,14 +55,14 @@ fun PysankaHome() {
     val context = LocalContext.current
     val clipboardManager by context.clipboardManager()
 
-    val glide by prefs.glide.enabled.collectAsState()
-    val suggestions by prefs.suggestion.enabled.collectAsState()
-    val numberRow by prefs.keyboard.numberRow.collectAsState()
-    val haptic by prefs.inputFeedback.hapticEnabled.collectAsState()
-    val audio by prefs.inputFeedback.audioEnabled.collectAsState()
-    val history by prefs.clipboard.historyEnabled.collectAsState()
-    val skipPasswords by prefs.clipboard.historySkipSensitive.collectAsState()
-    val emojiHistory by prefs.emoji.historyEnabled.collectAsState()
+    val glide by prefs.glide.enabled.observeAsState()
+    val suggestions by prefs.suggestion.enabled.observeAsState()
+    val numberRow by prefs.keyboard.numberRow.observeAsState()
+    val haptic by prefs.inputFeedback.hapticEnabled.observeAsState()
+    val audio by prefs.inputFeedback.audioEnabled.observeAsState()
+    val history by prefs.clipboard.historyEnabled.observeAsState()
+    val skipPasswords by prefs.clipboard.historySkipSensitive.observeAsState()
+    val emojiHistory by prefs.emoji.historyEnabled.observeAsState()
     val tags by clipboardManager.tagsFlow.collectAsState()
 
     val on = stringRes(R.string.pysanka__settings__on)
