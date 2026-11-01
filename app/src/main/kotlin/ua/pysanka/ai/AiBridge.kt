@@ -61,6 +61,8 @@ object AiBridge {
 
     /** The "AI" button on the keyboard. */
     fun openFromKeyboard(editor: ImeEditor) {
+        // Not in the editor's own text field (that would replace the field the text came from)
+        if (editor.info.packageName == FlorisApplication.getHack().packageName) return
         if (FieldPrivacy.isPassword || FieldPrivacy.isPrivate) {
             toast(R.string.pysanka__ai__not_here)
             return
@@ -132,7 +134,12 @@ object AiBridge {
         answer = null
         target = null
         val fresh = System.currentTimeMillis() - at < MAX_AGE_MS
-        if (!fresh || isPassword || FieldPrivacy.isPrivate || t.field != fieldOf(info)) return null
+        if (!fresh || isPassword || FieldPrivacy.isPrivate) return null
+        if (t.field != fieldOf(info)) {
+            // Another field: not put there, but not lost either
+            couldNotPlace(a)
+            return null
+        }
         return Result(t.taken.mode, t.taken.text, a, t.taken.start, t.taken.end)
     }
 }

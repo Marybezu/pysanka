@@ -70,7 +70,8 @@ internal object AiPrompts {
      */
     fun clean(raw: String, original: String): String {
         var s = raw.trim()
-        val fence = Regex("^```[A-Za-z-]*\\s*\\n?")
+        // An opening fence with an optional language tag on its own line, or a bare fence
+        val fence = Regex("^```(?:[A-Za-z-]*[ \\t]*\\r?\\n)?")
         if (fence.containsMatchIn(s) && !original.trimStart().startsWith("```")) {
             s = s.replaceFirst(fence, "").removeSuffix("```").trim()
         }

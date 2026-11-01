@@ -41,9 +41,24 @@ object AiEngine {
     @Volatile
     private var running: com.google.ai.edge.litertlm.Conversation? = null
 
+    private val runningLock = Any()
+
+    /** Editor screens open now; the model is stopped and freed only when the last one closes. */
+    private val screens = java.util.concurrent.atomic.AtomicInteger(0)
+
+    fun screenOpened() {
+        screens.incrementAndGet()
+    }
+
+    /** Returns true if no editor screen is left (then stop and free the model). */
+    fun screenClosed(): Boolean = screens.updateAndGet { maxOf(0, it - 1) } == 0
+
+    /** Still no editor screen (one may have opened while a text was being stopped). */
+    fun screenClosedStill(): Boolean = screens.get() == 0
+
     /** Stops the text being written now, if any (the native call does not stop by itself). */
     fun cancel() {
-        runCatching { running?.cancelProcess() }
+        synchronized(runningLock) { runCatching { running?.cancelProcess() } }
     }
 
     /** The model's own cache: not the app cache, which the keyboard empties when it starts. */
@@ -93,11 +108,12 @@ object AiEngine {
                     maxOutputToken = 4096,
                 ),
             ).use { conv ->
-                running = conv
+                synchronized(runningLock) { running = conv }
                 try {
                     AiPrompts.clean(conv.sendMessage(AiPrompts.user(action, text, target)).toString(), text)
                 } finally {
-                    running = null
+                    // Before the conversation is closed, so cancel() never reaches a closed one
+                    synchronized(runningLock) { running = null }
                 }
             }
         }
@@ -105,6 +121,8 @@ object AiEngine {
 
     /** Frees the model's memory; waits for a running action to finish first. */
     suspend fun release() = mutex.withLock {
+        // A new editor screen opened meanwhile: it keeps the model
+        if (screens.get() > 0) return@withLock
         withContext(Dispatchers.Default) {
             engine?.close()
             engine = null

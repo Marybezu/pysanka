@@ -86,6 +86,7 @@ class AiEditorActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AiEngine.screenOpened()
         // The keyboard's setting, passed along (this process does not read settings)
         if (intent.getBooleanExtra(EXTRA_SECURE, false)) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         if (Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(false)
@@ -116,10 +117,11 @@ class AiEditorActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         // The model takes gigabytes; this process exists only for the editor
-        if (isFinishing) {
-            // Stop a text being written (it would keep the processor busy), then free the memory
+        // The last editor screen gone (a new one may already be open): stop a text being written
+        // (it would keep the processor busy), then free the memory
+        if (AiEngine.screenClosed() && isFinishing) {
             AiEngine.cancel()
-            CoroutineScope(Dispatchers.Default).launch { AiEngine.release() }
+            CoroutineScope(Dispatchers.Default).launch { if (AiEngine.screenClosedStill()) AiEngine.release() }
         }
     }
 }
