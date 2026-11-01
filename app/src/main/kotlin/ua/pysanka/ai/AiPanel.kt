@@ -76,7 +76,6 @@ import dev.patrickgold.florisboard.ime.keyboard3.LocalImeController
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.systemService
-import org.florisboard.lib.compose.florisHorizontalScroll
 import org.florisboard.lib.compose.florisVerticalScroll
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.SnyggSelector
@@ -414,7 +413,7 @@ internal sealed interface PanelStage {
 
 @Composable
 private fun Note(text: String) {
-    SnyggText(FlorisImeUi.ClipboardSubheader.elementName, modifier = Modifier.fillMaxWidth(), text = text)
+    SnyggText(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp), text = text)
 }
 
 @Composable
@@ -426,7 +425,10 @@ private fun Tile(icon: ImageVector, label: String, enabled: Boolean = true, onCl
         clickAndSemanticsModifier = Modifier.clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.alpha(if (enabled) 1f else 0.4f)) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp).alpha(if (enabled) 1f else 0.4f),
+        ) {
             SnyggIcon(imageVector = icon)
             SnyggText(text = label)
         }
@@ -447,8 +449,8 @@ private fun Chip(text: String, primary: Boolean = false, onClick: () -> Unit) {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Notice(text: String, buttons: @Composable () -> Unit) {
-    Column(Modifier.fillMaxSize().florisVerticalScroll()) {
-        SnyggText(modifier = Modifier.fillMaxWidth(), text = text)
+    Column(Modifier.fillMaxSize().florisVerticalScroll().padding(8.dp)) {
+        SnyggText(modifier = Modifier.fillMaxWidth().padding(4.dp), text = text)
         FlowRow { buttons() }
     }
 }
@@ -470,6 +472,7 @@ private fun Working(text: String, onStop: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Done(
     s: PanelStage.Done,
@@ -491,7 +494,7 @@ private fun Done(
                         modifier = Modifier.fillMaxWidth(),
                         clickAndSemanticsModifier = Modifier.clickable { onPlace(r.text, true) },
                     ) {
-                        Column {
+                        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
                             r.label?.let { SnyggText(FlorisImeUi.ClipboardItemDescription.elementName, text = it) }
                             SnyggText(text = r.text)
                         }
@@ -500,7 +503,7 @@ private fun Done(
             }
         } else {
             SnyggBox(FlorisImeUi.ClipboardItem.elementName, modifier = Modifier.fillMaxWidth().weight(1f)) {
-                SnyggText(modifier = Modifier.fillMaxWidth().florisVerticalScroll(), text = s.text)
+                SnyggText(modifier = Modifier.fillMaxWidth().florisVerticalScroll().padding(12.dp), text = s.text)
             }
         }
         Note(
@@ -513,7 +516,7 @@ private fun Done(
                 }
             },
         )
-        SnyggRow(modifier = Modifier.fillMaxWidth(), clickAndSemanticsModifier = Modifier.florisHorizontalScroll()) {
+        FlowRow(Modifier.fillMaxWidth()) {
             // Replies are put in by tapping one
             if (replaceLabel != null && replies == null) {
                 Chip(stringRes(replaceLabel), primary = true) { onPlace(s.text, s.action == AiAction.REPLIES) }
