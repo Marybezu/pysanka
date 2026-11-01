@@ -162,7 +162,7 @@
     <string name="pysanka__ai__source">Текст</string>
     <string name="pysanka__ai__result">Результат (можна змінити)</string>
     <string name="pysanka__ai__run">Виконати</string>
-    <string name="pysanka__ai__loading">Завантажую модель… Уперше — до хвилини.</string>
+    <string name="pysanka__ai__loading">Завантажую модель… Це до хвилини.</string>
     <string name="pysanka__ai__working">Працюю…</string>
     <string name="pysanka__ai__failed">ШІ не вдалося це зробити. Спробуйте ще раз або з коротшим текстом.</string>
     <string name="pysanka__ai__replace">Замінити</string>
@@ -198,4 +198,5 @@
     <string name="pysanka__ai__ready">Модель встановлено ({size} МБ).</string>
     <string name="pysanka__ai__how_to_use">Торкніться ✨ на панелі над клавіатурою: ШІ візьме виділений текст (або все поле) і запропонує граматику, стиль, підсумок, переклад тощо. У полях пароля й інкогніто ШІ не працює ніколи.</string>
     <string name="pysanka__ai__delete">Видалити модель</string>
+    <string name="pysanka__ai__copied_instead">Відповідь не вдалося безпечно вставити, тож її скопійовано: вставте, куди треба.</string>
 </resources>

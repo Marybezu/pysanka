@@ -8,6 +8,9 @@ import com.google.ai.edge.litertlm.Engine
 import com.google.ai.edge.litertlm.EngineConfig
 import com.google.ai.edge.litertlm.SamplerConfig
 import com.google.ai.edge.litertlm.ThinkingConfig
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -30,7 +33,21 @@ object AiEngine {
     var backend: String = "?"
         private set
 
-    val isLoaded: Boolean get() = engine != null
+    /** Whether the model is in memory (shown as "working" rather than "loading"). */
+    var loaded by mutableStateOf(false)
+        private set
+
+    /** The conversation writing now, so it can be stopped. */
+    @Volatile
+    private var running: com.google.ai.edge.litertlm.Conversation? = null
+
+    /** Stops the text being written now, if any (the native call does not stop by itself). */
+    fun cancel() {
+        runCatching { running?.cancelProcess() }
+    }
+
+    /** The model's own cache: not the app cache, which the keyboard empties when it starts. */
+    fun cacheDir(context: Context) = java.io.File(context.noBackupFilesDir, "ai_cache").apply { mkdirs() }
 
     private fun engineLocked(context: Context): Engine {
         val path = ModelStore(context).modelFile()?.absolutePath ?: error("Model not installed")
@@ -42,6 +59,7 @@ object AiEngine {
             .getOrElse { create(context, path, gpu = false).also { backend = "CPU" } }
         engine = created
         loadedPath = path
+        loaded = true
         return created
     }
 
@@ -50,7 +68,7 @@ object AiEngine {
             modelPath = path,
             backend = if (gpu) Backend.GPU() else Backend.CPU(),
             maxNumTokens = 8192,
-            cacheDir = context.cacheDir.absolutePath,
+            cacheDir = cacheDir(context).absolutePath,
         )
         return Engine(config).also { it.initialize() }
     }
@@ -71,9 +89,17 @@ object AiEngine {
                     samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = action.temperature),
                     // No hidden "thinking": it would use up the output before the text is written
                     thinkingConfig = ThinkingConfig(enableThinking = false),
-                    maxOutputToken = 2048,
+                    // About 4000 characters of Ukrainian are up to ~2000 tokens, more after translation
+                    maxOutputToken = 4096,
                 ),
-            ).use { conv -> AiPrompts.clean(conv.sendMessage(AiPrompts.user(action, text, target)).toString()) }
+            ).use { conv ->
+                running = conv
+                try {
+                    AiPrompts.clean(conv.sendMessage(AiPrompts.user(action, text, target)).toString(), text)
+                } finally {
+                    running = null
+                }
+            }
         }
     }
 
@@ -83,6 +109,7 @@ object AiEngine {
             engine?.close()
             engine = null
             loadedPath = null
+            loaded = false
         }
     }
 }

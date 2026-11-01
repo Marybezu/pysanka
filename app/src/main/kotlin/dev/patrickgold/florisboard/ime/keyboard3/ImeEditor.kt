@@ -96,59 +96,73 @@ open class ImeEditor(
 
     /**
      * Pysanka: the text the AI editor works on: the selection, or else the whole field (up to
-     * [limit] + 1 characters, so a longer text can be told apart). Null if the field cannot be read.
+     * [limit] + 1 characters, so a longer text can be told apart), with where the selection was
+     * (absolute offsets, -1 if the app does not say). Null if the field cannot be read.
      */
     fun pysankaTextForAi(limit: Int): ua.pysanka.ai.AiBridge.Taken? {
         val ic = ic.get() ?: return null
-        val selected = ic.getSelectedText(0)?.toString()
-        if (!selected.isNullOrEmpty()) return ua.pysanka.ai.AiBridge.Taken(ua.pysanka.ai.AiBridge.Mode.SELECTION, selected)
-        val request = android.view.inputmethod.ExtractedTextRequest().apply {
+        val et = ic.getExtractedText(android.view.inputmethod.ExtractedTextRequest().apply {
             hintMaxChars = limit + 1
             hintMaxLines = Int.MAX_VALUE
+        }, 0)
+        val start = if (et != null && et.selectionStart >= 0) et.startOffset + minOf(et.selectionStart, et.selectionEnd) else -1
+        val end = if (et != null && et.selectionEnd >= 0) et.startOffset + maxOf(et.selectionStart, et.selectionEnd) else -1
+        val selected = ic.getSelectedText(0)?.toString()
+        if (!selected.isNullOrEmpty()) {
+            return ua.pysanka.ai.AiBridge.Taken(ua.pysanka.ai.AiBridge.Mode.SELECTION, selected, start, end)
         }
-        val et = ic.getExtractedText(request, 0)
-        val all = if (et?.text != null && et.startOffset == 0) {
-            et.text.toString()
-        } else {
-            // Some apps do not give the extracted text: before and after the cursor instead
-            (ic.getTextBeforeCursor(limit + 1, 0)?.toString() ?: "") + (ic.getTextAfterCursor(limit + 1, 0)?.toString() ?: "")
-        }
+        val all = wholeText(ic, et, limit)
         return ua.pysanka.ai.AiBridge.Taken(
-            if (all.isBlank()) ua.pysanka.ai.AiBridge.Mode.INSERT else ua.pysanka.ai.AiBridge.Mode.ALL, all,
+            if (all.isBlank()) ua.pysanka.ai.AiBridge.Mode.INSERT else ua.pysanka.ai.AiBridge.Mode.ALL, all, start, end,
         )
     }
 
+    /** The whole field: the extracted text if the app gives it, else the text before and after the cursor. */
+    private fun wholeText(ic: InputConnection, et: android.view.inputmethod.ExtractedText?, limit: Int): String =
+        if (et?.text != null && et.startOffset == 0) {
+            et.text.toString()
+        } else {
+            (ic.getTextBeforeCursor(limit + 1, 0)?.toString() ?: "") +
+                (ic.getSelectedText(0)?.toString() ?: "") +
+                (ic.getTextAfterCursor(limit + 1, 0)?.toString() ?: "")
+        }
+
     /**
      * Pysanka: puts the AI editor's text back. It replaces the original only if the field still
-     * holds exactly it (the selection, or the whole text); otherwise nothing is overwritten and the
-     * text goes in at the end of the current selection.
+     * holds exactly it (the selection, found again by its place if the app forgot it, or the whole
+     * text). Otherwise nothing is overwritten: the text goes in after the current selection, or,
+     * if the app does not say where that is, it is only copied (returns false then).
      */
     fun pysankaApplyAi(result: ua.pysanka.ai.AiBridge.Result): Boolean {
         val ic = ic.get() ?: return false
         ic.beginBatchEdit()
         try {
             ic.finishComposingText()
-            val request = android.view.inputmethod.ExtractedTextRequest().apply {
-                hintMaxChars = result.original.length + 1
-                hintMaxLines = Int.MAX_VALUE
-            }
-            val replaced = when (result.mode) {
-                ua.pysanka.ai.AiBridge.Mode.SELECTION -> ic.getSelectedText(0)?.toString() == result.original
+            val replace = when (result.mode) {
+                ua.pysanka.ai.AiBridge.Mode.SELECTION -> {
+                    ic.getSelectedText(0)?.toString() == result.original ||
+                        (result.start >= 0 && result.end > result.start &&
+                            ic.setSelection(result.start, result.end) &&
+                            ic.getSelectedText(0)?.toString() == result.original)
+                }
                 ua.pysanka.ai.AiBridge.Mode.ALL -> {
-                    val et = ic.getExtractedText(request, 0)
-                    val same = et?.text?.toString() == result.original && et.startOffset == 0
-                    if (same) ic.setSelection(0, result.original.length)
-                    same
+                    val et = ic.getExtractedText(android.view.inputmethod.ExtractedTextRequest().apply {
+                        hintMaxChars = result.original.length + 1
+                        hintMaxLines = Int.MAX_VALUE
+                    }, 0)
+                    wholeText(ic, et, result.original.length) == result.original &&
+                        ic.setSelection(0, result.original.length)
                 }
                 ua.pysanka.ai.AiBridge.Mode.INSERT -> false
             }
-            if (!replaced) {
-                // Never overwrite something else: collapse the selection to its end first
+            if (replace) return ic.commitText(result.text, 1)
+            // Never overwrite something else: with a selection, go to its end first; if the app
+            // does not say where that is, do not touch the field at all
+            if (!ic.getSelectedText(0).isNullOrEmpty()) {
                 val et = ic.getExtractedText(android.view.inputmethod.ExtractedTextRequest(), 0)
-                if (et != null && et.selectionEnd >= 0 && et.selectionStart != et.selectionEnd) {
-                    val end = et.startOffset + maxOf(et.selectionStart, et.selectionEnd)
-                    ic.setSelection(end, end)
-                }
+                if (et == null || et.selectionEnd < 0) return false
+                val endAt = et.startOffset + maxOf(et.selectionStart, et.selectionEnd)
+                ic.setSelection(endAt, endAt)
             }
             return ic.commitText(result.text, 1)
         } finally {

@@ -163,7 +163,7 @@
     <string name="pysanka__ai__source">Text</string>
     <string name="pysanka__ai__result">Result (you can edit it)</string>
     <string name="pysanka__ai__run">Go</string>
-    <string name="pysanka__ai__loading">Loading the model… The first time takes up to a minute.</string>
+    <string name="pysanka__ai__loading">Loading the model… This takes up to a minute.</string>
     <string name="pysanka__ai__working">Working…</string>
     <string name="pysanka__ai__failed">The AI could not do this. Try again or with a shorter text.</string>
     <string name="pysanka__ai__replace">Replace</string>
@@ -199,4 +199,5 @@
     <string name="pysanka__ai__ready">Model installed ({size} MB).</string>
     <string name="pysanka__ai__how_to_use">Tap ✨ on the bar above the keyboard: it takes the selected text (or the whole field) and offers grammar, style, summary, translation and more. The AI never works in password fields or incognito.</string>
     <string name="pysanka__ai__delete">Delete the model</string>
+    <string name="pysanka__ai__copied_instead">The answer could not be put back safely, so it was copied: paste it where you need it.</string>
 </resources>

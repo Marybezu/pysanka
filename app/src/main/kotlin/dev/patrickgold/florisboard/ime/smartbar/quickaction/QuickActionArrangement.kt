@@ -123,11 +123,7 @@ data class QuickActionArrangement(
         }
 
         override fun deserialize(value: String): QuickActionArrangement {
-            val a = QuickActionJsonConfig.decodeFromString<QuickActionArrangement>(value)
-            // Pysanka: a saved arrangement from before the AI button gets it first (once it is
-            // anywhere, also hidden, the owner's choice stays)
-            val ai = QuickAction.InsertK3Descriptor(ImeActions.PysankaAi)
-            return if (ai in a) a else a.copy(dynamicActions = listOf(ai) + a.dynamicActions)
+            return QuickActionJsonConfig.decodeFromString(value)
         }
     }
 }

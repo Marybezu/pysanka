@@ -151,7 +151,10 @@
             android:exported="false">
         </provider>
 
-        <!-- Pysanka: text from a photo or the camera; its own task, not in recent apps -->
+        <!-- Pysanka: the AI model's graphics-processor path needs these system libraries (not permissions) -->
+        <uses-native-library android:name="libvndksupport.so" android:required="false" />
+        <uses-native-library android:name="libOpenCL.so" android:required="false" />
+
         <!-- Pysanka: the AI editor, in its own process so the model (about 2.6 GB) never weighs on the keyboard -->
         <activity
             android:name="ua.pysanka.ai.AiEditorActivity"
@@ -164,6 +167,7 @@
             android:theme="@style/FlorisAppTheme"
             android:label="@string/pysanka__ai__title" />
 
+        <!-- Pysanka: text from a photo or the camera; its own task, not in recent apps -->
         <activity
             android:name="ua.pysanka.ocr.TextFromImageActivity"
             android:exported="false"

@@ -46,7 +46,7 @@ fun AiSettingsScreen() = FlorisScreen {
     content {
         val context = LocalContext.current
         val scope = rememberCoroutineScope()
-        val store = remember { ModelStore(context) }
+        val store = remember { ModelStore(context).also { it.cleanUp() } }
         var state by remember { mutableStateOf(store.state()) }
         var progress by remember { mutableFloatStateOf(-1f) }
         var deleteOriginal by remember { mutableStateOf(true) }

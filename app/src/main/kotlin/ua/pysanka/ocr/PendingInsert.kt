@@ -23,6 +23,10 @@ object PendingInsert {
         text = null
     }
 
+    /** Whether the screen was opened from a field (so there is somewhere to insert). */
+    @Synchronized
+    fun hasTarget(): Boolean = target != null
+
     @Synchronized
     fun set(value: String) {
         if (target == null) return

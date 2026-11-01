@@ -69,7 +69,7 @@ class AiEditorActivity : ComponentActivity() {
         private const val EXTRA_CAN_REPLACE = "can_replace"
         private const val EXTRA_SECURE = "secure"
 
-        fun intent(context: Context, text: String, preset: AiAction?, receiver: ResultReceiver, canReplace: Boolean): Intent {
+        fun intent(context: Context, text: String, preset: AiAction?, receiver: ResultReceiver?, canReplace: Boolean): Intent {
             val secure = runCatching {
                 val prefs by dev.patrickgold.florisboard.app.FlorisPreferenceStore
                 prefs.pysankaOcr.blockScreenshots.get()
@@ -91,12 +91,7 @@ class AiEditorActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(false)
         val text = intent.getStringExtra(EXTRA_TEXT).orEmpty().take(AiBridge.MAX_CHARS)
         val preset = intent.getStringExtra(EXTRA_PRESET)?.let { n -> AiAction.entries.firstOrNull { it.name == n } }
-        @Suppress("DEPRECATION")
-        val receiver: ResultReceiver? = if (Build.VERSION.SDK_INT >= 33) {
-            intent.getParcelableExtra(EXTRA_RECEIVER, ResultReceiver::class.java)
-        } else {
-            intent.getParcelableExtra(EXTRA_RECEIVER)
-        }
+        val receiver: ResultReceiver? = androidx.core.content.IntentCompat.getParcelableExtra(intent, EXTRA_RECEIVER, ResultReceiver::class.java)
         val canReplace = intent.getBooleanExtra(EXTRA_CAN_REPLACE, false)
         setContent {
             ProvideLocalizedResources(this, appName = R.string.app_name) {
@@ -121,7 +116,11 @@ class AiEditorActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         // The model takes gigabytes; this process exists only for the editor
-        if (isFinishing) CoroutineScope(Dispatchers.Default).launch { AiEngine.release() }
+        if (isFinishing) {
+            // Stop a text being written (it would keep the processor busy), then free the memory
+            AiEngine.cancel()
+            CoroutineScope(Dispatchers.Default).launch { AiEngine.release() }
+        }
     }
 }
 
@@ -143,6 +142,8 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
     var language by rememberSaveable { mutableStateOf(AiLanguage.EN) }
     var stage by remember { mutableStateOf<AiStage>(AiStage.Idle) }
     var result by rememberSaveable { mutableStateOf("") }
+    // Start loading the model while the person chooses what to do
+    if (installed) androidx.compose.runtime.LaunchedEffect(Unit) { runCatching { AiEngine.warmUp(context) } }
 
     fun run() {
         if (source.isBlank()) return
@@ -200,7 +201,7 @@ private fun AiEditorScreen(original: String, preset: AiAction?, replaceLabel: In
             AiStage.Working -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CircularProgressIndicator()
                 Text(
-                    stringRes(if (AiEngine.isLoaded) R.string.pysanka__ai__working else R.string.pysanka__ai__loading),
+                    stringRes(if (AiEngine.loaded) R.string.pysanka__ai__working else R.string.pysanka__ai__loading),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }

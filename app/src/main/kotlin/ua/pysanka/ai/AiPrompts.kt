@@ -43,7 +43,7 @@ internal object AiPrompts {
         AiAction.FIX -> "$KEEP_LANGUAGE Correct spelling, grammar and punctuation. Keep the wording, the meaning, " +
             "the tone and the line breaks; change only what is wrong."
         AiAction.FIX_OCR -> "$KEEP_LANGUAGE The text was recognised from a photo and has recognition errors: " +
-            "letters mixed up (for example Latin look-alikes in a Cyrillic word, 6 instead of б, 3 instead of з), " +
+            "letters mixed up (for example Latin look-alikes in a Cyrillic word, or a digit inside a Cyrillic word such as 6 for б or 3 for з; real numbers stay as they are), " +
             "words joined together or split apart, words broken across lines with a hyphen, lines broken in the " +
             "middle of a sentence. Fix only such errors. Join the lines of one paragraph; keep breaks between " +
             "paragraphs and list items. Do not rephrase and do not change anything that is already right."
@@ -64,17 +64,26 @@ internal object AiPrompts {
 
     fun user(action: AiAction, text: String, target: AiLanguage): String = "Text:\n$text"
 
-    /** Removes what small models sometimes wrap the answer in: code fences, "Here is…", quotes. */
-    fun clean(raw: String): String {
+    /**
+     * Removes what small models sometimes wrap the answer in: code fences, "Here is…:", quotes —
+     * but only what the person's own [original] text did not have itself.
+     */
+    fun clean(raw: String, original: String): String {
         var s = raw.trim()
-        s = s.removePrefix("```text").removePrefix("```").removeSuffix("```").trim()
+        val fence = Regex("^```[A-Za-z-]*\\s*\\n?")
+        if (fence.containsMatchIn(s) && !original.trimStart().startsWith("```")) {
+            s = s.replaceFirst(fence, "").removeSuffix("```").trim()
+        }
         val firstLine = s.substringBefore('\n')
         if (s.contains('\n') && firstLine.endsWith(":") && firstLine.length < 80 &&
+            !original.trimStart().startsWith(firstLine) &&
             Regex("(?i)^(here|ось|виправлен|переклад|текст|result|summary|підсумок)").containsMatchIn(firstLine)
         ) {
             s = s.substringAfter('\n').trim()
         }
-        if (s.length >= 2 && ((s.first() == '"' && s.last() == '"') || (s.first() == '«' && s.last() == '»'))) {
+        val o = original.trim()
+        val quotedOriginal = o.length >= 2 && ((o.first() == '"' && o.last() == '"') || (o.first() == '«' && o.last() == '»'))
+        if (!quotedOriginal && s.length >= 2 && ((s.first() == '"' && s.last() == '"') || (s.first() == '«' && s.last() == '»'))) {
             val inner = s.substring(1, s.length - 1)
             if ('"' !in inner && '«' !in inner) s = inner.trim()
         }

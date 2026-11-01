@@ -47,6 +47,8 @@ class ModelStore(private val context: Context) {
             val total = runCatching { cr.openAssetFileDescriptor(uri, "r")?.use { it.length } }.getOrNull() ?: -1L
             val tmp = File(dir, "import.tmp")
             tmp.delete() // a leftover from a failed copy must not block the space check
+            // A file of another size is refused at once, not after copying gigabytes
+            if (total > 0 && total != E2B_BYTES) throw WrongFile()
             if (dir.usableSpace < E2B_BYTES + 200 * MB) throw NoSpace()
             val sha = java.security.MessageDigest.getInstance("SHA-256")
             try {
@@ -90,6 +92,15 @@ class ModelStore(private val context: Context) {
 
     fun delete() {
         dir.listFiles()?.forEach { it.delete() }
+        AiEngine.cacheDir(context).deleteRecursively()
+    }
+
+    /**
+     * Removes what an interrupted copy left (a temporary or partial file, up to 2.6 GB). Called when
+     * the AI settings open, never while a copy runs.
+     */
+    fun cleanUp() {
+        dir.listFiles()?.forEach { f -> if (f.name != MODEL_NAME || f.length() != E2B_BYTES) f.delete() }
     }
 
     companion object {
