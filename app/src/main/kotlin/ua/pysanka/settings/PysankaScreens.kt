@@ -83,6 +83,23 @@ fun PysankaTypingScreen() = FlorisScreen {
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
             )
         }
+        // Pysanka: emoji are part of typing, not a screen of their own (clearing the emoji
+        // history stays under More → Emoji)
+        PreferenceGroup(title = stringRes(R.string.pysanka__settings__emoji)) {
+            ListPreference(
+                prefs.emoji.preferredSkinTone,
+                title = stringRes(R.string.prefs__media__emoji_preferred_skin_tone),
+                entries = enumDisplayEntriesOf(dev.patrickgold.florisboard.ime.media.emoji.EmojiSkinTone::class),
+            )
+            SwitchPreference(
+                prefs.emoji.historyEnabled,
+                title = stringRes(R.string.prefs__media__emoji_history_enabled),
+            )
+            SwitchPreference(
+                prefs.emoji.suggestionEnabled,
+                title = stringRes(R.string.prefs__media__emoji_suggestion_enabled),
+            )
+        }
     }
 }
 
@@ -120,32 +137,26 @@ fun PysankaLookScreen() = FlorisScreen {
             max = 150,
             stepIncrement = 5,
         )
-    }
-}
-
-@Composable
-fun PysankaSoundScreen() = FlorisScreen {
-    title = stringRes(R.string.pysanka__settings__sound)
-    previewFieldVisible = true
-
-    content {
-        SwitchPreference(
-            prefs.inputFeedback.hapticEnabled,
-            title = stringRes(R.string.pysanka__sound__haptic),
-        )
-        SwitchPreference(
-            prefs.inputFeedback.audioEnabled,
-            title = stringRes(R.string.pysanka__sound__audio),
-        )
-        DialogSliderPreference(
-            prefs.inputFeedback.audioVolume,
-            title = stringRes(R.string.pysanka__sound__volume),
-            valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
-            min = 1,
-            max = 100,
-            stepIncrement = 1,
-            enabledIf = { prefs.inputFeedback.audioEnabled isEqualTo true },
-        )
+        // Pysanka: sound and vibration are here, not a screen of their own (three options)
+        PreferenceGroup(title = stringRes(R.string.pysanka__settings__sound)) {
+            SwitchPreference(
+                prefs.inputFeedback.hapticEnabled,
+                title = stringRes(R.string.pysanka__sound__haptic),
+            )
+            SwitchPreference(
+                prefs.inputFeedback.audioEnabled,
+                title = stringRes(R.string.pysanka__sound__audio),
+            )
+            DialogSliderPreference(
+                prefs.inputFeedback.audioVolume,
+                title = stringRes(R.string.pysanka__sound__volume),
+                valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
+                min = 1,
+                max = 100,
+                stepIncrement = 1,
+                enabledIf = { prefs.inputFeedback.audioEnabled isEqualTo true },
+            )
+        }
     }
 }
 
@@ -235,6 +246,10 @@ fun PysankaMoreScreen() = FlorisScreen {
             title = stringRes(R.string.ext__home__title),
             summary = stringRes(R.string.pysanka__more__extensions_summary),
             onClick = { navController.navigate(Routes.Ext.Home) },
+        )
+        Preference(
+            title = stringRes(R.string.pysanka__settings__emoji),
+            onClick = { navController.navigate(Routes.Settings.Media) },
         )
         Preference(
             title = stringRes(R.string.settings__other__title),

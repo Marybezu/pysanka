@@ -166,10 +166,6 @@ object Routes {
         object PysankaLook
 
         @Serializable
-        @Deeplink("settings/pysanka/sound")
-        object PysankaSound
-
-        @Serializable
         @Deeplink("settings/pysanka/privacy")
         object PysankaPrivacy
 
@@ -311,7 +307,6 @@ object Routes {
             composableWithDeepLink(Settings.ClipboardTags::class) { ua.pysanka.clipboard.ClipboardTagsScreen() }
             composableWithDeepLink(Settings.PysankaTyping::class) { ua.pysanka.settings.PysankaTypingScreen() }
             composableWithDeepLink(Settings.PysankaLook::class) { ua.pysanka.settings.PysankaLookScreen() }
-            composableWithDeepLink(Settings.PysankaSound::class) { ua.pysanka.settings.PysankaSoundScreen() }
             composableWithDeepLink(Settings.PysankaPrivacy::class) { ua.pysanka.settings.PysankaPrivacyScreen() }
             composableWithDeepLink(Settings.PysankaMore::class) { ua.pysanka.settings.PysankaMoreScreen() }
             composableWithDeepLink(Settings.PysankaAi::class) { ua.pysanka.ai.AiSettingsScreen() }

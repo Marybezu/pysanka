@@ -14,8 +14,6 @@ import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
-import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.Palette
@@ -59,10 +57,8 @@ fun PysankaHome() {
     val suggestions by prefs.suggestion.enabled.observeAsState()
     val numberRow by prefs.keyboard.numberRow.observeAsState()
     val haptic by prefs.inputFeedback.hapticEnabled.observeAsState()
-    val audio by prefs.inputFeedback.audioEnabled.observeAsState()
     val history by prefs.clipboard.historyEnabled.observeAsState()
     val skipPasswords by prefs.clipboard.historySkipSensitive.observeAsState()
-    val emojiHistory by prefs.emoji.historyEnabled.observeAsState()
     val tags by clipboardManager.tagsFlow.collectAsState()
 
     val on = stringRes(R.string.pysanka__settings__on)
@@ -88,14 +84,8 @@ fun PysankaHome() {
         TileRow(
             Tile(
                 Icons.Outlined.Palette, stringRes(R.string.pysanka__settings__look),
-                stringRes(R.string.pysanka__settings__look_summary, "numbers" to state(numberRow)),
+                stringRes(R.string.pysanka__settings__look_summary, "numbers" to state(numberRow), "haptic" to state(haptic)),
             ) { navController.navigate(Routes.Settings.PysankaLook) },
-            Tile(
-                Icons.Default.Vibration, stringRes(R.string.pysanka__settings__sound),
-                stringRes(R.string.pysanka__settings__sound_summary, "haptic" to state(haptic), "audio" to state(audio)),
-            ) { navController.navigate(Routes.Settings.PysankaSound) },
-        )
-        TileRow(
             Tile(
                 Icons.AutoMirrored.Outlined.Assignment, stringRes(R.string.pysanka__settings__clipboard),
                 if (history) {
@@ -104,10 +94,6 @@ fun PysankaHome() {
                     stringRes(R.string.pysanka__settings__clipboard_summary_off)
                 },
             ) { navController.navigate(Routes.Settings.Clipboard) },
-            Tile(
-                Icons.Default.SentimentSatisfiedAlt, stringRes(R.string.pysanka__settings__emoji),
-                stringRes(R.string.pysanka__settings__emoji_summary, "history" to state(emojiHistory)),
-            ) { navController.navigate(Routes.Settings.Media) },
         )
         WideTile(
             Icons.Default.Lock, stringRes(R.string.pysanka__settings__privacy),
