@@ -134,27 +134,48 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
      * the AI goes back only into the field it came from.
      */
     private fun pysankaStartField(editorInfo: FlorisEditorInfo) {
-        val isPasswordField = editorInfo.inputAttributes.variation in setOf(
-            InputAttributes.Variation.PASSWORD,
-            InputAttributes.Variation.VISIBLE_PASSWORD,
-            InputAttributes.Variation.WEB_PASSWORD,
-        )
-        val isPrivate = activeState.isIncognitoMode || editorInfo.imeOptions.flagNoPersonalizedLearning
-        clipboardManager.setFieldPrivacy(incognito = isPrivate, passwordField = isPasswordField)
-        ua.pysanka.privacy.FieldPrivacy.isPrivate = isPrivate
-        ua.pysanka.privacy.FieldPrivacy.isPassword = isPasswordField
+        pysankaUpdatePrivacy(editorInfo)
+        val isPasswordField = ua.pysanka.privacy.FieldPrivacy.isPassword
+        val isPrivate = ua.pysanka.privacy.FieldPrivacy.isPrivate
         ua.pysanka.ocr.PendingInsert.takeFor(editorInfo.packageName, editorInfo.base.fieldId, isPasswordField, isPrivate)
             ?.let { ua.pysanka.ime.FieldText.insert(it) }
         ua.pysanka.ai.AiBridge.takeFor(editorInfo, isPasswordField)
             ?.let { r -> if (!ua.pysanka.ime.FieldText.applyAi(editorInfo, r)) ua.pysanka.ai.AiBridge.couldNotPlace(r.text) }
     }
 
-    override fun handleFinishInputView() {
-        // Pysanka: a copy made while no field is open is not judged by the last field
+    /**
+     * Pysanka: the field's privacy for the clipboard and the AI. Set as soon as a field is focused
+     * (also with the keyboard hidden or a physical keyboard), again when incognito is switched,
+     * and cleared only when the field is left.
+     */
+    fun pysankaUpdatePrivacy(editorInfo: FlorisEditorInfo = activeInfo) {
+        val isPasswordField = editorInfo.inputAttributes.variation in setOf(
+            InputAttributes.Variation.PASSWORD,
+            InputAttributes.Variation.VISIBLE_PASSWORD,
+            InputAttributes.Variation.WEB_PASSWORD,
+        )
+        val incognito = when (prefs.suggestion.incognitoMode.get()) {
+            IncognitoMode.FORCE_OFF -> false
+            IncognitoMode.FORCE_ON -> true
+            IncognitoMode.DYNAMIC_ON_OFF -> prefs.suggestion.forceIncognitoModeFromDynamic.get()
+        }
+        val isPrivate = incognito || editorInfo.imeOptions.flagNoPersonalizedLearning
+        clipboardManager.setFieldPrivacy(incognito = isPrivate, passwordField = isPasswordField)
+        ua.pysanka.privacy.FieldPrivacy.isPrivate = isPrivate
+        ua.pysanka.privacy.FieldPrivacy.isPassword = isPasswordField
+    }
+
+    override fun handleStartInput(editorInfo: FlorisEditorInfo) {
+        super.handleStartInput(editorInfo)
+        pysankaUpdatePrivacy(editorInfo)
+    }
+
+    override fun handleFinishInput() {
+        // Pysanka: a copy made while no field is focused is not judged by the last field
         clipboardManager.setFieldPrivacy(incognito = false, passwordField = false)
         ua.pysanka.privacy.FieldPrivacy.isPrivate = false
         ua.pysanka.privacy.FieldPrivacy.isPassword = false
-        super.handleFinishInputView()
+        super.handleFinishInput()
     }
 
     override fun handleSelectionUpdate(oldSelection: EditorRange, newSelection: EditorRange, composing: EditorRange) {
@@ -343,7 +364,12 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             }
             ItemType.IMAGE, ItemType.VIDEO -> {
                 item.uri ?: return false
-                val id = ContentUris.parseId(item.uri)
+                // Pysanka: a clip not kept in the history (a video, or one copied in incognito) points to
+                // the other app's own file; the app's normal paste handles it
+                if (item.uri.authority != dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider.AUTHORITY) {
+                    return currentInputConnection()?.performContextMenuAction(android.R.id.paste) ?: false
+                }
+                val id = runCatching { ContentUris.parseId(item.uri) }.getOrNull() ?: return false
                 val file = ClipboardFileStorage.getFileForId(appContext, id)
                 if (!file.exists()) return false
                 val inputContentInfo = InputContentInfoCompat(

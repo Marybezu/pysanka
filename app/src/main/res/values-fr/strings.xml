@@ -706,8 +706,6 @@
     <string name="ext__validation__enter_percent_size">Veuillez saisir un pourcentage</string>
     <string name="ext__validation__enter_number_between_0_100">Veuillez saisir un nombre positif entre 0 et 100</string>
     <string name="ext__validation__hint_value_above_50_percent">Toute valeur supérieure à 50 % sera comme si vous aviez fixé 50 %, veuillez réduire la taille du pourcentage</string>
-    <string name="ext__update_box__internet_permission_hint">Comme cette application ne dispose pas d\'une autorisation Internet, les mises à jour des extensions doivent être vérifiées manuellement.</string>
-    <string name="ext__update_box__search_for_updates">Rechercher les mises à jour</string>
     <string name="ext__addon_management_box__managing_placeholder">Gestion de {extensions}</string>
     <string name="ext__addon_management_box__addon_manager_info">Les tâches d\'importation, d\'exportation, de création, de personnalisation et de suppression d\'extensions peuvent être gérées par le gestionnaire d\'extensions centralisé.</string>
     <string name="ext__addon_management_box__go_to_page">Aller à {ext_home_title}</string>
@@ -715,7 +713,6 @@
     <string name="ext__home__visit_store">Visiter le magasin d\'extensions</string>
     <string name="ext__home__manage_extensions">Gestion des Extensions Installées</string>
     <string name="ext__list__view_details">Voir les détails</string>
-    <string name="ext__check_updates__title">Vérifier les mises à jour</string>
     <!-- Action strings -->
     <string name="action__add">Ajouter</string>
     <string name="action__apply">Appliquer</string>

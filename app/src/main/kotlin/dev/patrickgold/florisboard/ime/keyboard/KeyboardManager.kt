@@ -585,6 +585,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         prefs.suggestion.forceIncognitoModeFromDynamic.set(!prefs.suggestion.forceIncognitoModeFromDynamic.get())
         val newState = !activeState.isIncognitoMode
         activeState.isIncognitoMode = newState
+        // Pysanka: the clipboard and the AI follow the switch at once, not from the next field
+        editorInstance.pysankaUpdatePrivacy()
         lastToastReference.get()?.cancel()
         lastToastReference = WeakReference(
             if (newState) {

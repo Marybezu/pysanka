@@ -689,8 +689,6 @@
     <string name="ext__validation__enter_percent_size">Bitte gib eine Prozentzahl an</string>
     <string name="ext__validation__enter_number_between_0_100">Bitte gib eine positive Zahl zwischen 0 und 100 an</string>
     <string name="ext__validation__hint_value_above_50_percent">Jeder Wert über 50 % verhält sich so, als ob 50 % eingestellt wären. Überlege den Wert zu senken</string>
-    <string name="ext__update_box__internet_permission_hint">Weil diese App keine Internetberechtigungen hat, muss manuell nach Updates für Erweiterungen gesucht werden.</string>
-    <string name="ext__update_box__search_for_updates">Nach Updates suchen</string>
     <string name="ext__addon_management_box__managing_placeholder">Verwalte {extensions}</string>
     <string name="ext__addon_management_box__addon_manager_info">Alle Aufgaben im Zusammenhang mit dem Importieren, Exportieren, Erstellen, Anpassen und Entfernen von Erweiterungen können über den Add-on-Manager abgewickelt werden.</string>
     <string name="ext__addon_management_box__go_to_page">Gehe zu {ext_home_title}</string>
@@ -698,7 +696,6 @@
     <string name="ext__home__visit_store">Besuche den Add-ons Store</string>
     <string name="ext__home__manage_extensions">Installierte Erweiterungen verwalten</string>
     <string name="ext__list__view_details">Details anzeigen</string>
-    <string name="ext__check_updates__title">Auf Updates prüfen</string>
     <!-- Action strings -->
     <string name="action__add">Hinzufügen</string>
     <string name="action__apply">Übernehmen</string>

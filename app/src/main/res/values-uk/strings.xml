@@ -662,8 +662,6 @@
     <string name="ext__validation__enter_percent_size">Введіть розмір у відсотках</string>
     <string name="ext__validation__enter_number_between_0_100">Введіть додатне число від 0 до 100</string>
     <string name="ext__validation__hint_value_above_50_percent">Будь-яке значення вище 50% буде таке ж як і 50%, розгляньте можливість зменшення розміру відсотка</string>
-    <string name="ext__update_box__internet_permission_hint">Оскільки цей застосунок не має дозволу на доступ до Інтернету, оновлення для встановлених розширень потрібно перевіряти вручну.</string>
-    <string name="ext__update_box__search_for_updates">Перевірити оновлення</string>
     <string name="ext__addon_management_box__managing_placeholder">Керування {extensions}</string>
     <string name="ext__addon_management_box__addon_manager_info">Всі завдання, пов\'язані з імпортом, експортом, створенням, налаштуванням і видаленням розширень, можна вирішувати за допомогою централізованого менеджера розширень.</string>
     <string name="ext__addon_management_box__go_to_page">Перейти до {ext_home_title}</string>
@@ -671,7 +669,6 @@
     <string name="ext__home__visit_store">Відвідати магазин розширень</string>
     <string name="ext__home__manage_extensions">Керування встановленими розширеннями</string>
     <string name="ext__list__view_details">Докладніше</string>
-    <string name="ext__check_updates__title">Перевірити оновлення</string>
     <!-- Action strings -->
     <string name="action__add">Додати</string>
     <string name="action__apply">Застосувати</string>

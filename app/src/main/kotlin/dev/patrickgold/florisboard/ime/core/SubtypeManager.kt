@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -60,19 +61,23 @@ class SubtypeManager(context: Context) {
     init {
         prefs.localization.subtypes.asFlow().collectLatestIn(scope) { listRaw ->
             flogDebug { listRaw }
+            // Pysanka: a list saved in another format (Pysanka before 0.9) counts as none
             val list = if (listRaw.isNotBlank()) {
-                SubtypeJsonConfig.decodeFromString<List<Subtype>>(listRaw)
+                runCatching { SubtypeJsonConfig.decodeFromString<List<Subtype>>(listRaw) }.getOrDefault(emptyList())
             } else {
                 emptyList()
             }
-            // Pysanka: with no languages chosen, Ukrainian and English are set up (the keyboard
-            // would otherwise fall back to English alone)
-            if (list.isEmpty()) {
-                persistNewSubtypeList(Subtype.PYSANKA_DEFAULTS)
-                return@collectLatestIn
-            }
             subtypes = list
             evaluateActiveSubtype(list)
+        }
+        // Pysanka: with no languages chosen, Ukrainian and English are set up (the keyboard would
+        // otherwise fall back to English alone). Only once the settings are read, so languages
+        // already chosen are never overwritten.
+        scope.launch {
+            dev.patrickgold.florisboard.FlorisApplication.getHack().preferenceStoreLoaded.first { it }
+            val raw = prefs.localization.subtypes.get()
+            val saved = runCatching { SubtypeJsonConfig.decodeFromString<List<Subtype>>(raw) }.getOrDefault(emptyList())
+            if (saved.isEmpty()) persistNewSubtypeList(Subtype.PYSANKA_DEFAULTS)
         }
     }
 

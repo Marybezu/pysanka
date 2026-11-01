@@ -661,8 +661,6 @@
     <string name="ext__validation__enter_percent_size">يرجى إدخال النسبة المئوية للحجم</string>
     <string name="ext__validation__enter_number_between_0_100">يرجى إدخال رَقْم موجب بين 0 و 100</string>
     <string name="ext__validation__hint_value_above_50_percent">أي قيمة أعلى من 50 ٪ ستتصرف كما لو أنك قمت بتعيين 50 ٪، فكر في خفض النسبة المئوية لحجمك</string>
-    <string name="ext__update_box__internet_permission_hint">نظرًا لأن هذا التطبيق ليس لديه إذن إنترنت، يجب التحقق من تحديثات الإضافات المثبتة يدويًا.</string>
-    <string name="ext__update_box__search_for_updates">البحث عن التحديثات</string>
     <string name="ext__addon_management_box__managing_placeholder">إدارة {extensions}</string>
     <string name="ext__addon_management_box__addon_manager_info">يمكن التعامل مع جميع المهام المتعلقة باستيراد الملحقات وتصديرها وإنشائها وتخصيصها وإزالتها بواسطة مدير الإضافات المركزي.</string>
     <string name="ext__addon_management_box__go_to_page">انتقل إلى {ext_home_title}</string>
@@ -670,7 +668,6 @@
     <string name="ext__home__visit_store">زيارة متجر الإضافات</string>
     <string name="ext__home__manage_extensions">إدارة الإضافات المثبتة</string>
     <string name="ext__list__view_details">عرض التفاصيل</string>
-    <string name="ext__check_updates__title">التحقق من وجود تحديثات</string>
     <!-- Action strings -->
     <string name="action__add">إضافة</string>
     <string name="action__apply">تطبيق</string>

@@ -165,7 +165,8 @@ fun TypingScreen() = FlorisScreen {
             )
         }
 
-        PreferenceGroup(title = stringRes(R.string.settings__dictionary__title)) {
+        // Pysanka: off until learned words are stored encrypted (see DECISIONS.md)
+        PreferenceGroup(title = stringRes(R.string.settings__dictionary__title), enabledIf = { false }) {
             Preference(
                 icon = Icons.AutoMirrored.Filled.LibraryBooks,
                 title = stringRes(R.string.settings__dictionary__title),
