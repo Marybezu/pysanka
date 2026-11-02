@@ -1,21 +1,19 @@
-**Писанка 0.13.0** — приватна клавіатура для Android без доступу до інтернету. Тестова версія.
+**Писанка 0.14.0** — приватна клавіатура для Android без доступу до інтернету. Тестова версія.
 
-- ⚙️ **Нові налаштування, як у Спротиві.** Кожна тема — блок із кольоровим заголовком і тим, що налаштовано; розгортається дотиком. Перемикач — на весь рядок.
-- 🌐 **Мови простіше:** список мов клавіатури, видалити — кошиком, «Додати мову» — один дотик (кожна мова з її звичною розкладкою).
-- 🎨 Теми: світла, темна чи як у системі, тема вдень і вночі. Розширення, імпорт файлів і редактор тем вирізано.
-- ✦ **ШІ-панель охайніша:** під відповіддю — один рядок: значки «копіювати», «ще раз», «доробити», «розгорнути» (назва — на довге натискання) і кнопка «Замінити». «Розгорнути» більше не губить готову відповідь.
-- ✦ **«Мій стиль»:** додайте до 5 своїх повідомлень (Налаштування → ШІ на телефоні), і «Моїм стилем» перепише текст так, як пишете ви. Зразки — лише ваші, зашифровані.
-- ✍️ Свайп знає ваші вивчені слова (імена, сленг).
+- ✦ **Відповідь ШІ більше не губиться.** «Згорнути» в розгорнутому редакторі повертає готову відповідь у панель над клавіатурою; так само, якщо перейти в інший застосунок і повернутися в те саме поле. У редакторі теж є «Ще раз» і «Доробити».
+- ✦ Панель ШІ коротша: 5 головних дій, решта — у «Ще».
+- ✦ «Мій стиль» сміливіше переписує текст своїми словами (перевіряйте на чужому тексті: свій і так написаний вашим стилем).
+- ⚙️ **Налаштування без підекранів.** Один колір для всіх блоків. Буфер (скільки записів, коли видаляти старі, теги, копія), очищення емодзі, довге натискання, літера над пальцем, пробіл до літер, фізична клавіатура й мова налаштувань — просто в блоках. «Більше» й напівпорожні екрани FlorisBoard прибрано; те, що вирізано, лишається типовим.
+- 👋 Екран першого запуску — простою українською.
 
 📲 Завантажте файл .apk нижче й відкрийте його на телефоні. 🔄 Для оновлень — Obtainium: «Додати застосунок» → `github.com/Marybezu/pysanka`.
 
 ---
 
-**Pysanka 0.13.0** — a private keyboard for Android with no internet access. Test version.
+**Pysanka 0.14.0** — a private keyboard for Android with no internet access. Test version.
 
-- New settings in foldable blocks that show what is set; whole-row switches.
-- Simpler languages: the keyboard's languages, remove with a tap, add one with a tap.
-- Themes: light, dark or as the system, a day and a night theme. Extensions, file import and the theme editor were removed.
-- Tidier AI panel: one row under the answer (icons with names on long press, and Replace); Expand keeps the finished answer.
-- «My style»: add up to 5 of your own messages and «In my style» rewrites a text the way you write. Encrypted, added only by you.
-- Swipe knows your learned words.
+- The AI answer is no longer lost: «Collapse» in the expanded editor, or leaving it and coming back to the same field, returns the answer to the panel. «Again» and «Refine» in the editor too.
+- Shorter AI panel: 5 main actions, the rest under «More».
+- «In my style» rewrites more boldly.
+- Settings without sub-screens: one colour for all blocks; the clipboard, emoji clean-up, long press, key popup, space to letters, physical keyboard and the settings language are set right in the blocks. FlorisBoard's half-empty screens are gone; what was cut stays at its default.
+- Plainer first-run screen.
