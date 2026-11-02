@@ -62,6 +62,7 @@ import androidx.compose.material.icons.filled.FilterListOff
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ToggleOff
 import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.outlined.ContentPasteGo
@@ -237,6 +238,21 @@ fun ClipboardInputLayout(
                     } else {
                         Icons.Default.ToggleOff
                     },
+                )
+            }
+            // Pysanka: search the history; the keys type into the search
+            SnyggIconButton(
+                elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
+                onClick = {
+                    ua.pysanka.clipboard.ClipSearch.start()
+                    keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
+                },
+                modifier = sizeModifier,
+                enabled = !deviceLocked && historyEnabled && unfilteredHistory.all.isNotEmpty() && !isPopupSurfaceActive(),
+            ) {
+                SnyggIcon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = stringRes(R.string.pysanka__clip_search__button),
                 )
             }
             // Pysanka: a photo (a screenshot, say) into the history, picked with the system picker

@@ -106,7 +106,8 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
                     }
                 }
 
-                nlpManager.suggestDirectly(suggestionList)
+                // Pysanka: a word swiped into the clipboard search is not offered for the field afterwards
+                if (!ua.pysanka.clipboard.ClipSearch.active) nlpManager.suggestDirectly(suggestionList)
                 if (commit && suggestions.isNotEmpty()) {
                     keyboardManager.commitGesture(suggestions.first())
                 }
