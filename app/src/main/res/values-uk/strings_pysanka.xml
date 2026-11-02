@@ -290,4 +290,6 @@
     <string name="pysanka__clip_search__nothing">Нічого не знайдено</string>
     <string name="pysanka__clip_search__image">Зображення</string>
     <string name="pysanka__clip_search__back">Назад до буфера</string>
+    <string name="pysanka__ai__action_post">Допис для соцмереж</string>
+    <string name="pysanka__ai__action_hashtags">Хештеги</string>
 </resources>
