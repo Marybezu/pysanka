@@ -306,7 +306,31 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     fun commitGesture(word: String) {
+        // Pysanka: a swiped word goes into the clipboard search while it is open
+        if (pysankaSearching()) return ua.pysanka.clipboard.ClipSearch.typeWord(fixCase(word))
         editorInstance.commitGesture(fixCase(word))
+    }
+
+    /** Pysanka: the keys type into the clipboard search (shown over the text keys), not the field. */
+    private fun pysankaSearching() = activeState.imeUiMode == ImeUiMode.TEXT && ua.pysanka.clipboard.ClipSearch.active
+
+    /** Pysanka: a key typed into the clipboard search; false for keys that work as usual (shift, layouts, language). */
+    private fun pysankaSearchKey(data: KeyData): Boolean {
+        val search = ua.pysanka.clipboard.ClipSearch
+        when {
+            data.code == KeyCode.DELETE -> search.deleteChar()
+            data.code == KeyCode.DELETE_WORD -> search.deleteWord()
+            data.code == KeyCode.SPACE -> search.type(" ")
+            data.code == KeyCode.ENTER -> search.stop()
+            (data.type == KeyType.CHARACTER || data.type == KeyType.NUMERIC) && data.code > 0 -> {
+                search.type(data.asString(isForDisplay = false))
+                if (activeState.inputShiftState != InputShiftState.CAPS_LOCK && !inputEventDispatcher.isPressed(KeyCode.SHIFT)) {
+                    activeState.inputShiftState = InputShiftState.UNSHIFTED
+                }
+            }
+            else -> return false
+        }
+        return true
     }
 
     /**
@@ -811,6 +835,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // Pysanka: an auto-correction can be taken back only by the very next key (Backspace)
         pysankaUndoReady = pysankaUndo
         pysankaUndo = null
+        if (pysankaSearching() && pysankaSearchKey(data)) return@batchEdit
         val windowController = FlorisImeService.windowControllerOrNull() ?: return@batchEdit
         when (data.code) {
             KeyCode.ARROW_DOWN,

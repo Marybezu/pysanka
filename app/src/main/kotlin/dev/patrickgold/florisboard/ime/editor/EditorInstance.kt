@@ -135,6 +135,8 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
      */
     private fun pysankaStartField(editorInfo: FlorisEditorInfo) {
         pysankaUpdatePrivacy(editorInfo)
+        // Another field: a clipboard search left open ends
+        ua.pysanka.clipboard.ClipSearch.stop()
         val isPasswordField = ua.pysanka.privacy.FieldPrivacy.isPassword
         val isPrivate = ua.pysanka.privacy.FieldPrivacy.isPrivate
         ua.pysanka.ocr.PendingInsert.takeFor(editorInfo.packageName, editorInfo.base.fieldId, isPasswordField, isPrivate)

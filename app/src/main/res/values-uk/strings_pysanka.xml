@@ -285,4 +285,9 @@
         <item quantity="many">{n} записів</item>
         <item quantity="other">{n} запису</item>
     </plurals>
+    <string name="pysanka__clip_search__button">Шукати в буфері</string>
+    <string name="pysanka__clip_search__hint">Пишіть, щоб шукати</string>
+    <string name="pysanka__clip_search__nothing">Нічого не знайдено</string>
+    <string name="pysanka__clip_search__image">Зображення</string>
+    <string name="pysanka__clip_search__back">Назад до буфера</string>
 </resources>

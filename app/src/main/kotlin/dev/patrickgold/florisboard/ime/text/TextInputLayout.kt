@@ -58,7 +58,9 @@ fun TextInputLayout(
             .fillMaxWidth()
             .wrapContentHeight(),
     ) {
-        Smartbar()
+        // Pysanka: while searching the clipboard, its search in place of the suggestions
+        val clipSearch by ua.pysanka.clipboard.ClipSearch.query.collectAsState()
+        clipSearch?.let { ua.pysanka.clipboard.ClipSearchBar(it) } ?: Smartbar()
         if (state.isActionsOverflowVisible) {
             QuickActionsOverflowPanel()
         } else {

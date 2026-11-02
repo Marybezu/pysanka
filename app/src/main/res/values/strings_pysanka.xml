@@ -284,4 +284,9 @@
         <item quantity="one">{n} entry</item>
         <item quantity="other">{n} entries</item>
     </plurals>
+    <string name="pysanka__clip_search__button">Search the clipboard</string>
+    <string name="pysanka__clip_search__hint">Type to search</string>
+    <string name="pysanka__clip_search__nothing">Nothing found</string>
+    <string name="pysanka__clip_search__image">Image</string>
+    <string name="pysanka__clip_search__back">Back to the clipboard</string>
 </resources>
