@@ -38,7 +38,6 @@ import ua.pysanka.settings.ChoiceRow
 import ua.pysanka.settings.LinkRow
 import ua.pysanka.settings.SliderRow
 import ua.pysanka.settings.ToggleRow
-import ua.pysanka.settings.Tone
 import java.io.File
 
 /**
@@ -79,8 +78,8 @@ class SettingsScreensTest {
                             SliderRow("Розмір літер на клавішах", 100, 50..150, 5, { "$it %" }) {}
                             BlockNote("Перемикає між мовами кнопка з глобусом на клавіатурі.")
                         }
-                        Block("Приватність", "Без інтернету · паролі не зберігаються · буфер зашифровано", tone = Tone.PRIVACY, icon = Icons.Outlined.Lock) {}
-                        Block("ШІ на телефоні", "Модель встановлено", tone = Tone.AI, icon = ua.pysanka.ui.AiMark) {
+                        Block("Приватність", "Без інтернету · паролі не зберігаються · буфер зашифровано", icon = Icons.Outlined.Lock) {}
+                        Block("ШІ на телефоні", "Модель встановлено", icon = ua.pysanka.ui.AiMark) {
                             LinkRow("Модель і налаштування ШІ", "Завантажити чи видалити модель, «Мій стиль»") {}
                         }
                     }

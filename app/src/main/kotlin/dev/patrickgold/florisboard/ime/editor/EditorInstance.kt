@@ -141,6 +141,14 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             ?.let { ua.pysanka.ime.FieldText.insert(it) }
         ua.pysanka.ai.AiBridge.takeFor(editorInfo, isPasswordField)
             ?.let { r -> if (!ua.pysanka.ime.FieldText.applyAi(editorInfo, r)) ua.pysanka.ai.AiBridge.couldNotPlace(r.text) }
+        pysankaReopenDraft(editorInfo)
+    }
+
+    /** Pysanka: an answer left in the AI editor (collapsed, or another app opened) comes back in the panel. */
+    fun pysankaReopenDraft(editorInfo: FlorisEditorInfo = activeInfo) {
+        if (ua.pysanka.ai.AiBridge.reopenDraft(editorInfo, ua.pysanka.privacy.FieldPrivacy.isPassword)) {
+            keyboardManager.activeState.imeUiMode = ImeUiMode.PYSANKA_AI
+        }
     }
 
     /**

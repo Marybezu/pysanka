@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.PYSANKA_SETTINGS_LANGUAGES
 import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.keyboardManager
@@ -79,6 +80,8 @@ fun LanguagesBlock() {
         }
         ActionRow(stringRes(R.string.pysanka__languages__add)) { adding = true }
         BlockNote(stringRes(R.string.pysanka__languages__switch_hint))
+        BlockDivider()
+        SettingsLanguage()
     }
 
     if (adding) {
@@ -147,4 +150,22 @@ fun ThemeChoices() {
     ChoiceRow(stringRes(R.string.pysanka__look__night_theme), options(true, night), night) {
         scope.launch { prefs.theme.nightThemeId.set(it) }
     }
+}
+
+/** The language of these settings: as the phone, Ukrainian or English (each named in itself). */
+@Composable
+private fun SettingsLanguage() {
+    val prefs by FlorisPreferenceStore
+    val scope = rememberCoroutineScope()
+    val value by prefs.other.settingsLanguage.observeAsState()
+    val names = mapOf(
+        "auto" to stringRes(R.string.pysanka__settings__ui_language_auto),
+        "uk" to "Українська",
+        "en" to "English",
+    )
+    ChoiceRow(
+        stringRes(R.string.pysanka__settings__ui_language),
+        PYSANKA_SETTINGS_LANGUAGES.map { it to names.getValue(it) },
+        value,
+    ) { scope.launch { prefs.other.settingsLanguage.set(it) } }
 }

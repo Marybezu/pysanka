@@ -58,17 +58,11 @@ import kotlin.math.roundToInt
 /** A block's colours: the header's fill and the ink on it. */
 data class Tint(val container: Color, val ink: Color)
 
-/** Three colours only: the keyboard's own (red of the icon), privacy (blue), the AI (violet). */
-enum class Tone { KEYBOARD, PRIVACY, AI }
-
+/** One calm colour for every block (the red of the icon, softened): the header is what says "a block". */
 @Composable
-fun Tone.tint(): Tint {
+fun blockTint(): Tint {
     val dark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
-    return when (this) {
-        Tone.KEYBOARD -> if (dark) Tint(Color(0xFF3A2320), Color(0xFFF3C7BE)) else Tint(Color(0xFFF8E3DE), Color(0xFF7A231B))
-        Tone.PRIVACY -> if (dark) Tint(Color(0xFF1A2A3C), Color(0xFFBBD0EA)) else Tint(Color(0xFFDCE8F7), Color(0xFF163E6E))
-        Tone.AI -> if (dark) Tint(Color(0xFF272339), Color(0xFFD2C7EE)) else Tint(Color(0xFFEDE7F8), Color(0xFF47387A))
-    }
+    return if (dark) Tint(Color(0xFF3A2320), Color(0xFFF3C7BE)) else Tint(Color(0xFFF8E3DE), Color(0xFF7A231B))
 }
 
 /**
@@ -79,12 +73,11 @@ fun Tone.tint(): Tint {
 fun Block(
     title: String,
     summary: String? = null,
-    tone: Tone = Tone.KEYBOARD,
     icon: ImageVector? = null,
     startOpen: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val tint = tone.tint()
+    val tint = blockTint()
     var open by rememberSaveable(title) { mutableStateOf(startOpen) }
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -196,7 +189,7 @@ fun <T> ChoiceRow(title: String, options: List<Pair<T, String>>, selected: T, en
 
 /** A value on a scale, shown as it is set. */
 @Composable
-fun SliderRow(title: String, value: Int, range: IntRange, step: Int, label: (Int) -> String, enabled: Boolean = true, onChange: (Int) -> Unit) {
+fun SliderRow(title: String, value: Int, range: IntRange, step: Int, label: @Composable (Int) -> String, enabled: Boolean = true, onChange: (Int) -> Unit) {
     var v by androidx.compose.runtime.remember(value) { mutableStateOf(value.toFloat()) }
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {

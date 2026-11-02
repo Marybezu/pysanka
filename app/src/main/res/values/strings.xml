@@ -602,29 +602,26 @@
 
     <!-- Setup UI strings -->
     <string name="setup__title" comment="Title of Setup">Welcome!</string>
-    <string name="setup__intro_message" comment="Short intro message welcoming new users">Thanks for using {app_name}! This quick setup guides you through the required steps to use {app_name} on your device.</string>
+    <string name="setup__intro_message" comment="Short intro message welcoming new users">Thanks for choosing {app_name}! A few steps and it is ready to use.</string>
     <string name="setup__footer__privacy_policy" comment="Privacy policy label for URL">Privacy policy</string>
-    <string name="setup__footer__repository" comment="Repository label for URL">Repository</string>
+    <string name="setup__footer__repository" comment="Repository label for URL">Source code</string>
 
     <string name="setup__enable_ime__title">Enable {app_name}</string>
-    <string name="setup__enable_ime__description">Android requires that every custom keyboard is separately enabled before you can use it. Open the System <i>Language &amp; Input</i> Settings, there enable "{app_name}".</string>
+    <string name="setup__enable_ime__description">Android asks for every new keyboard to be enabled separately. Open the system <i>Language &amp; input</i> settings and enable “{app_name}” there.</string>
     <string name="setup__enable_ime__open_settings_btn">Open System Settings</string>
 
     <string name="setup__select_ime__title">Select {app_name}</string>
-    <string name="setup__select_ime__description">{app_name} is now enabled in your system. To actively use it, switch to {app_name} by selecting it in the input selector dialog!</string>
+    <string name="setup__select_ime__description">{app_name} is enabled. To use it, choose it in the keyboard picker.</string>
     <string name="setup__select_ime__switch_keyboard_btn">Switch Keyboard</string>
 
-    <string name="setup__grant_notification_permission__title">Permit Crash Report Notifications</string>
-    <string name="setup__grant_notification_permission__description">As of Android 13+, apps must ask for permission to
-        send notifications. In Pysanka, this is only used to open a crash report screen in the event of a crash.
-        This permission can be changed at any time in the system settings.
-    </string>
+    <string name="setup__grant_notification_permission__title">Crash notifications</string>
+    <string name="setup__grant_notification_permission__description">Since Android 13, apps must ask before showing notifications. {app_name} uses this only to show a report if something breaks. You can change it any time in the system settings.</string>
     <string name="setup__grant_notification_permission__btn">Grant Permission</string>
 
     <string name="setup__finish_up__title">Finish Up</string>
-    <string name="setup__finish_up__description_p1">{app_name} is now enabled in the system and ready to be customized by you.</string>
-    <string name="setup__finish_up__description_p2">If you encounter any issues, bugs, crashes or just want to make a suggestion, check out the project repository from the about screen!</string>
-    <string name="setup__finish_up__finish_btn">Start Customizing</string>
+    <string name="setup__finish_up__description_p1">{app_name} is enabled and ready.</string>
+    <string name="setup__finish_up__description_p2">Next you can pick the languages, theme and more.</string>
+    <string name="setup__finish_up__finish_btn">Open the settings</string>
 
     <!-- Physical keyboard -->
     <string name="physical_keyboard__title">Physical keyboard</string>

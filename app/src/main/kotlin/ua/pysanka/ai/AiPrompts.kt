@@ -164,7 +164,8 @@ internal object AiPrompts {
             style.joinToString("") { "-----\n${it.replace(Regex("-{3,}"), "—")}\n" } + "-----\n" +
             "Match their style: word choice, how they greet, sentence length, punctuation, capital letters, emoji. " +
             "Never copy facts, names, phone numbers, addresses or signatures from the samples. " +
-            "Keep the meaning and every fact of the text. If it already reads like them, change little."
+            "Keep the meaning and every fact of the text, but say it the way they would. " +
+            "Answer only with the rewritten text."
         AiAction.REDACT -> "$keepLanguage Replace personal data with placeholders in square brackets, written in the " +
             "language of the text: names of people, phone numbers, e-mail addresses, home addresses, card and account " +
             "numbers, document numbers, dates of birth (in Ukrainian: [ім'я], [телефон], [пошта], [адреса], [картка], " +

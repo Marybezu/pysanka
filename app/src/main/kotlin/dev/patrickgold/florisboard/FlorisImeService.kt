@@ -119,6 +119,12 @@ class FlorisImeService : LifecycleInputMethodService() {
             ims.startActivity(intent(ims))
         }
 
+        /** Pysanka: an AI answer came back while the keyboard may already be in its field: shown at once if so. */
+        fun pysankaReopenAiDraft() {
+            val ims = FlorisImeServiceReference.get() ?: return
+            if (ims.isInputViewShown) ims.editorInstance.pysankaReopenDraft()
+        }
+
         fun showUi() {
             val ims = FlorisImeServiceReference.get() ?: return
             ims.showUi()

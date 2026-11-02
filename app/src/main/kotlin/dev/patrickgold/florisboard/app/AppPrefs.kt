@@ -246,9 +246,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "suggestion__enable_system_user_dictionary",
             default = true,
         )
+        // Pysanka: off; FlorisBoard's own word list had a screen only (unencrypted), Pysanka learns words itself
         val enableFlorisUserDictionary = boolean(
             key = "suggestion__enable_floris_user_dictionary",
-            default = true,
+            default = false,
         )
     }
 
@@ -769,8 +770,8 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             // Pysanka: settings whose screens were removed always stay at their defaults, so a value
             // set in an earlier build can never get stuck where nobody can change it
             in PYSANKA_FIXED_KEYS -> entry.reset()
-            // Pysanka: Russian is no longer offered as the settings language
-            "other__settings_language" -> if (entry.rawValue == "ru") entry.reset() else entry.keepAsIs()
+            // Pysanka: the settings speak Ukrainian or English (or follow the phone)
+            "other__settings_language" -> if (entry.rawValue in PYSANKA_SETTINGS_LANGUAGES) entry.keepAsIs() else entry.reset()
             // Pysanka: "by the time of day" needs times nobody can set any more
             "theme__mode" -> if (entry.rawValue == "FOLLOW_TIME") entry.reset() else entry.keepAsIs()
 
@@ -942,6 +943,9 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     }
 }
 
+/** Pysanka: the settings languages offered ("auto": as the phone). */
+val PYSANKA_SETTINGS_LANGUAGES = listOf("auto", "uk", "en")
+
 /** Pysanka: keys of settings that have no screen any more (see [AppPrefs.migrate]). */
 private val PYSANKA_FIXED_KEYS = setOf(
             // The theme editor and the language screens were cut (November 2026)
@@ -997,4 +1001,42 @@ private val PYSANKA_FIXED_KEYS = setOf(
             "other__show_app_icon",
             "smartbar__flip_toggles",
             "smartbar__shared_actions_auto_expand_collapse",
+            // The FlorisBoard sub-screens were folded into the settings list; what was left out keeps its default
+            "correction__remember_caps_lock_state",
+            "suggestion__enable_floris_user_dictionary",
+            "suggestion__enable_system_user_dictionary",
+            "emoji__suggestion_type",
+            "gestures__delete_key_long_press",
+            "gestures__space_bar_long_press",
+            "gestures__space_bar_swipe_up",
+            "gestures__swipe_down",
+            "gestures__swipe_left",
+            "gestures__swipe_right",
+            "gestures__swipe_up",
+            "glide__immediate_backspace_deletes_word",
+            "glide__show_preview",
+            "glide__trail_fade_duration",
+            "keyboard__capitalization_behavior",
+            "keyboard__font_size_multiplier_landscape",
+            "keyboard__hinted_number_row_enabled",
+            "keyboard__hinted_number_row_mode",
+            "keyboard__hinted_symbols_mode",
+            "keyboard__incognito_indicator",
+            "keyboard__key_spacing_horizontal",
+            "keyboard__key_spacing_vertical",
+            "keyboard__landscape_input_ui_mode",
+            "keyboard__merge_hint_popups_enabled",
+            "keyboard__space_bar_display_mode",
+            "keyboard__utility_key_action",
+            "keyboard__utility_key_enabled",
+            "smartbar__extended_actions_placement",
+            "smartbar__layout",
+            "spelling__language_mode",
+            "spelling__use_contacts",
+            "spelling__use_udm_entries",
+            "suggestion__api30_inline_suggestions_enabled",
+            "suggestion__block_possibly_offensive",
+            "suggestion__display_mode",
+            "clipboard__history_hide_on_paste",
+            "clipboard__history_hide_on_next_text_field",
 )
