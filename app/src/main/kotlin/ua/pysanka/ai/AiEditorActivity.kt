@@ -78,6 +78,7 @@ class AiEditorActivity : ComponentActivity() {
         private const val EXTRA_LANGUAGE = "language"
         private const val EXTRA_DONE = "done"
         private const val EXTRA_TARGET = "target"
+        private const val EXTRA_BACK_TO_PANEL = "back_to_panel"
 
         /** An answer as it is handed over (to the keyboard on leaving, from the panel on Expand). */
         internal fun bundleOf(output: AiJob.Output, action: AiAction? = null, language: AiLanguage? = null) = Bundle().apply {
@@ -115,6 +116,8 @@ class AiEditorActivity : ComponentActivity() {
             done: AiJob.Output? = null,
             /** The language the panel translated into. */
             target: AiLanguage? = null,
+            /** Opened from the keyboard's panel: an answer left here goes back to it (see [RESULT_DRAFT]). */
+            backToPanel: Boolean = false,
         ): Intent {
             val prefs by dev.patrickgold.florisboard.app.FlorisPreferenceStore
             val secure = runCatching { prefs.pysankaOcr.blockScreenshots.get() }.getOrDefault(false)
@@ -128,6 +131,7 @@ class AiEditorActivity : ComponentActivity() {
                 .putExtra(EXTRA_FOR_RESULT, forResult)
                 .putExtra(EXTRA_LANGUAGE, language)
                 .putExtra(EXTRA_TARGET, target?.name)
+                .putExtra(EXTRA_BACK_TO_PANEL, backToPanel && receiver != null)
                 .apply { if (done != null) putExtra(EXTRA_DONE, bundleOf(done)) }
                 // A result comes back only within the same task
                 .apply {
@@ -152,6 +156,7 @@ class AiEditorActivity : ComponentActivity() {
         val forResult = intent.getBooleanExtra(EXTRA_FOR_RESULT, false) && callingActivity?.packageName == packageName
         val done = intent.getBundleExtra(EXTRA_DONE)?.let(::outputOf)
         receiver = androidx.core.content.IntentCompat.getParcelableExtra(intent, EXTRA_RECEIVER, ResultReceiver::class.java)
+        backToPanel = intent.getBooleanExtra(EXTRA_BACK_TO_PANEL, false) && receiver != null && !forResult
         setContent {
             ProvideLocalizedResources(ua.pysanka.settings.AppLanguage.context(this, intent.getStringExtra(EXTRA_LANGUAGE)), appName = R.string.app_name) {
                 FlorisAppTheme(theme = AppTheme.AUTO) {
@@ -177,9 +182,10 @@ class AiEditorActivity : ComponentActivity() {
                                 finish()
                             },
                             // Back to the keyboard's panel with the answer (only when opened from the keyboard)
-                            collapse = if (receiver != null && !forResult) { { leave() } } else null,
-                            onDraft = { d -> draft = d; if (leaving && d != null) leave() },
-                            onBusy = { b -> busy = b },
+                            collapse = if (backToPanel) { { leave() } } else null,
+                            onReady = { d, b -> draft = d; busy = b },
+                            // Left while it was being written: now it can go back (or, if it failed, the screen just closes)
+                            onFinished = { if (leaving) leave() },
                             close = { used = true; finish() },
                         )
                     }
@@ -190,25 +196,35 @@ class AiEditorActivity : ComponentActivity() {
 
     private var receiver: ResultReceiver? = null
 
+    /** Opened from the keyboard's panel: collapsing, or leaving, gives the answer back to it. */
+    private var backToPanel = false
+
     /** The answer was used or the editor closed on purpose: nothing goes back. */
     private var used = false
 
-    /** The answer on screen now (with its action and language), for the keyboard if the editor is left. */
-    private var draft: Bundle? = null
-    private var busy = false
+    /** The answer on screen now, as it would go back if the editor were left; null: none (or still being written). */
+    private var draft: (() -> Bundle?)? = null
+    private var busy: () -> Boolean = { false }
 
     /** Left while the answer was still being written: it goes back when it is ready. */
     private var leaving = false
 
     /** The answer, if any, goes back to the keyboard's panel, and this screen closes. */
     private fun leave() {
-        if (busy && draft == null) {
+        if (used) return
+        if (busy()) {
             leaving = true
             return
         }
-        if (!used) draft?.let { receiver?.send(RESULT_DRAFT, it) }
+        draft?.invoke()?.let { receiver?.send(RESULT_DRAFT, it) }
         used = true
         finish()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Back before the answer was ready: it stays here
+        leaving = false
     }
 
     /**
@@ -218,7 +234,7 @@ class AiEditorActivity : ComponentActivity() {
      */
     override fun onStop() {
         super.onStop()
-        if (!isChangingConfigurations && !isFinishing && !used && receiver != null && callingActivity == null) leave()
+        if (!isChangingConfigurations && !isFinishing && backToPanel) leave()
     }
 
     override fun onDestroy() {
@@ -253,9 +269,10 @@ private fun AiEditorScreen(
     onUse: (String) -> Unit,
     /** Back to the keyboard's panel with the answer; null when not opened from the keyboard. */
     collapse: (() -> Unit)?,
-    /** The answer on screen as it would go back (null: none). */
-    onDraft: (Bundle?) -> Unit,
-    onBusy: (Boolean) -> Unit,
+    /** Hands over how to read the answer as it would go back, and whether one is being written. */
+    onReady: (draft: () -> Bundle?, busy: () -> Boolean) -> Unit,
+    /** A text finished being written (or failed). */
+    onFinished: () -> Unit,
     close: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -290,6 +307,7 @@ private fun AiEditorScreen(
             } finally {
                 AiEngine.endRun(thisRun)
             }
+            onFinished()
         }
     }
 
@@ -312,16 +330,14 @@ private fun AiEditorScreen(
 
     fun thousands(n: Int) = ((n + 500) / 1000).toString()
 
-    // What would go back to the keyboard if the editor were left now
-    val current = stage
-    androidx.compose.runtime.SideEffect {
-        onBusy(current is AiStage.Working)
-        onDraft(
-            if (current is AiStage.Done && result.isNotBlank()) {
-                AiEditorActivity.bundleOf(current.output.copy(text = result), action, language)
-            } else {
-                null
+    // What would go back to the keyboard if the editor were left: read only then (the states are read as they are at that moment)
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        onReady(
+            {
+                val now = stage
+                if (now is AiStage.Done && result.isNotBlank()) AiEditorActivity.bundleOf(now.output.copy(text = result), action, language) else null
             },
+            { stage is AiStage.Working },
         )
     }
 
@@ -333,7 +349,7 @@ private fun AiEditorScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(stringRes(R.string.pysanka__ai__title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
             if (collapse != null) {
-                TextButton(onClick = collapse) {
+                TextButton(onClick = collapse, enabled = stage !is AiStage.Working) {
                     Icon(Icons.Default.CloseFullscreen, contentDescription = null)
                     Text(stringRes(R.string.pysanka__ai__collapse), modifier = Modifier.padding(start = 6.dp))
                 }

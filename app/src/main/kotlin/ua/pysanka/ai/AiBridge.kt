@@ -132,10 +132,11 @@ object AiBridge {
         FlorisImeService.pysankaLaunch { context ->
             AiEditorActivity.intent(
                 context, text, preset,
-                receiver(onDraft = { d -> setDraft(session, d) }) { result -> set(session, result) },
+                receiver(onDraft = { d -> if (setDraft(session, d)) FlorisImeService.pysankaReopenAiDraft() }) { result -> set(session, result) },
                 canReplace = taken.mode != Mode.INSERT,
                 done = done,
                 target = language,
+                backToPanel = true,
             )
         }
     }
@@ -155,11 +156,31 @@ object AiBridge {
         }
     }
 
+    /** Whether the draft was kept (it belongs to the editor opened last). */
     @Synchronized
-    private fun setDraft(session: Long, value: Draft) {
-        if (target?.session != session) return
+    private fun setDraft(session: Long, value: Draft): Boolean {
+        if (target?.session != session) return false
         draft = value
         at = System.currentTimeMillis()
+        forgetLater(session, DRAFT_AGE_MS)
+        return true
+    }
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    /** Nothing of the person's text stays in memory past its time, even if no field ever opens. */
+    private fun forgetLater(session: Long, ms: Long) {
+        val stamp = at
+        handler.postDelayed({ forget(session, stamp) }, ms)
+    }
+
+    /** Forgets the answer or draft set at [stamp], unless something newer came since. */
+    @Synchronized
+    private fun forget(session: Long, stamp: Long) {
+        if (target?.session != session || at != stamp) return
+        target = null
+        answer = null
+        draft = null
     }
 
     /**
@@ -183,7 +204,9 @@ object AiBridge {
     private fun set(session: Long, value: String) {
         if (target?.session != session) return
         answer = value
+        draft = null
         at = System.currentTimeMillis()
+        forgetLater(session, MAX_AGE_MS)
     }
 
     /**
@@ -197,6 +220,7 @@ object AiBridge {
         if (info.packageName == FlorisApplication.getHack().packageName) return null
         answer = null
         target = null
+        draft = null
         val fresh = System.currentTimeMillis() - at < MAX_AGE_MS
         if (!fresh || isPassword || FieldPrivacy.isPrivate) return null
         if (t.field != fieldOf(info)) {

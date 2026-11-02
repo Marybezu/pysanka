@@ -46,6 +46,7 @@ import dev.patrickgold.jetpref.datastore.model.PreferenceData
 import dev.patrickgold.jetpref.datastore.model.observeAsState
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.showShortToastSync
+import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 import ua.pysanka.typing.UserWords
 import kotlin.reflect.KClass
@@ -315,11 +316,11 @@ private fun ClipboardSettings() {
     PrefToggle(prefs.clipboard.historyEnabled, stringRes(R.string.pysanka__clipboard__history), stringRes(R.string.pysanka__clipboard__history_summary))
     val limited by prefs.clipboard.historySizeLimitEnabled.observeAsState()
     val limit by prefs.clipboard.historySizeLimit.observeAsState()
-    val sizes = (listOf(10, 20, 50, 100) + limit).distinct().sorted()
+    val sizes = (listOf(10, 20, 50, 100) + limit).filter { it > 0 }.distinct().sorted()
     ChoiceRow(
         stringRes(R.string.pysanka__clipboard__size),
-        sizes.map { it to stringRes(R.string.pysanka__clipboard__size_n, "n" to it) } + (0 to stringRes(R.string.pysanka__clipboard__size_unlimited)),
-        if (limited) limit else 0,
+        sizes.map { it to pluralsRes(R.plurals.pysanka__clipboard__entries, it, "n" to it) } + (0 to stringRes(R.string.pysanka__clipboard__size_unlimited)),
+        if (limited && limit > 0) limit else 0,
         enabled = history,
     ) { n ->
         scope.launch {

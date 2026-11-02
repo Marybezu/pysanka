@@ -125,6 +125,8 @@ class FlorisApplication : Application() {
         cacheDir?.deleteContentsRecursively()
         // Pysanka: "Pysanka AI" in Share and the selection menu only while the model is there
         runCatching { ua.pysanka.ai.AiEntry.sync(this) }
+        // Pysanka: FlorisBoard's own word list (unencrypted, no screen any more; always off) left from earlier
+        runCatching { deleteDatabase(dev.patrickgold.florisboard.ime.dictionary.FlorisUserDictionaryDatabase.DB_FILE_NAME) }
         // Pysanka: a camera shot left by a crash (the camera app may still be writing a fresh one)
         runCatching {
             val now = System.currentTimeMillis()

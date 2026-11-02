@@ -250,7 +250,6 @@
     <string name="pysanka__clipboard__history">Зберігати історію буфера</string>
     <string name="pysanka__clipboard__history_summary">Скопійоване можна знову вставити з панелі буфера</string>
     <string name="pysanka__clipboard__size">Скільки записів зберігати</string>
-    <string name="pysanka__clipboard__size_n">{n} записів</string>
     <string name="pysanka__clipboard__size_unlimited">Без обмежень</string>
     <string name="pysanka__clipboard__clean_old">Видаляти старі записи</string>
     <string name="pysanka__clipboard__clean_old_hint">Закріплені записи лишаються</string>
@@ -259,7 +258,7 @@
     <string name="pysanka__time__after_seconds">Через {n} с</string>
     <string name="pysanka__time__after_minutes">Через {n} хв</string>
     <string name="pysanka__time__after_hours">Через {n} год</string>
-    <string name="pysanka__clipboard__clear_affects">Очищений буфер зникає з історії</string>
+    <string name="pysanka__clipboard__clear_affects">Очищене застосунком зникає з історії</string>
     <string name="pysanka__clipboard__clear_affects_summary">Коли застосунок очищає буфер (як-от менеджер паролів), незакріплений запис теж видаляється</string>
     <string name="pysanka__clipboard__suggest">Пропонувати щойно скопійоване</string>
     <string name="pysanka__clipboard__suggest_summary">Над клавішами, щоб вставити одним дотиком</string>
@@ -280,4 +279,10 @@
     <string name="pysanka__typing__space_letters_summary">Після цифри чи знака пробіл знову відкриває літери</string>
     <string name="pysanka__typing__physical">Екранна клавіатура з фізичною</string>
     <string name="pysanka__typing__physical_summary">Показувати її, навіть коли підʼєднано фізичну клавіатуру</string>
+    <plurals name="pysanka__clipboard__entries">
+        <item quantity="one">{n} запис</item>
+        <item quantity="few">{n} записи</item>
+        <item quantity="many">{n} записів</item>
+        <item quantity="other">{n} запису</item>
+    </plurals>
 </resources>

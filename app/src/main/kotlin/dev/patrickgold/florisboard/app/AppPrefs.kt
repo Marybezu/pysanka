@@ -246,9 +246,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "suggestion__enable_system_user_dictionary",
             default = true,
         )
+        // Pysanka: off; FlorisBoard's own word list had a screen only (unencrypted), Pysanka learns words itself
         val enableFlorisUserDictionary = boolean(
             key = "suggestion__enable_floris_user_dictionary",
-            default = true,
+            default = false,
         )
     }
 
@@ -942,10 +943,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     }
 }
 
-/** Pysanka: keys of settings that have no screen any more (see [AppPrefs.migrate]). */
 /** Pysanka: the settings languages offered ("auto": as the phone). */
 val PYSANKA_SETTINGS_LANGUAGES = listOf("auto", "uk", "en")
 
+/** Pysanka: keys of settings that have no screen any more (see [AppPrefs.migrate]). */
 private val PYSANKA_FIXED_KEYS = setOf(
             // The theme editor and the language screens were cut (November 2026)
             "theme__accent_color",
@@ -1028,7 +1029,6 @@ private val PYSANKA_FIXED_KEYS = setOf(
             "keyboard__space_bar_display_mode",
             "keyboard__utility_key_action",
             "keyboard__utility_key_enabled",
-            "smartbar__enabled",
             "smartbar__extended_actions_placement",
             "smartbar__layout",
             "spelling__language_mode",

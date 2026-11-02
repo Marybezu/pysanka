@@ -620,7 +620,7 @@
 
     <string name="setup__finish_up__title">Finish Up</string>
     <string name="setup__finish_up__description_p1">{app_name} is enabled and ready.</string>
-    <string name="setup__finish_up__description_p2">You can make it your own in the settings next.</string>
+    <string name="setup__finish_up__description_p2">Next you can pick the languages, theme and more.</string>
     <string name="setup__finish_up__finish_btn">Open the settings</string>
 
     <!-- Physical keyboard -->

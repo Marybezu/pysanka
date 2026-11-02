@@ -452,7 +452,7 @@
     <string name="setup__grant_notification_permission__btn">Надати дозвіл</string>
     <string name="setup__finish_up__title">Завершення</string>
     <string name="setup__finish_up__description_p1">Писанку ввімкнено, і вона готова до роботи.</string>
-    <string name="setup__finish_up__description_p2">Налаштувати її під себе можна далі — у налаштуваннях.</string>
+    <string name="setup__finish_up__description_p2">Далі можна вибрати мови, тему й інше під себе.</string>
     <string name="setup__finish_up__finish_btn">До налаштувань</string>
     <!-- Physical keyboard -->
     <!-- Back up & Restore -->

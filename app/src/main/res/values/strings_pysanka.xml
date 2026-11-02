@@ -251,7 +251,6 @@
     <string name="pysanka__clipboard__history">Keep a clipboard history</string>
     <string name="pysanka__clipboard__history_summary">What you copy can be pasted again from the clipboard panel</string>
     <string name="pysanka__clipboard__size">How many entries to keep</string>
-    <string name="pysanka__clipboard__size_n">{n} entries</string>
     <string name="pysanka__clipboard__size_unlimited">No limit</string>
     <string name="pysanka__clipboard__clean_old">Delete old entries</string>
     <string name="pysanka__clipboard__clean_old_hint">Pinned entries stay</string>
@@ -260,7 +259,7 @@
     <string name="pysanka__time__after_seconds">After {n} s</string>
     <string name="pysanka__time__after_minutes">After {n} min</string>
     <string name="pysanka__time__after_hours">After {n} h</string>
-    <string name="pysanka__clipboard__clear_affects">A cleared clipboard leaves the history</string>
+    <string name="pysanka__clipboard__clear_affects">What an app clears leaves the history</string>
     <string name="pysanka__clipboard__clear_affects_summary">When an app clears the clipboard (a password manager, say), an unpinned entry is deleted too</string>
     <string name="pysanka__clipboard__suggest">Offer what you just copied</string>
     <string name="pysanka__clipboard__suggest_summary">Above the keys, to paste with one tap</string>
@@ -281,4 +280,8 @@
     <string name="pysanka__typing__space_letters_summary">After a digit or sign, space brings the letters back</string>
     <string name="pysanka__typing__physical">On-screen keyboard with a physical one</string>
     <string name="pysanka__typing__physical_summary">Show it even when a physical keyboard is connected</string>
+    <plurals name="pysanka__clipboard__entries">
+        <item quantity="one">{n} entry</item>
+        <item quantity="other">{n} entries</item>
+    </plurals>
 </resources>
