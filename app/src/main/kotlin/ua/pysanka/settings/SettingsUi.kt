@@ -189,7 +189,7 @@ fun <T> ChoiceRow(title: String, options: List<Pair<T, String>>, selected: T, en
 
 /** A value on a scale, shown as it is set. */
 @Composable
-fun SliderRow(title: String, value: Int, range: IntRange, step: Int, label: (Int) -> String, enabled: Boolean = true, onChange: (Int) -> Unit) {
+fun SliderRow(title: String, value: Int, range: IntRange, step: Int, label: @Composable (Int) -> String, enabled: Boolean = true, onChange: (Int) -> Unit) {
     var v by androidx.compose.runtime.remember(value) { mutableStateOf(value.toFloat()) }
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {

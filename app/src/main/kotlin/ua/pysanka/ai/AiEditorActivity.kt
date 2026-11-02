@@ -318,7 +318,7 @@ private fun AiEditorScreen(
         onBusy(current is AiStage.Working)
         onDraft(
             if (current is AiStage.Done && result.isNotBlank()) {
-                bundleOf(current.output.copy(text = result), action, language)
+                AiEditorActivity.bundleOf(current.output.copy(text = result), action, language)
             } else {
                 null
             },
