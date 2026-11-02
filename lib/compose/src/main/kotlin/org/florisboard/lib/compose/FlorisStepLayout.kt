@@ -86,7 +86,8 @@ class FlorisStepLayoutScope(
         Text(
             modifier = modifier,
             text = text,
-            textAlign = TextAlign.Justify,
+            // Pysanka: ragged right; justified text left gaps between words
+            textAlign = TextAlign.Start,
             fontStyle = fontStyle,
         )
     }

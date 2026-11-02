@@ -30,22 +30,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
-import androidx.navigation.toRoute
 import dev.patrickgold.florisboard.app.settings.HomeScreen
 import dev.patrickgold.florisboard.app.settings.about.AboutScreen
 import dev.patrickgold.florisboard.app.settings.about.ProjectLicenseScreen
 import dev.patrickgold.florisboard.app.settings.about.ThirdPartyLicensesScreen
-import dev.patrickgold.florisboard.app.settings.advanced.OtherScreen
-import dev.patrickgold.florisboard.app.settings.advanced.PhysicalKeyboardScreen
-import dev.patrickgold.florisboard.app.settings.clipboard.ClipboardScreen
-import dev.patrickgold.florisboard.app.settings.dictionary.DictionaryScreen
-import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreen
-import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
-import dev.patrickgold.florisboard.app.settings.gestures.GesturesScreen
-import dev.patrickgold.florisboard.app.settings.keyboard.KeyboardScreen
-import dev.patrickgold.florisboard.app.settings.media.MediaScreen
-import dev.patrickgold.florisboard.app.settings.smartbar.SmartbarScreen
-import dev.patrickgold.florisboard.app.settings.typing.TypingScreen
 import dev.patrickgold.florisboard.app.setup.SetupScreen
 import kotlinx.serialization.Serializable
 import kotlin.reflect.KClass
@@ -78,34 +66,7 @@ object Routes {
         @Deeplink("settings/home")
         object Home
 
-        // Pysanka: languages are in the settings list; the language, theme and extension screens were cut
-        @Serializable
-        @Deeplink("settings/keyboard")
-        object Keyboard
-
-        @Serializable
-        @Deeplink("settings/smartbar")
-        object Smartbar
-
-        @Serializable
-        @Deeplink("settings/typing")
-        object Typing
-
-        @Serializable
-        @Deeplink("settings/dictionary")
-        object Dictionary
-
-        @Serializable
-        @Deeplink("settings/dictionary/user-dictionary")
-        data class UserDictionary(val type: UserDictionaryType)
-
-        @Serializable
-        @Deeplink("settings/gestures")
-        object Gestures
-
-        @Serializable
-        @Deeplink("settings/clipboard")
-        object Clipboard
+        // Pysanka: everything else is on the one settings screen; FlorisBoard's sub-screens were cut
 
         // Pysanka: export and import of the clipboard history
         @Serializable
@@ -121,26 +82,6 @@ object Routes {
         @Serializable
         @Deeplink("settings/clipboard/tags")
         object ClipboardTags
-
-        @Serializable
-        @Deeplink("settings/media")
-        object Media
-
-        @Serializable
-        @Deeplink("settings/other")
-        object Other
-
-        @Serializable
-        @Deeplink("settings/other/physical-keyboard")
-        object PhysicalKeyboard
-
-        @Serializable
-        @Deeplink("settings/other/backup")
-        object Backup
-
-        @Serializable
-        @Deeplink("settings/other/restore")
-        object Restore
 
         @Serializable
         @Deeplink("settings/about")
@@ -183,32 +124,9 @@ object Routes {
 
             composableWithDeepLink(Settings.Home::class) { HomeScreen() }
 
-            composableWithDeepLink(Settings.Keyboard::class) { KeyboardScreen() }
-
-            composableWithDeepLink(Settings.Smartbar::class) { SmartbarScreen() }
-
-            composableWithDeepLink(Settings.Typing::class) { TypingScreen() }
-
-            composableWithDeepLink(Settings.Dictionary::class) { DictionaryScreen() }
-            composableWithDeepLink(Settings.UserDictionary::class) { navBackStack ->
-                val payload = navBackStack.toRoute<Settings.UserDictionary>()
-                UserDictionaryScreen(payload.type)
-            }
-
-            composableWithDeepLink(Settings.Gestures::class) { GesturesScreen() }
-
-            composableWithDeepLink(Settings.Clipboard::class) { ClipboardScreen() }
             composableWithDeepLink(Settings.ClipboardCopy::class) { ua.pysanka.clipboard.ClipboardBackupScreen() }
             composableWithDeepLink(Settings.ClipboardTags::class) { ua.pysanka.clipboard.ClipboardTagsScreen() }
             composableWithDeepLink(Settings.PysankaAi::class) { ua.pysanka.ai.AiSettingsScreen() }
-
-            composableWithDeepLink(Settings.Media::class) { MediaScreen() }
-
-            composableWithDeepLink(Settings.Other::class) { OtherScreen() }
-            composableWithDeepLink(Settings.PhysicalKeyboard::class) { PhysicalKeyboardScreen() }
-            // Pysanka: FlorisBoard 0.6's own backup screens are switched off (empty); show the clipboard copy
-            composableWithDeepLink(Settings.Backup::class) { ua.pysanka.clipboard.ClipboardBackupScreen() }
-            composableWithDeepLink(Settings.Restore::class) { ua.pysanka.clipboard.ClipboardBackupScreen() }
 
             composableWithDeepLink(Settings.About::class) { AboutScreen() }
             composableWithDeepLink(Settings.ProjectLicense::class) { ProjectLicenseScreen() }

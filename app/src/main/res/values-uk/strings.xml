@@ -415,7 +415,7 @@
     <string name="pref__other__show_app_icon__label" comment="Label of Show app icon preference in Other">Показувати значок застосунку в лаунчері</string>
     <string name="pref__other__show_app_icon__summary_atleast_q" comment="Summary of Show app icon preference in Other for Android 10+">Завжди ввімкнено на Android 10+ через обмеження системи</string>
     <!-- About UI strings -->
-    <string name="about__title" comment="Title of About activity">Про додаток</string>
+    <string name="about__title" comment="Title of About activity">Про застосунок</string>
     <string name="about__app_icon_content_description" comment="Content description of app icon in About">Значок застосунку Писанка</string>
     <string name="about__view_licenses" comment="Label of View licenses button in About">Ліцензії відкритого ПЗ</string>
     <string name="about__view_privacy_policy" comment="Label of View privacy policy button in About">Політика конфіденційності</string>
@@ -438,25 +438,22 @@
     <string name="about__third_party_licenses__summary" comment="Preference summary">Ліцензії сторонніх бібліотек, що входять до цього застосунку</string>
     <!-- Setup UI strings -->
     <string name="setup__title" comment="Title of Setup">Ласкаво просимо!</string>
-    <string name="setup__intro_message" comment="Short intro message welcoming new users">Дякуємо за використання {app_name}! Це коротке налаштування допоможе вам виконати необхідні кроки для використання {app_name} на вашому пристрої.</string>
+    <string name="setup__intro_message" comment="Short intro message welcoming new users">Дякуємо, що обрали Писанку! Кілька кроків — і нею можна користуватися.</string>
     <string name="setup__footer__privacy_policy" comment="Privacy policy label for URL">Політика конфіденційності</string>
-    <string name="setup__footer__repository" comment="Repository label for URL">Сховище</string>
-    <string name="setup__enable_ime__title">Ввімкнути {app_name}</string>
-    <string name="setup__enable_ime__description"><i> </i> {app_name}.</string>
+    <string name="setup__footer__repository" comment="Repository label for URL">Код проєкту</string>
+    <string name="setup__enable_ime__title">Увімкнути Писанку</string>
+    <string name="setup__enable_ime__description">Android вимагає окремо ввімкнути кожну нову клавіатуру. Відкрийте системні налаштування <i>Мова та введення</i> й увімкніть там «Писанка».</string>
     <string name="setup__enable_ime__open_settings_btn">Відкрити системні налаштування</string>
-    <string name="setup__select_ime__title">Вибрати {app_name}</string>
-    <string name="setup__select_ime__description">У вашій системі ввімкнено {app_name}. Щоб активно використовувати його, перемкніться на {app_name}, вибравши її у вікні вибору клавіатури!</string>
+    <string name="setup__select_ime__title">Вибрати Писанку</string>
+    <string name="setup__select_ime__description">Писанку ввімкнено. Щоб нею користуватися, виберіть її у вікні вибору клавіатури.</string>
     <string name="setup__select_ime__switch_keyboard_btn">Перемкнути клавіатуру</string>
-    <string name="setup__grant_notification_permission__title">Повідомлення про збої в роботі з дозволами</string>
-    <string name="setup__grant_notification_permission__description">Починаючи з Android 13+, програми повинні запитувати дозвіл на
-        надсилання сповіщень. У Писанці цей дозвіл використовується лише для того, щоб відкрити екран звіту про збій у разі збою.
-        Цей дозвіл можна будь-коли змінити в налаштуваннях системи.
-    </string>
+    <string name="setup__grant_notification_permission__title">Сповіщення про збої</string>
+    <string name="setup__grant_notification_permission__description">Від Android 13 застосунки мають питати дозволу на сповіщення. Писанка використовує його лише для того, щоб показати звіт, якщо щось зламалося. Дозвіл можна будь-коли змінити в налаштуваннях системи.</string>
     <string name="setup__grant_notification_permission__btn">Надати дозвіл</string>
     <string name="setup__finish_up__title">Завершення</string>
-    <string name="setup__finish_up__description_p1">{app_name} тепер ввімкнено в системі і він готовий до ваших налаштувань.</string>
-    <string name="setup__finish_up__description_p2">Якщо ви зіткнулися з будь-якими проблемами, помилками, збоями або просто хочете внести пропозицію, перевірте репозиторій проєкту з розділу «Про застосунок»!</string>
-    <string name="setup__finish_up__finish_btn">Почати персоналізацію</string>
+    <string name="setup__finish_up__description_p1">Писанку ввімкнено, і вона готова до роботи.</string>
+    <string name="setup__finish_up__description_p2">Налаштувати її під себе можна далі — у налаштуваннях.</string>
+    <string name="setup__finish_up__finish_btn">До налаштувань</string>
     <!-- Physical keyboard -->
     <!-- Back up & Restore -->
     <string name="backup_and_restore__title">Резервні копії та відновлення</string>
