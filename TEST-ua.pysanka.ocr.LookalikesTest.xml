@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.ocr.LookalikesTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:21:57.088Z" hostname="runnervmnwato" time="0.01">
+  <properties/>
+  <testcase name="a Latin-looking word in a Cyrillic line becomes Cyrillic" classname="ua.pysanka.ocr.LookalikesTest" time="0.002"/>
+  <testcase name="words with other Latin letters and Latin lines stay" classname="ua.pysanka.ocr.LookalikesTest" time="0.002"/>
+  <testcase name="a line of one word is left alone" classname="ua.pysanka.ocr.LookalikesTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

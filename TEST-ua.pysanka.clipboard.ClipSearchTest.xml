@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.clipboard.ClipSearchTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:21:57.038Z" hostname="runnervmnwato" time="0.015">
+  <properties/>
+  <testcase name="every word must be found, in any letters, in the text or the tags" classname="ua.pysanka.clipboard.ClipSearchTest" time="0.006"/>
+  <testcase name="a password is found only by its tags, never by its text" classname="ua.pysanka.clipboard.ClipSearchTest" time="0.001"/>
+  <testcase name="a picture is found by the text recognised in it; words split at any space" classname="ua.pysanka.clipboard.ClipSearchTest" time="0.001"/>
+  <testcase name="at most MAX_RESULTS, in the order given" classname="ua.pysanka.clipboard.ClipSearchTest" time="0.002"/>
+  <testcase name="typing and deleting" classname="ua.pysanka.clipboard.ClipSearchTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

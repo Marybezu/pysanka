@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.typing.PersonalWordsTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:21:57.493Z" hostname="runnervmnwato" time="0.091">
+  <properties/>
+  <testcase name="only things that look like words are learned" classname="ua.pysanka.typing.PersonalWordsTest" time="0.005"/>
+  <testcase name="an own word is offered after KNOWN uses, and never corrected" classname="ua.pysanka.typing.PersonalWordsTest" time="0.04"/>
+  <testcase name="auto-correction goes only into a list word, never into a learned one" classname="ua.pysanka.typing.PersonalWordsTest" time="0.004"/>
+  <testcase name="a word whose small letters are odd is not learned (and never spoils the file)" classname="ua.pysanka.typing.PersonalWordsTest" time="0.004"/>
+  <testcase name="a word the person insists on is known at once" classname="ua.pysanka.typing.PersonalWordsTest" time="0.002"/>
+  <testcase name="a list word used often is offered higher" classname="ua.pysanka.typing.PersonalWordsTest" time="0.002"/>
+  <testcase name="a name keeps its capital only when typed so inside a sentence" classname="ua.pysanka.typing.PersonalWordsTest" time="0.005"/>
+  <testcase name="undo and forget" classname="ua.pysanka.typing.PersonalWordsTest" time="0.0"/>
+  <testcase name="at most the given number of words; the least used go first" classname="ua.pysanka.typing.PersonalWordsTest" time="0.001"/>
+  <testcase name="written and read back; anything else is refused" classname="ua.pysanka.typing.PersonalWordsTest" time="0.001"/>
+  <testcase name="a file from before pairs (format 1) is still read" classname="ua.pysanka.typing.PersonalWordsTest" time="0.003"/>
+  <testcase name="the next word: offered after PAIR_KNOWN uses of the pair, written and read back" classname="ua.pysanka.typing.PersonalWordsTest" time="0.002"/>
+  <testcase name="the word before lifts what usually follows it (a pair used PAIR_KNOWN times)" classname="ua.pysanka.typing.PersonalWordsTest" time="0.001"/>
+  <testcase name="a pair never makes an auto-correction by itself" classname="ua.pysanka.typing.PersonalWordsTest" time="0.001"/>
+  <testcase name="swipe knows the known own words and their use" classname="ua.pysanka.typing.PersonalWordsTest" time="0.001"/>
+  <testcase name="forgetting a word forgets its pairs" classname="ua.pysanka.typing.PersonalWordsTest" time="0.001"/>
+  <testcase name="the word before the cursor, only in the same sentence" classname="ua.pysanka.typing.PersonalWordsTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

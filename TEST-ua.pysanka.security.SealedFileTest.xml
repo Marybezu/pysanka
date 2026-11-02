@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.security.SealedFileTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:21:57.112Z" hostname="runnervmnwato" time="0.325">
+  <properties/>
+  <testcase name="round trip, 0 bytes" classname="ua.pysanka.security.SealedFileTest" time="0.088"/>
+  <testcase name="round trip, 1 bytes" classname="ua.pysanka.security.SealedFileTest" time="0.003"/>
+  <testcase name="round trip, 100 bytes" classname="ua.pysanka.security.SealedFileTest" time="0.006"/>
+  <testcase name="round trip, 65535 bytes" classname="ua.pysanka.security.SealedFileTest" time="0.038"/>
+  <testcase name="round trip, 65536 bytes" classname="ua.pysanka.security.SealedFileTest" time="0.016"/>
+  <testcase name="round trip, 65537 bytes" classname="ua.pysanka.security.SealedFileTest" time="0.015"/>
+  <testcase name="round trip, 131072 bytes" classname="ua.pysanka.security.SealedFileTest" time="0.028"/>
+  <testcase name="round trip, 196685 bytes" classname="ua.pysanka.security.SealedFileTest" time="0.017"/>
+  <testcase name="streaming writer, 0 bytes, written in small pieces" classname="ua.pysanka.security.SealedFileTest" time="0.002"/>
+  <testcase name="streaming writer, 65536 bytes, written in small pieces" classname="ua.pysanka.security.SealedFileTest" time="0.02"/>
+  <testcase name="streaming writer, 131077 bytes, written in small pieces" classname="ua.pysanka.security.SealedFileTest" time="0.02"/>
+  <testcase name="wrong key fails" classname="ua.pysanka.security.SealedFileTest" time="0.002"/>
+  <testcase name="a changed byte fails" classname="ua.pysanka.security.SealedFileTest" time="0.001"/>
+  <testcase name="a file cut at a chunk boundary fails" classname="ua.pysanka.security.SealedFileTest" time="0.007"/>
+  <testcase name="a file under another label (another id) fails" classname="ua.pysanka.security.SealedFileTest" time="0.001"/>
+  <testcase name="an extra chunk after the last one fails" classname="ua.pysanka.security.SealedFileTest" time="0.007"/>
+  <testcase name="swapped chunks fail" classname="ua.pysanka.security.SealedFileTest" time="0.016"/>
+  <testcase name="the same data never looks the same twice" classname="ua.pysanka.security.SealedFileTest" time="0.004"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

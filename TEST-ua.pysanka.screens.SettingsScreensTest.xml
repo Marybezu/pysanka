@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.screens.SettingsScreensTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:27:35.475Z" hostname="runnervmnwato" time="0.914">
+  <properties/>
+  <testcase name="closedDark" classname="ua.pysanka.screens.SettingsScreensTest" time="0.235"/>
+  <testcase name="typingOpen" classname="ua.pysanka.screens.SettingsScreensTest" time="0.305"/>
+  <testcase name="closed" classname="ua.pysanka.screens.SettingsScreensTest" time="0.177"/>
+  <testcase name="typingOpenDark" classname="ua.pysanka.screens.SettingsScreensTest" time="0.197"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

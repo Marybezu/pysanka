@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.screens.AiPanelScreensTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:22:01.661Z" hostname="runnervmnwato" time="333.808">
+  <properties/>
+  <testcase name="failed" classname="ua.pysanka.screens.AiPanelScreensTest" time="12.765"/>
+  <testcase name="tooLong" classname="ua.pysanka.screens.AiPanelScreensTest" time="0.59"/>
+  <testcase name="result" classname="ua.pysanka.screens.AiPanelScreensTest" time="0.378"/>
+  <testcase name="menuLargeText" classname="ua.pysanka.screens.AiPanelScreensTest" time="1.004"/>
+  <testcase name="menuDark" classname="ua.pysanka.screens.AiPanelScreensTest" time="0.507"/>
+  <testcase name="resultDark" classname="ua.pysanka.screens.AiPanelScreensTest" time="0.497"/>
+  <testcase name="menu" classname="ua.pysanka.screens.AiPanelScreensTest" time="0.499"/>
+  <testcase name="tone" classname="ua.pysanka.screens.AiPanelScreensTest" time="0.52"/>
+  <testcase name="menuAll" classname="ua.pysanka.screens.AiPanelScreensTest" time="0.702"/>
+  <testcase name="replies" classname="ua.pysanka.screens.AiPanelScreensTest" time="0.78"/>
+  <testcase name="languages" classname="ua.pysanka.screens.AiPanelScreensTest" time="0.587"/>
+  <testcase name="working" classname="ua.pysanka.screens.AiPanelScreensTest" time="314.589"/>
+  <testcase name="summaryChecked" classname="ua.pysanka.screens.AiPanelScreensTest" time="0.199"/>
+  <testcase name="noModel" classname="ua.pysanka.screens.AiPanelScreensTest" time="0.178"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[Exception in thread "SDK 34 Main Thread @coroutine#187" java.lang.OutOfMemoryError: Java heap space
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:42)
+	at androidx.compose.runtime.PausableMonotonicFrameClock.withFrameNanos(PausableMonotonicFrameClock.kt:62)
+	at androidx.compose.runtime.Recomposer$runRecomposeAndApplyChanges$2.invokeSuspend(Recomposer.kt:609)
+	at androidx.compose.runtime.Recomposer$recompositionRunner$2$2.invokeSuspend(Recomposer.kt:1173)
+	at androidx.compose.runtime.Recomposer$recompositionRunner$2.invokeSuspend(Recomposer.kt:1173)
+	at androidx.compose.ui.platform.WindowRecomposer_androidKt$createLifecycleAwareWindowRecomposer$2$onStateChanged$1.invokeSuspend(WindowRecomposer.android.kt:389)
+	Suppressed: kotlinx.coroutines.internal.DiagnosticCoroutineContextException: [androidx.compose.runtime.PausableMonotonicFrameClock@3f3d6d30, androidx.compose.ui.platform.MotionDurationScaleImpl@3ba60226, CoroutineId(184), "coroutine#184":StandaloneCoroutine{Cancelling}@3af16d98, AndroidUiDispatcher@5dfba016]
+Caused by: java.lang.OutOfMemoryError: Java heap space
+	at java.base/java.util.Arrays.copyOf(Arrays.java:3481)
+	at java.base/java.util.ArrayDeque.grow(ArrayDeque.java:149)
+	at java.base/java.util.ArrayDeque.addLast(ArrayDeque.java:307)
+	at java.base/java.util.ArrayDeque.offerLast(ArrayDeque.java:352)
+	at java.base/java.util.ArrayDeque.offer(ArrayDeque.java:508)
+	at org.robolectric.shadows.ShadowTrace.endSection(ShadowTrace.java:75)
+	at java.base/java.lang.invoke.DirectMethodHandle$Holder.invokeStatic(DirectMethodHandle$Holder)
+	at java.base/java.lang.invoke.LambdaForm$MH/0x000073393453c800.guardWithCatch(LambdaForm$MH)
+	at java.base/java.lang.invoke.DelegatingMethodHandle$Holder.delegate(DelegatingMethodHandle$Holder)
+	at java.base/java.lang.invoke.LambdaForm$MH/0x000073393453d800.guard(LambdaForm$MH)
+	at java.base/java.lang.invoke.LambdaForm$MH/0x000073393453dc00.linkToCallSite(LambdaForm$MH)
+	at android.os.Trace.endSection(Trace.java)
+	at androidx.compose.runtime.internal.Trace.endSection(Trace.android.kt:26)
+	at androidx.compose.runtime.Recomposer$runRecomposeAndApplyChanges$2.invokeSuspend$lambda$2(Recomposer.kt:2036)
+	at androidx.compose.runtime.Recomposer$runRecomposeAndApplyChanges$2$$Lambda$1748/0x0000733934f46ce0.invoke(Unknown Source)
+	at androidx.compose.ui.platform.AndroidUiFrameClock$withFrameNanos$2$callback$1.doFrame(AndroidUiFrameClock.android.kt:39)
+	at androidx.compose.ui.platform.AndroidUiDispatcher.performFrameDispatch(AndroidUiDispatcher.android.kt:108)
+	at androidx.compose.ui.platform.AndroidUiDispatcher.access$performFrameDispatch(AndroidUiDispatcher.android.kt:41)
+	at androidx.compose.ui.platform.AndroidUiDispatcher$dispatchCallback$1.doFrame(AndroidUiDispatcher.android.kt:69)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1337)
+	at java.base/java.lang.invoke.LambdaForm$DMH/0x0000733934545000.invokeSpecial(LambdaForm$DMH)
+	at java.base/java.lang.invoke.LambdaForm$MH/0x0000733934630000.guardWithCatch(LambdaForm$MH)
+	at java.base/java.lang.invoke.LambdaForm$MH/0x00007339345f4c00.delegate(LambdaForm$MH)
+	at java.base/java.lang.invoke.LambdaForm$MH/0x0000733934631800.guard(LambdaForm$MH)
+	at java.base/java.lang.invoke.LambdaForm$MH/0x0000733934631c00.linkToCallSite(LambdaForm$MH)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java)
+	at android.view.Choreographer$CallbackRecord.run(Choreographer.java:1348)
+	at java.base/java.lang.invoke.LambdaForm$DMH/0x000073393410c400.invokeSpecial(LambdaForm$DMH)
+	at java.base/java.lang.invoke.LambdaForm$MH/0x0000733934488c00.guardWithCatch(LambdaForm$MH)
+	at java.base/java.lang.invoke.DelegatingMethodHandle$Holder.delegate(DelegatingMethodHandle$Holder)
+	at java.base/java.lang.invoke.LambdaForm$MH/0x000073393448a000.guard(LambdaForm$MH)
+	at java.base/java.lang.invoke.LambdaForm$MH/0x000073393448a400.linkToCallSite(LambdaForm$MH)
+]]></system-err>
+</testsuite>

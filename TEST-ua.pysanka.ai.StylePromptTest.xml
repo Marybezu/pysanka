@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.ai.StylePromptTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:21:56.918Z" hostname="runnervmnwato" time="0.056">
+  <properties/>
+  <testcase name="the samples go to the model in order, up to the limit" classname="ua.pysanka.ai.StylePromptTest" time="0.006"/>
+  <testcase name="«In my style» carries the samples and the rules; other actions do not" classname="ua.pysanka.ai.StylePromptTest" time="0.046"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.clipboard.AutoTagTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:21:57.018Z" hostname="runnervmnwato" time="0.014">
+  <properties/>
+  <testcase name="links" classname="ua.pysanka.clipboard.AutoTagTest" time="0.004"/>
+  <testcase name="emails" classname="ua.pysanka.clipboard.AutoTagTest" time="0.001"/>
+  <testcase name="codes" classname="ua.pysanka.clipboard.AutoTagTest" time="0.001"/>
+  <testcase name="phone numbers" classname="ua.pysanka.clipboard.AutoTagTest" time="0.001"/>
+  <testcase name="no false phones or codes" classname="ua.pysanka.clipboard.AutoTagTest" time="0.001"/>
+  <testcase name="tag ids round trip" classname="ua.pysanka.clipboard.AutoTagTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

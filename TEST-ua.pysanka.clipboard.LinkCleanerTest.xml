@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.clipboard.LinkCleanerTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:21:57.063Z" hostname="runnervmnwato" time="0.017">
+  <properties/>
+  <testcase name="utm and click ids go, the rest stays in order" classname="ua.pysanka.clipboard.LinkCleanerTest" time="0.006"/>
+  <testcase name="site rules apply only on their sites" classname="ua.pysanka.clipboard.LinkCleanerTest" time="0.002"/>
+  <testcase name="links in text, punctuation after them stays" classname="ua.pysanka.clipboard.LinkCleanerTest" time="0.002"/>
+  <testcase name="nothing to clean: the same text" classname="ua.pysanka.clipboard.LinkCleanerTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

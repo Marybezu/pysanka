@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.ai.TextChunksTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:21:56.992Z" hostname="runnervmnwato" time="0.012">
+  <properties/>
+  <testcase name="parts put back together give the original text" classname="ua.pysanka.ai.TextChunksTest" time="0.004"/>
+  <testcase name="a long paragraph is cut at sentence ends, a long sentence at spaces" classname="ua.pysanka.ai.TextChunksTest" time="0.002"/>
+  <testcase name="a text without full stops is cut at line breaks, whitespace kept between parts" classname="ua.pysanka.ai.TextChunksTest" time="0.002"/>
+  <testcase name="short text is one part" classname="ua.pysanka.ai.TextChunksTest" time="0.001"/>
+  <testcase name="prefix ends at a paragraph or a sentence" classname="ua.pysanka.ai.TextChunksTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

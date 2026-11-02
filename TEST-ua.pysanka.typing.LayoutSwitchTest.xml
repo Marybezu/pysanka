@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.typing.LayoutSwitchTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:21:57.449Z" hostname="runnervmnwato" time="0.015">
+  <properties/>
+  <testcase name="English keys to Ukrainian" classname="ua.pysanka.typing.LayoutSwitchTest" time="0.004"/>
+  <testcase name="Ukrainian keys to English" classname="ua.pysanka.typing.LayoutSwitchTest" time="0.001"/>
+  <testcase name="apostrophe and ґ" classname="ua.pysanka.typing.LayoutSwitchTest" time="0.003"/>
+  <testcase name="there and back" classname="ua.pysanka.typing.LayoutSwitchTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

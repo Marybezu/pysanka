@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.ai.FactCheckTest" tests="6" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:21:56.694Z" hostname="runnervmnwato" time="0.141">
+  <properties/>
+  <testcase name="lines with facts from the text stay" classname="ua.pysanka.ai.FactCheckTest" time="0.089"/>
+  <testcase name="a line with a number that is not in the text goes" classname="ua.pysanka.ai.FactCheckTest" time="0.012"/>
+  <testcase name="a line with a name that is not in the text goes" classname="ua.pysanka.ai.FactCheckTest" time="0.006"/>
+  <testcase name="list numbers and words at the start of a sentence do not count" classname="ua.pysanka.ai.FactCheckTest" time="0.009"/>
+  <testcase name="shortened dates, ranges with a dash, numbers listed with commas" classname="ua.pysanka.ai.FactCheckTest" time="0.004"/>
+  <testcase name="if nothing would be left, the text stays and is marked" classname="ua.pysanka.ai.FactCheckTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

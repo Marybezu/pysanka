@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ua.pysanka.ai.TextLanguageTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-11-02T02:21:57.008Z" hostname="runnervmnwato" time="0.004">
+  <properties/>
+  <testcase name="Ukrainian, Polish, German, Spanish and English are named" classname="ua.pysanka.ai.TextLanguageTest" time="0.001"/>
+  <testcase name="anything not unmistakable is left to the model" classname="ua.pysanka.ai.TextLanguageTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
