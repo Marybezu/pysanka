@@ -289,4 +289,6 @@
     <string name="pysanka__clip_search__nothing">Nothing found</string>
     <string name="pysanka__clip_search__image">Image</string>
     <string name="pysanka__clip_search__back">Back to the clipboard</string>
+    <string name="pysanka__ai__action_post">Social media post</string>
+    <string name="pysanka__ai__action_hashtags">Hashtags</string>
 </resources>

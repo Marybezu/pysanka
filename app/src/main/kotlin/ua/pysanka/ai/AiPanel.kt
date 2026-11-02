@@ -47,6 +47,8 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.MoreHoriz
@@ -417,6 +419,8 @@ private fun icon(action: AiAction): ImageVector = when (action) {
     AiAction.TABLE -> Icons.Default.TableChart
     AiAction.NOTES -> Icons.Default.EditNote
     AiAction.LETTER -> Icons.Default.Email
+    AiAction.POST -> Icons.Default.Campaign
+    AiAction.HASHTAGS -> Icons.Default.Tag
     AiAction.REPLIES -> Icons.Default.QuestionAnswer
     AiAction.TONE -> Icons.Default.TheaterComedy
     AiAction.REDACT -> Icons.Default.VisibilityOff

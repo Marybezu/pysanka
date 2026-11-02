@@ -109,7 +109,13 @@ object AiJob {
                 unconfirmed = checked.allRemoved
                 checked.text
             }
-        }.let { if (action == AiAction.REDACT) Redact.apply(it) else it }
+        }.let {
+            when (action) {
+                AiAction.REDACT -> Redact.apply(it)
+                AiAction.HASHTAGS -> Hashtags.append(text, it)
+                else -> it
+            }
+        }
         val seconds = ((System.currentTimeMillis() - started) / 1000).toInt()
         if (warm && !retried) Speed.learn(context, action, text.length, seconds)
         return Output(result.trim(), removed, unconfirmed, seconds, AiEngine.backend)

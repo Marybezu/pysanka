@@ -25,6 +25,10 @@ enum class AiAction(@StringRes val label: Int, val temperature: Double, val kind
     TABLE(R.string.pysanka__ai__action_table, 0.2, Kind.WHOLE),
     NOTES(R.string.pysanka__ai__action_notes, 0.3, Kind.WHOLE),
     LETTER(R.string.pysanka__ai__action_letter, 0.6, Kind.WHOLE),
+    POST(R.string.pysanka__ai__action_post, 0.6, Kind.WHOLE),
+
+    /** The model only names the hashtags; they are added under the text as it is ([Hashtags]). */
+    HASHTAGS(R.string.pysanka__ai__action_hashtags, 0.4, Kind.WHOLE),
     REPLIES(R.string.pysanka__ai__action_replies, 0.7, Kind.WHOLE),
     TONE(R.string.pysanka__ai__action_tone, 0.3, Kind.ADVICE),
     REDACT(R.string.pysanka__ai__action_redact, 0.1, Kind.REWRITE),
@@ -152,6 +156,13 @@ internal object AiPrompts {
         AiAction.LETTER -> "The text describes a message the person wants to write: to whom, about what, maybe the tone. " +
             "Write that message, ready to send, ${inLanguage(language)}, natural and polite. Use only facts " +
             "from the description; where a detail is missing, put a placeholder in square brackets, like [дата] or [date]."
+        AiAction.POST -> "Rewrite the text as a short post for social media ${inLanguage(language)}: a first line " +
+            "that makes people want to read on, then short paragraphs in plain words, at most two or three emoji " +
+            "where they fit, no hashtags. Keep every fact, name and number; add none. " +
+            "Answer only with the post."
+        AiAction.HASHTAGS -> "Suggest three to eight hashtags for this text as a social media post, " +
+            "${inLanguage(language)}: specific to its topic, the most fitting first. Answer with only the hashtags on one line, " +
+            "separated by spaces, each starting with #, without spaces inside a hashtag. Do not repeat the text."
         AiAction.REPLIES -> "The text is a message the person received. Write three short possible replies " +
             "${inLanguage(language)}: one that agrees, one that politely declines, one that asks to clarify. Put a blank line " +
             "between them and start each with a short label in that language and a colon (for example «Так:», «Ні:», " +
