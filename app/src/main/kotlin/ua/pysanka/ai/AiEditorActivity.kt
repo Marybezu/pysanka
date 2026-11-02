@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloseFullscreen
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -26,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -63,6 +66,8 @@ import org.florisboard.lib.compose.stringRes
 class AiEditorActivity : ComponentActivity() {
     companion object {
         const val RESULT_TEXT = 1
+        /** The editor was left with an answer not used: it goes back to the keyboard's panel. */
+        const val RESULT_DRAFT = 2
         const val EXTRA_TEXT = "text"
         private const val EXTRA_PRESET = "preset"
         private const val EXTRA_RECEIVER = "receiver"
@@ -73,6 +78,29 @@ class AiEditorActivity : ComponentActivity() {
         private const val EXTRA_LANGUAGE = "language"
         private const val EXTRA_DONE = "done"
         private const val EXTRA_TARGET = "target"
+
+        /** An answer as it is handed over (to the keyboard on leaving, from the panel on Expand). */
+        internal fun bundleOf(output: AiJob.Output, action: AiAction? = null, language: AiLanguage? = null) = Bundle().apply {
+            putString("text", output.text)
+            putInt("removed", output.removed)
+            putBoolean("unconfirmed", output.unconfirmed)
+            putInt("seconds", output.seconds)
+            putString("backend", output.backend)
+            putString("action", action?.name)
+            putString("language", language?.name)
+        }
+
+        private fun outputOf(b: Bundle) = b.getString("text")?.takeIf { it.isNotBlank() }?.let {
+            AiJob.Output(it.take(AiJob.HARD_MAX), b.getInt("removed"), b.getBoolean("unconfirmed"), b.getInt("seconds"), b.getString("backend").orEmpty())
+        }
+
+        /** The keyboard's side: an answer left in the editor. */
+        fun draftOf(b: Bundle): AiBridge.Draft? {
+            val output = outputOf(b) ?: return null
+            val action = AiAction.entries.firstOrNull { it.name == b.getString("action") } ?: return null
+            val language = AiLanguage.entries.firstOrNull { it.name == b.getString("language") } ?: AiLanguage.EN
+            return AiBridge.Draft(action, language, output)
+        }
 
         /**
          * [receiver]: where the answer goes back to the keyboard; or [forResult]: the answer is
@@ -100,17 +128,7 @@ class AiEditorActivity : ComponentActivity() {
                 .putExtra(EXTRA_FOR_RESULT, forResult)
                 .putExtra(EXTRA_LANGUAGE, language)
                 .putExtra(EXTRA_TARGET, target?.name)
-                .apply {
-                    if (done != null) {
-                        putExtra(EXTRA_DONE, Bundle().apply {
-                            putString("text", done.text)
-                            putInt("removed", done.removed)
-                            putBoolean("unconfirmed", done.unconfirmed)
-                            putInt("seconds", done.seconds)
-                            putString("backend", done.backend)
-                        })
-                    }
-                }
+                .apply { if (done != null) putExtra(EXTRA_DONE, bundleOf(done)) }
                 // A result comes back only within the same task
                 .apply {
                     when {
@@ -130,14 +148,10 @@ class AiEditorActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(false)
         val text = intent.getStringExtra(EXTRA_TEXT).orEmpty().take(AiJob.HARD_MAX)
         val preset = intent.getStringExtra(EXTRA_PRESET)?.let { n -> AiAction.entries.firstOrNull { it.name == n } }
-        val receiver: ResultReceiver? = androidx.core.content.IntentCompat.getParcelableExtra(intent, EXTRA_RECEIVER, ResultReceiver::class.java)
         val canReplace = intent.getBooleanExtra(EXTRA_CAN_REPLACE, false)
         val forResult = intent.getBooleanExtra(EXTRA_FOR_RESULT, false) && callingActivity?.packageName == packageName
-        val done = intent.getBundleExtra(EXTRA_DONE)?.let { b ->
-            b.getString("text")?.takeIf { it.isNotBlank() }?.let {
-                AiJob.Output(it.take(AiJob.HARD_MAX), b.getInt("removed"), b.getBoolean("unconfirmed"), b.getInt("seconds"), b.getString("backend").orEmpty())
-            }
-        }
+        val done = intent.getBundleExtra(EXTRA_DONE)?.let(::outputOf)
+        receiver = androidx.core.content.IntentCompat.getParcelableExtra(intent, EXTRA_RECEIVER, ResultReceiver::class.java)
         setContent {
             ProvideLocalizedResources(ua.pysanka.settings.AppLanguage.context(this, intent.getStringExtra(EXTRA_LANGUAGE)), appName = R.string.app_name) {
                 FlorisAppTheme(theme = AppTheme.AUTO) {
@@ -154,6 +168,7 @@ class AiEditorActivity : ComponentActivity() {
                                 else -> R.string.pysanka__ai__insert
                             },
                             onUse = { result ->
+                                used = true
                                 if (forResult) {
                                     setResult(RESULT_OK, Intent().putExtra(EXTRA_TEXT, result))
                                 } else {
@@ -161,12 +176,49 @@ class AiEditorActivity : ComponentActivity() {
                                 }
                                 finish()
                             },
-                            close = { finish() },
+                            // Back to the keyboard's panel with the answer (only when opened from the keyboard)
+                            collapse = if (receiver != null && !forResult) { { leave() } } else null,
+                            onDraft = { d -> draft = d; if (leaving && d != null) leave() },
+                            onBusy = { b -> busy = b },
+                            close = { used = true; finish() },
                         )
                     }
                 }
             }
         }
+    }
+
+    private var receiver: ResultReceiver? = null
+
+    /** The answer was used or the editor closed on purpose: nothing goes back. */
+    private var used = false
+
+    /** The answer on screen now (with its action and language), for the keyboard if the editor is left. */
+    private var draft: Bundle? = null
+    private var busy = false
+
+    /** Left while the answer was still being written: it goes back when it is ready. */
+    private var leaving = false
+
+    /** The answer, if any, goes back to the keyboard's panel, and this screen closes. */
+    private fun leave() {
+        if (busy && draft == null) {
+            leaving = true
+            return
+        }
+        if (!used) draft?.let { receiver?.send(RESULT_DRAFT, it) }
+        used = true
+        finish()
+    }
+
+    /**
+     * Another app opened, or Home: this screen is not in recent apps (so it could not be found
+     * again); opened from the keyboard, its answer goes back to the keyboard's panel instead of
+     * being lost.
+     */
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations && !isFinishing && !used && receiver != null && callingActivity == null) leave()
     }
 
     override fun onDestroy() {
@@ -199,6 +251,11 @@ private fun AiEditorScreen(
     target: AiLanguage?,
     replaceLabel: Int?,
     onUse: (String) -> Unit,
+    /** Back to the keyboard's panel with the answer; null when not opened from the keyboard. */
+    collapse: (() -> Unit)?,
+    /** The answer on screen as it would go back (null: none). */
+    onDraft: (Bundle?) -> Unit,
+    onBusy: (Boolean) -> Unit,
     close: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -255,12 +312,33 @@ private fun AiEditorScreen(
 
     fun thousands(n: Int) = ((n + 500) / 1000).toString()
 
+    // What would go back to the keyboard if the editor were left now
+    val current = stage
+    androidx.compose.runtime.SideEffect {
+        onBusy(current is AiStage.Working)
+        onDraft(
+            if (current is AiStage.Done && result.isNotBlank()) {
+                bundleOf(current.output.copy(text = result), action, language)
+            } else {
+                null
+            },
+        )
+    }
+
     Column(
         Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()
             .verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(stringRes(R.string.pysanka__ai__title), style = MaterialTheme.typography.titleLarge)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringRes(R.string.pysanka__ai__title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+            if (collapse != null) {
+                TextButton(onClick = collapse) {
+                    Icon(Icons.Default.CloseFullscreen, contentDescription = null)
+                    Text(stringRes(R.string.pysanka__ai__collapse), modifier = Modifier.padding(start = 6.dp))
+                }
+            }
+        }
         if (!installed) {
             Text(stringRes(R.string.pysanka__ai__no_model), style = MaterialTheme.typography.bodyMedium)
             Button(onClick = { openAiSettings(context); close() }, modifier = Modifier.fillMaxWidth()) {
@@ -362,6 +440,19 @@ private fun AiEditorScreen(
                     }
                     OutlinedButton(onClick = { copy(context, result) }, enabled = result.isNotBlank(), modifier = Modifier.weight(1f)) {
                         Text(stringRes(R.string.pysanka__ocr__copy))
+                    }
+                }
+                // As in the panel: the same once more, or another action on this answer
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    OutlinedButton(onClick = { run() }, modifier = Modifier.weight(1f)) {
+                        Text(stringRes(R.string.pysanka__ai__again))
+                    }
+                    if (action.kind != AiAction.Kind.ADVICE && action != AiAction.REPLIES) {
+                        OutlinedButton(
+                            onClick = { source = result; stage = AiStage.Idle },
+                            enabled = result.isNotBlank(),
+                            modifier = Modifier.weight(1f),
+                        ) { Text(stringRes(R.string.pysanka__ai__change)) }
                     }
                 }
             }

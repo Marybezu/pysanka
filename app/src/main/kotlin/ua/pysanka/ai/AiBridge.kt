@@ -29,6 +29,9 @@ object AiBridge {
     /** From pressing "Replace" to the keyboard being back in the field: seconds, not minutes. */
     private const val MAX_AGE_MS = 60 * 1000L
 
+    /** An answer left in the editor (collapsed, or another app opened) waits this long for its field. */
+    private const val DRAFT_AGE_MS = 10 * 60 * 1000L
+
     /** What the answer replaces: the selection, the whole text, or nothing (it goes in at the cursor). */
     enum class Mode { SELECTION, ALL, INSERT }
 
@@ -52,6 +55,7 @@ object AiBridge {
     private var target: Target? = null
     private var sessions = 0L
     private var answer: String? = null
+    private var draft: Draft? = null
     private var at = 0L
 
     private fun toast(res: Int) {
@@ -59,8 +63,14 @@ object AiBridge {
         Toast.makeText(app, res, Toast.LENGTH_LONG).show()
     }
 
-    /** What the panel works on, from pressing ✦ until the panel takes it. */
-    class Panel(val info: FlorisEditorInfo, val taken: Taken) {
+    /**
+     * An answer the editor had when it was left without using it: it comes back in the panel when
+     * the keyboard is back in its field, so the work is not lost.
+     */
+    class Draft(val action: AiAction, val language: AiLanguage, val output: AiJob.Output)
+
+    /** What the panel works on, from pressing ✦ until the panel takes it; [draft]: an answer to show at once. */
+    class Panel(val info: FlorisEditorInfo, val taken: Taken, val draft: Draft? = null) {
         /** In Pysanka's own fields the full editor is not offered (it could be the editor's own field). */
         val canExpand get() = info.packageName != FlorisApplication.getHack().packageName
     }
@@ -118,9 +128,12 @@ object AiBridge {
         val session = ++sessions
         target = Target(field, taken, session)
         answer = null
+        draft = null
         FlorisImeService.pysankaLaunch { context ->
             AiEditorActivity.intent(
-                context, text, preset, receiver { result -> set(session, result) }, canReplace = taken.mode != Mode.INSERT,
+                context, text, preset,
+                receiver(onDraft = { d -> setDraft(session, d) }) { result -> set(session, result) },
+                canReplace = taken.mode != Mode.INSERT,
                 done = done,
                 target = language,
             )
@@ -133,11 +146,37 @@ object AiBridge {
         toast(R.string.pysanka__ai__copied_instead)
     }
 
-    private fun receiver(onText: (String) -> Unit) = object : ResultReceiver(Handler(Looper.getMainLooper())) {
+    private fun receiver(onDraft: ((Draft) -> Unit)? = null, onText: (String) -> Unit) = object : ResultReceiver(Handler(Looper.getMainLooper())) {
         override fun onReceiveResult(resultCode: Int, resultData: Bundle?) {
-            if (resultCode != AiEditorActivity.RESULT_TEXT) return
-            resultData?.getString(AiEditorActivity.EXTRA_TEXT)?.takeIf { it.isNotEmpty() }?.let(onText)
+            when (resultCode) {
+                AiEditorActivity.RESULT_TEXT -> resultData?.getString(AiEditorActivity.EXTRA_TEXT)?.takeIf { it.isNotEmpty() }?.let(onText)
+                AiEditorActivity.RESULT_DRAFT -> resultData?.let(AiEditorActivity::draftOf)?.let { d -> onDraft?.invoke(d) }
+            }
         }
+    }
+
+    @Synchronized
+    private fun setDraft(session: Long, value: Draft) {
+        if (target?.session != session) return
+        draft = value
+        at = System.currentTimeMillis()
+    }
+
+    /**
+     * Back in the field the editor was opened from, with an answer left in it: the panel opens
+     * with that answer (true). Anywhere else, or later, it is dropped.
+     */
+    @Synchronized
+    fun reopenDraft(info: FlorisEditorInfo, isPassword: Boolean): Boolean {
+        val d = draft ?: return false
+        val t = target ?: return false
+        if (info.packageName == FlorisApplication.getHack().packageName) return false
+        draft = null
+        target = null
+        val fresh = System.currentTimeMillis() - at < DRAFT_AGE_MS
+        if (!fresh || isPassword || FieldPrivacy.isPrivate || t.field != fieldOf(info)) return false
+        panel = Panel(info, t.taken, d)
+        return true
     }
 
     @Synchronized

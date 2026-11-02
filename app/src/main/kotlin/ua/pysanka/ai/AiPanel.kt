@@ -129,9 +129,21 @@ fun AiPanel(modifier: Modifier = Modifier) {
             ?.text?.takeIf { it.isNotBlank() }?.take(AiBridge.MAX_CHARS)
     }
 
-    var stage by remember { mutableStateOf<PanelStage>(if (installed) PanelStage.Menu else PanelStage.NoModel) }
+    // An answer left in the editor comes back as it was
+    val draft = panel.draft
+    var stage by remember {
+        mutableStateOf<PanelStage>(
+            when {
+                !installed -> PanelStage.NoModel
+                draft != null -> draft.output.let {
+                    PanelStage.Done(draft.action, false, it.text, it.removed, it.unconfirmed, it.seconds, it.backend)
+                }
+                else -> PanelStage.Menu
+            },
+        )
+    }
     var source by remember { mutableStateOf(panel.taken.text) }
-    var target by remember { mutableStateOf(AiLanguage.EN) }
+    var target by remember { mutableStateOf(draft?.language ?: AiLanguage.EN) }
     var more by remember { mutableStateOf(false) }
     var loaded by remember { mutableStateOf(false) }
     var token by remember { mutableLongStateOf(0L) }
@@ -326,7 +338,11 @@ internal fun AiPanelView(
                 }
                 PanelStage.Menu -> Column(Modifier.fillMaxSize()) {
                     Note(stringRes(note))
-                    val shown = (if (more) AiAction.entries else MAIN).filter(available)
+                    val shown = if (more) {
+                        (MAIN + AiAction.entries).distinct().filter(available)
+                    } else {
+                        MAIN.filter(available).take(MAIN_SHOWN)
+                    }
                     // At least 112 dp a tile (three across on a phone): narrower, longer words broke in the
                     // middle («Граматик-а»), above all with large text
                     LazyVerticalGrid(columns = GridCells.Adaptive(112.dp), modifier = Modifier.fillMaxWidth().weight(1f)) {
@@ -380,12 +396,13 @@ internal fun AiPanelView(
     }
 }
 
-/** The actions shown first; "More" shows all. */
+/** The actions shown first (the first [MAIN_SHOWN] of them that are available); "More" shows all. */
 private val MAIN = listOf(
-    AiAction.FIX, AiAction.MY_STYLE, AiAction.FRIENDLY, AiAction.FORMAL, AiAction.SHORTER,
-    AiAction.REPLIES, AiAction.TONE, AiAction.TRANSLATE, AiAction.RUSSISMS,
-    AiAction.SUMMARY, AiAction.LIST, AiAction.TABLE,
+    AiAction.FIX, AiAction.MY_STYLE, AiAction.FRIENDLY, AiAction.FORMAL, AiAction.SHORTER, AiAction.REPLIES,
 )
+
+/** Five and "More": two rows on a phone, so the short list is clearly short. */
+private const val MAIN_SHOWN = 5
 
 private fun icon(action: AiAction): ImageVector = when (action) {
     AiAction.FIX -> Icons.Default.Spellcheck

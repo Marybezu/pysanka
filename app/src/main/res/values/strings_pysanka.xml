@@ -244,6 +244,7 @@
     <string name="pysanka__ai__again">Again</string>
     <string name="pysanka__ai__change">Refine</string>
     <string name="pysanka__ai__expand">Expand</string>
+    <string name="pysanka__ai__collapse">Collapse</string>
     <string name="pysanka__ai__back">Back</string>
     <string name="pysanka__typing__auto_correct">Correct typing errors</string>
     <string name="pysanka__typing__auto_correct_summary">Only clear typos, after a space; Backspace at once brings back what you typed</string>
