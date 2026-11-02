@@ -13,12 +13,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
@@ -33,12 +36,19 @@ import org.florisboard.lib.snygg.ui.SnyggIconButton
 import org.florisboard.lib.snygg.ui.SnyggRow
 import org.florisboard.lib.snygg.ui.SnyggText
 
+/** Pysanka: the clipboard search while it is open, else [smartbar]. */
+@Composable
+fun ClipSearchOrSmartbar(smartbar: @Composable () -> Unit) {
+    val query by ClipSearch.query.collectAsState()
+    query?.let { ClipSearchBar(it) } ?: smartbar()
+}
+
 /**
  * Pysanka: the clipboard search, in place of the suggestions bar while the keys type into it
  * ([ClipSearch]): back to the clipboard, the query, then the clips found; a tap pastes one.
  */
 @Composable
-fun ClipSearchBar(query: String) {
+private fun ClipSearchBar(query: String) {
     val context = LocalContext.current
     val clipboardManager by context.clipboardManager()
     val keyboardManager by context.keyboardManager()
@@ -46,9 +56,11 @@ fun ClipSearchBar(query: String) {
     val tags by clipboardManager.tagsFlow.collectAsState()
     val locked = remember { context.getSystemService(android.app.KeyguardManager::class.java) }
         .let { it.isDeviceLocked || it.isKeyguardLocked }
-    val found = remember(history, tags, query) {
-        ClipSearch.results(history.pinned + history.recent + history.other, tags, query)
+    // Prepared once (in the background) when the history or the tags change, not for every key
+    val index by produceState(emptyList<ClipSearch.Entry>(), history, tags) {
+        value = withContext(Dispatchers.Default) { ClipSearch.index(history.pinned + history.unpinned, tags) }
     }
+    val found = remember(index, query, locked) { if (locked) emptyList() else ClipSearch.results(index, query) }
     // Leaving the text keys (another panel, or the keyboard closed) ends the search
     DisposableEffect(Unit) { onDispose { ClipSearch.stop() } }
 
@@ -72,7 +84,12 @@ fun ClipSearchBar(query: String) {
             elementName = FlorisImeUi.ClipboardHeaderText.elementName,
             modifier = Modifier.widthIn(max = 140.dp).padding(horizontal = 6.dp),
             // The cursor: the keys type here
-            text = if (query.isEmpty()) stringRes(R.string.pysanka__clip_search__hint) else "$query▏",
+            // The end of a long query, where the typing is
+            text = when {
+                query.isEmpty() -> stringRes(R.string.pysanka__clip_search__hint)
+                query.length > 18 -> "…" + query.takeLast(17).let { if (it.first().isLowSurrogate()) it.drop(1) else it } + "▏"
+                else -> "$query▏"
+            },
         )
         SnyggRow(
             elementName = FlorisImeUi.ClipboardFilterRow.elementName,
@@ -91,7 +108,8 @@ fun ClipSearchBar(query: String) {
                             ClipSearch.stop()
                         },
                         text = when {
-                            item.type != ItemType.TEXT -> stringRes(R.string.pysanka__clip_search__image)
+                            item.type != ItemType.TEXT -> stringRes(R.string.pysanka__clip_search__image) +
+                                item.text?.takeIf { it.isNotBlank() }?.let { ": " + label(it) }.orEmpty()
                             item.isSensitive -> stringRes(R.string.clipboard__sensitive_clip_content)
                             else -> label(item.text.orEmpty())
                         },

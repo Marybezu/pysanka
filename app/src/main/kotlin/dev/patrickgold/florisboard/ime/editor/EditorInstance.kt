@@ -135,7 +135,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
      */
     private fun pysankaStartField(editorInfo: FlorisEditorInfo) {
         pysankaUpdatePrivacy(editorInfo)
-        // Another field: a clipboard search left open ends
+        // Pysanka: another field, a clipboard search left open ends
         ua.pysanka.clipboard.ClipSearch.stop()
         val isPasswordField = ua.pysanka.privacy.FieldPrivacy.isPassword
         val isPrivate = ua.pysanka.privacy.FieldPrivacy.isPrivate
@@ -180,7 +180,15 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         pysankaUpdatePrivacy(editorInfo)
     }
 
+    override fun handleFinishInputView() {
+        // Pysanka: the keyboard hidden (or the screen locked): the clipboard search ends, its query is not kept
+        ua.pysanka.clipboard.ClipSearch.stop()
+        super.handleFinishInputView()
+    }
+
     override fun handleFinishInput() {
+        // Pysanka: the clipboard search ends with the field
+        ua.pysanka.clipboard.ClipSearch.stop()
         ua.pysanka.typing.AutoCorrect.clear()
         // Pysanka: learned words are written when a field is left
         ua.pysanka.typing.UserWords.flush(appContext)

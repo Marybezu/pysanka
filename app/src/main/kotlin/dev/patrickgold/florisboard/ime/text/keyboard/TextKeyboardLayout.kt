@@ -765,6 +765,8 @@ private class TextKeyboardLayoutController(
 
     private fun handleDeleteSwipe(event: SwipeGesture.Event): Boolean {
         if (editorInstance.activeInfo.isRawInputEditor) return false
+        // Pysanka: not while the keys type into the clipboard search (it would delete in the field)
+        if (ua.pysanka.clipboard.ClipSearch.active) return false
 
         return when (event.type) {
             SwipeGesture.Type.TOUCH_MOVE -> when (prefs.gestures.deleteKeySwipeLeft.get()) {
@@ -832,6 +834,8 @@ private class TextKeyboardLayoutController(
     }
 
     private fun handleSpaceSwipe(event: SwipeGesture.Event): Boolean {
+        // Pysanka: not while the keys type into the clipboard search (it would move the field's cursor)
+        if (ua.pysanka.clipboard.ClipSearch.active) return false
         val pointer = pointerMap.findById(event.pointerId) ?: return false
 
         return when (event.type) {

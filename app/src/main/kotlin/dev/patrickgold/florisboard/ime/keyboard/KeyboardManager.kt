@@ -314,21 +314,24 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     /** Pysanka: the keys type into the clipboard search (shown over the text keys), not the field. */
     private fun pysankaSearching() = activeState.imeUiMode == ImeUiMode.TEXT && ua.pysanka.clipboard.ClipSearch.active
 
-    /** Pysanka: a key typed into the clipboard search; false for keys that work as usual (shift, layouts, language). */
+    /**
+     * Pysanka: a key while the clipboard search is open. Only keys that never touch the field work
+     * as usual (false); text goes into the search; anything else (undo, arrows, paste…) does nothing.
+     */
     private fun pysankaSearchKey(data: KeyData): Boolean {
         val search = ua.pysanka.clipboard.ClipSearch
-        when {
-            data.code == KeyCode.DELETE -> search.deleteChar()
-            data.code == KeyCode.DELETE_WORD -> search.deleteWord()
-            data.code == KeyCode.SPACE -> search.type(" ")
-            data.code == KeyCode.ENTER -> search.stop()
-            (data.type == KeyType.CHARACTER || data.type == KeyType.NUMERIC) && data.code > 0 -> {
+        when (data.code) {
+            in PYSANKA_SEARCH_PASS -> return false
+            KeyCode.DELETE -> search.deleteChar()
+            KeyCode.DELETE_WORD -> search.deleteWord()
+            KeyCode.SPACE -> search.type(" ")
+            KeyCode.ENTER -> search.stop()
+            else -> if (data.code > 0 || data.code == KeyCode.URI_COMPONENT_TLD || data.code == KeyCode.MULTIPLE_CODE_POINTS) {
                 search.type(data.asString(isForDisplay = false))
                 if (activeState.inputShiftState != InputShiftState.CAPS_LOCK && !inputEventDispatcher.isPressed(KeyCode.SHIFT)) {
                     activeState.inputShiftState = InputShiftState.UNSHIFTED
                 }
             }
-            else -> return false
         }
         return true
     }
@@ -835,6 +838,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // Pysanka: an auto-correction can be taken back only by the very next key (Backspace)
         pysankaUndoReady = pysankaUndo
         pysankaUndo = null
+        // Pysanka: the keys type into the clipboard search while it is open
         if (pysankaSearching() && pysankaSearchKey(data)) return@batchEdit
         val windowController = FlorisImeService.windowControllerOrNull() ?: return@batchEdit
         when (data.code) {
@@ -1019,6 +1023,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     fun onHardwareKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        // Pysanka: a physical keyboard types into the field, so a clipboard search on screen ends
+        ua.pysanka.clipboard.ClipSearch.stop()
         when (keyCode) {
             KeyEvent.KEYCODE_SPACE -> {
                 handleHardwareKeyboardSpace()
@@ -1204,3 +1210,17 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
     }
 }
+
+/** Pysanka: keys that work as usual while the clipboard search is open (none of them touches the field). */
+private val PYSANKA_SEARCH_PASS = setOf(
+    KeyCode.SHIFT, KeyCode.CAPS_LOCK,
+    KeyCode.VIEW_CHARACTERS, KeyCode.VIEW_SYMBOLS, KeyCode.VIEW_SYMBOLS2, KeyCode.VIEW_NUMERIC,
+    KeyCode.VIEW_NUMERIC_ADVANCED, KeyCode.VIEW_PHONE, KeyCode.VIEW_PHONE2,
+    KeyCode.LANGUAGE_SWITCH, KeyCode.IME_PREV_SUBTYPE, KeyCode.IME_NEXT_SUBTYPE, KeyCode.SHOW_SUBTYPE_PICKER,
+    KeyCode.IME_UI_MODE_TEXT, KeyCode.IME_UI_MODE_MEDIA, KeyCode.IME_UI_MODE_CLIPBOARD,
+    KeyCode.IME_SHOW_UI, KeyCode.IME_HIDE_UI,
+    KeyCode.SYSTEM_INPUT_METHOD_PICKER, KeyCode.SYSTEM_PREV_INPUT_METHOD, KeyCode.SYSTEM_NEXT_INPUT_METHOD,
+    KeyCode.KANA_SWITCHER, KeyCode.KANA_HIRA, KeyCode.KANA_KATA, KeyCode.KANA_HALF_KATA,
+    KeyCode.CHAR_WIDTH_SWITCHER, KeyCode.CHAR_WIDTH_FULL, KeyCode.CHAR_WIDTH_HALF,
+    KeyCode.SETTINGS, KeyCode.TOGGLE_SMARTBAR_VISIBILITY, KeyCode.TOGGLE_ACTIONS_OVERFLOW,
+)

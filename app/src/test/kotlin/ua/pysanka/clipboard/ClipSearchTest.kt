@@ -16,22 +16,30 @@ class ClipSearchTest : FunSpec({
             clip("вул. Хрещатик, 1", listOf(2)),
             clip("Звіт за жовтень", listOf(1)),
         )
-        ClipSearch.results(items, tags, "П'ЯТНИЦ").map { it.text } shouldBe listOf("Зустріч у п’ятницю о 10:00")
-        ClipSearch.results(items, tags, "адреси хрещ").map { it.text } shouldBe listOf("вул. Хрещатик, 1")
-        ClipSearch.results(items, tags, "робота жовтень").size shouldBe 1
-        ClipSearch.results(items, tags, "робота листопад").size shouldBe 0
-        ClipSearch.results(items, tags, "   ").size shouldBe 0
+        ClipSearch.results(ClipSearch.index(items, tags), "П'ЯТНИЦ").map { it.text } shouldBe listOf("Зустріч у п’ятницю о 10:00")
+        ClipSearch.results(ClipSearch.index(items, tags), "адреси хрещ").map { it.text } shouldBe listOf("вул. Хрещатик, 1")
+        ClipSearch.results(ClipSearch.index(items, tags), "робота жовтень").size shouldBe 1
+        ClipSearch.results(ClipSearch.index(items, tags), "робота листопад").size shouldBe 0
+        ClipSearch.results(ClipSearch.index(items, tags), "   ").size shouldBe 0
     }
 
     test("a password is found only by its tags, never by its text") {
         val items = listOf(clip("Secret123", listOf(1), sensitive = true))
-        ClipSearch.results(items, tags, "secret").size shouldBe 0
-        ClipSearch.results(items, tags, "робота").size shouldBe 1
+        ClipSearch.results(ClipSearch.index(items, tags), "secret").size shouldBe 0
+        ClipSearch.results(ClipSearch.index(items, tags), "робота").size shouldBe 1
+    }
+
+    test("a picture is found by the text recognised in it; words split at any space") {
+        val picture = ClipboardItem(
+            type = dev.patrickgold.florisboard.ime.clipboard.provider.ItemType.IMAGE, text = "Квитанція № 5",
+            uri = null, creationTimestampMs = 0, isPinned = false, mimeTypes = listOf("image/png"),
+        )
+        ClipSearch.results(ClipSearch.index(listOf(picture), tags), "квитанц\u00A05").size shouldBe 1
     }
 
     test("at most MAX_RESULTS, in the order given") {
         val items = List(50) { clip("рядок $it") }
-        val found = ClipSearch.results(items, tags, "рядок")
+        val found = ClipSearch.results(ClipSearch.index(items, tags), "рядок")
         found.size shouldBe ClipSearch.MAX_RESULTS
         found.first().text shouldBe "рядок 0"
     }
